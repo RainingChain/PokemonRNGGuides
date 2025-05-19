@@ -1,6 +1,7 @@
 mod egg;
 mod feebas_sid;
 mod jirachi;
+mod largest_pokemon;
 mod mirage_island;
 mod seed;
 mod stationary;
