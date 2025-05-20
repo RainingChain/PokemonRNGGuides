@@ -33,7 +33,7 @@ pub struct Setup {
     pub encounter_slot:Vec<EncounterSlot>, 
     pub method:Gen3Method, 
     pub synchronize:Option<(Gen3Lead, Nature)>,
-    pub swarm:bool,
+    pub mass_outbreak:bool,
 } 
 
 pub fn get_size_scale(pid:u32, ivs:&Ivs) -> u16 {
@@ -55,7 +55,7 @@ pub fn is_largest(pid:u32, ivs:&Ivs) -> bool {
 }
 
 pub fn get_earliest_advance_for_max_size_for_setup(setup: &Setup) -> usize {
-    for i in 0..10000 {
+    for i in 0..10 {
         let opts = Gen3WOpts {
             shiny_type: None,
             ability: None,
@@ -67,10 +67,10 @@ pub fn get_earliest_advance_for_max_size_for_setup(setup: &Setup) -> usize {
             gender_ratio: GenderRatio::OneToOne,
             encounter_slot:Some(setup.encounter_slot.clone()),
             method: Some(setup.method),
-            min_advances: i * 10000,
-            max_advances: (i + 1) * 10000,
+            min_advances: i * 1000000,
+            max_advances: (i + 1) * 1000000,
             synchronize:setup.synchronize,
-            swarm:setup.swarm,
+            mass_outbreak:setup.mass_outbreak,
         };
         let generated_pokemons = generate_3wild(&opts, setup.seed);
         let largest = generated_pokemons.iter().find(|poke|{
@@ -78,6 +78,7 @@ pub fn get_earliest_advance_for_max_size_for_setup(setup: &Setup) -> usize {
         });
 
         if let Some(largest) = largest {
+            //println!("Advance {:?} from {:?}", largest.advances, setup);
             return largest.advances
         }
     }
@@ -85,20 +86,19 @@ pub fn get_earliest_advance_for_max_size_for_setup(setup: &Setup) -> usize {
     0
 }
 
-
-pub fn get_earliest_advance_for_max_size_for_all_setups(game:Game, pokemon:Pokemon) -> Vec<(Setup, usize)> {
+pub fn get_earliest_advance_for_max_size_for_all_setups_in_game(game:Game, pokemon:Pokemon) -> Vec<(Setup, usize)> {
     /*
     Lotad: 
         Route 102: {Ruby: None}, {Sapphire: 4,5 20%}, {Emerald: 4,5 20%}
         Route 114: {Ruby: None}, {Sapphire: 1,4 30%}, {Emerald: 1,4 30%}
 
     Seedot:
-        Route 102: {Ruby: 4,5 20%}, {Sapphire: None}, {Emerald: 11 1%} + Swarm
+        Route 102: {Ruby: 4,5 20%}, {Sapphire: None}, {Emerald: 11 1%} + MassOutbreak
         Route 114: {Ruby: 1,4 30%}, {Sapphire: None}, {Emerald: None}
-        Route 117: {Ruby: None},    {Sapphire: None}, {Emerald: Emerald: 11 1%} + Swarm
-        Route 120: {Ruby: None},    {Sapphire: None}, {Emerald: Emerald: 11 1%} + Swarm
+        Route 117: {Ruby: None},    {Sapphire: None}, {Emerald: Emerald: 11 1%} + MassOutbreak
+        Route 120: {Ruby: None},    {Sapphire: None}, {Emerald: Emerald: 11 1%} + MassOutbreak
     */
-    let encounter_slot_swarm_possible_values = match game {
+    let encounter_slot_and_mass_outbreak_possible_values = match game {
         Game::Ruby => {
             match pokemon {
                 Pokemon::Lotad => vec![],
@@ -132,7 +132,7 @@ pub fn get_earliest_advance_for_max_size_for_all_setups(game:Game, pokemon:Pokem
         }
     };
 
-    if encounter_slot_swarm_possible_values.is_empty() {
+    if encounter_slot_and_mass_outbreak_possible_values.is_empty() {
         return vec![];
     }
 
@@ -155,18 +155,18 @@ pub fn get_earliest_advance_for_max_size_for_all_setups(game:Game, pokemon:Pokem
     }; 
 
     let mut setups:Vec<Setup> = vec![];
-    for (encounter_slot, swarm) in encounter_slot_swarm_possible_values {
-        let swarm_possible_values = if swarm { vec![false, true] } else { vec![false] };
+    for (encounter_slot, mass_outbreak) in encounter_slot_and_mass_outbreak_possible_values {
+        let mass_outbreak_possible_values = if mass_outbreak { vec![false, true] } else { vec![false] };
 
         for synchronize in synchronize_possible_values.iter() {
             for method in vec![Gen3Method::H1,Gen3Method::H2,Gen3Method::H4] {
-                for swarm in swarm_possible_values.iter() {
+                for mass_outbreak in mass_outbreak_possible_values.iter() {
                     setups.push(Setup {
                         seed,
                         encounter_slot:encounter_slot.clone(), 
                         method, 
                         synchronize:*synchronize,
-                        swarm:*swarm,
+                        mass_outbreak:*mass_outbreak,
                     });
                 }
             }
@@ -184,6 +184,19 @@ pub fn get_earliest_advance_for_max_size_for_all_setups(game:Game, pokemon:Pokem
     res
 }
 
+pub fn get_earliest_advance_for_max_size_for_all_setups(pokemon:Pokemon) -> Vec<(Setup, usize)> {
+    let mut res:Vec<(Setup, usize)> = vec![];
+    for game in [Game::Ruby, Game::Sapphire, Game::Emerald] {
+        let res2 = get_earliest_advance_for_max_size_for_all_setups_in_game(game, pokemon);
+        res.extend(res2);
+    }
+    
+    res.sort_by(|res0, res1|{
+        res0.1.cmp(&res1.1)
+    });
+
+    res
+}
 
 #[cfg(test)]
 mod test {
@@ -207,9 +220,17 @@ mod test {
         // 100149 => Setup { seed: 1440, encounter_slot: [Slot4, Slot5], method: H1, synchronize: None }
         // 122955 => Setup { seed: 1440, encounter_slot: [Slot4, Slot5], method: H2, synchronize: None }
 
-        let res = get_earliest_advance_for_max_size_for_all_setups(Game::Sapphire, Pokemon::Lotad);
+        println!("Seedot");
+        let res = get_earliest_advance_for_max_size_for_all_setups(Pokemon::Seedot);
         // 100149 => Setup { seed: 1440, encounter_slot: [Slot4, Slot5], method: H1, synchronize: None }
         // 122955 => Setup { seed: 1440, encounter_slot: [Slot4, Slot5], method: H2, synchronize: None }
+        
+        for r in res {
+            println!("{} => {:?}", r.1, r.0);
+        }
+
+        println!("\n\nLotad");
+        let res = get_earliest_advance_for_max_size_for_all_setups(Pokemon::Lotad);
 
         for r in res {
             println!("{} => {:?}", r.1, r.0);

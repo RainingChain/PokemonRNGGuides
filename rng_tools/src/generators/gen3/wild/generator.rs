@@ -22,7 +22,7 @@ pub struct Gen3WOpts {
     pub min_advances: usize,
     pub max_advances: usize,
     pub synchronize: Option<(Gen3Lead, Nature)>,
-    pub swarm:bool,
+    pub mass_outbreak:bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -36,18 +36,28 @@ pub struct GeneratedPokemon {
     pub advances: usize,
     pub encounter_slot: EncounterSlot,
     pub synch: bool,
+    pub mass_outbreak:bool,
 }
 
 pub fn generate_pokemon(rng: &mut Pokerng, settings: &Gen3WOpts) -> Option<GeneratedPokemon> {
     rng.rand::<u32>(); // unknown
 
-    let encounter_rand = ((rng.rand::<u32>() >> 16) % 100) as u8;
-    let encounter_slot = EncounterSlot::from_rand(encounter_rand);
+    let mass_outbreak;
+    let mut encounter_slot = EncounterSlot::Slot0;
+    if settings.mass_outbreak && rng.rand::<u16>() % 100 < 50 {
+        mass_outbreak = true;
+    } else {
+        mass_outbreak = false;
 
-    if !EncounterSlot::passes_filter(settings.encounter_slot.as_deref(), encounter_slot) {
-        return None;
+        let encounter_rand = ((rng.rand::<u32>() >> 16) % 100) as u8;
+        encounter_slot = EncounterSlot::from_rand(encounter_rand);
+
+        if !EncounterSlot::passes_filter(settings.encounter_slot.as_deref(), encounter_slot) {
+            return None;
+        }
+        rng.rand::<u32>(); // level
     }
-    rng.rand::<u32>(); // level
+
 
     let nature_rand: u8;
     let mut is_synch = false;
@@ -142,6 +152,7 @@ pub fn generate_pokemon(rng: &mut Pokerng, settings: &Gen3WOpts) -> Option<Gener
         nature,
         advances: 0,
         encounter_slot,
+        mass_outbreak,
         synch: is_synch,
     })
 }
@@ -208,7 +219,7 @@ mod test {
             min_advances: 0,
             max_advances: 10,
             synchronize: None,
-            swarm:false,
+            mass_outbreak:false,
         };
 
         let expected_results = vec![
@@ -229,6 +240,7 @@ mod test {
                 advances: 1,
                 encounter_slot: EncounterSlot::Slot5,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0x639E3D69,
@@ -247,6 +259,7 @@ mod test {
                 advances: 2,
                 encounter_slot: EncounterSlot::Slot0,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0xAD05863A,
@@ -265,6 +278,7 @@ mod test {
                 advances: 3,
                 encounter_slot: EncounterSlot::Slot1,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0x945CE0C6,
@@ -283,6 +297,7 @@ mod test {
                 advances: 4,
                 encounter_slot: EncounterSlot::Slot0,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0x91785DD6,
@@ -301,6 +316,7 @@ mod test {
                 advances: 5,
                 encounter_slot: EncounterSlot::Slot4,
                 synch: false,
+                mass_outbreak:false,
             },
         ];
         let result = generate_3wild(&options, seed);
@@ -347,7 +363,7 @@ mod test {
             min_advances: 60,
             max_advances: 4000,
             synchronize: None,
-            swarm:false,
+            mass_outbreak:false,
         };
         let expected_results = vec![
             GeneratedPokemon {
@@ -367,6 +383,7 @@ mod test {
                 advances: 908,
                 encounter_slot: EncounterSlot::Slot0,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0xA44D455D,
@@ -385,6 +402,7 @@ mod test {
                 advances: 3543,
                 encounter_slot: EncounterSlot::Slot0,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0xA44D455D,
@@ -403,6 +421,7 @@ mod test {
                 advances: 3577,
                 encounter_slot: EncounterSlot::Slot6,
                 synch: false,
+                mass_outbreak:false,
             },
             GeneratedPokemon {
                 pid: 0xA44D455D,
@@ -421,6 +440,7 @@ mod test {
                 advances: 3621,
                 encounter_slot: EncounterSlot::Slot8,
                 synch: false,
+                mass_outbreak:false,
             },
         ];
         let result = generate_3wild(&options, seed);
