@@ -5,7 +5,9 @@ use wasm_bindgen::prelude::wasm_bindgen;
 pub enum Gen3Method {
     H1,
     H2,
+    H3,
     H4,
+    H5,
 }
 
 #[wasm_bindgen]

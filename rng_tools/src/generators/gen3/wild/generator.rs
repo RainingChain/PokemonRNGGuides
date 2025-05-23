@@ -101,7 +101,7 @@ pub fn generate_pokemon(rng: &mut Pokerng, settings: &Gen3WOpts) -> Option<Gener
             iv1 = rng.rand::<u16>();
             iv2 = rng.rand::<u16>();
         }
-        Gen3Method::H4 => {
+        _ => {
             iv1 = rng.rand::<u16>();
             rng.rand::<u16>(); // skip one
             iv2 = rng.rand::<u16>();
