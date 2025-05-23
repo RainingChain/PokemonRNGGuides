@@ -1,12 +1,50 @@
-import { Skeleton } from "antd";
-import { Flex, Typography, Grid, Card, Icon } from "~/components";
-import { getGuide, GuideMeta, guides, Category } from "~/guides";
+import { Card as AntdCard, Badge } from "antd";
+import { Flex, Typography, Grid, Card, Divider, Tag, Icon } from "~/components";
+import { getGuide, guides, Category, GuideTag, GuideMeta } from "~/guides";
 import { useActiveRoute } from "~/hooks/useActiveRoute";
-import { get, groupBy, sortBy, flatMap } from "lodash-es";
+import { get, groupBy, sortBy, flatMap, startCase } from "lodash-es";
 import { Route } from "~/routes/defs";
 import { match } from "ts-pattern";
 import styled from "@emotion/styled";
-import { useAbCohort } from "~/hooks/useAbTest";
+
+const BadgeRibbon = styled(Badge.Ribbon)<{ $isNew: boolean }>(({ $isNew }) => ({
+  display: $isNew ? "flex" : "none",
+}));
+
+type DisplayAttribute =
+  | GuideMeta["displayAttributes"][number]
+  | "new"
+  | "translated";
+
+const DisplayTag = styled(Tag)<{ tag: DisplayAttribute }>(({ tag }) => {
+  const colors = match(tag)
+    .with("new", () => ({
+      color: "#AF52DE",
+      backgroundColor: "rgba(175, 82, 222, 0.1)",
+    }))
+    .with("translated", () => ({
+      color: "#34C759",
+      backgroundColor: "rgba(52, 199, 89, 0.1)",
+    }))
+    .with("web_tool", () => ({
+      color: "#7E5BEF",
+      backgroundColor: "rgba(126, 91, 239, 0.08)",
+    }))
+    .with("video_guide", () => ({
+      color: "#007AFF",
+      backgroundColor: "rgba(0, 122, 255, 0.1)",
+    }))
+    .exhaustive();
+
+  return {
+    ...colors,
+    borderRadius: 20,
+    border: 0,
+    boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04)",
+  };
+});
+
+const { Meta: CardMeta } = AntdCard;
 
 const isToolCategory = (category: Category) => {
   return match(category)
@@ -34,41 +72,54 @@ const isToolCategory = (category: Category) => {
     .with("GBA Technical Documentation", () => false)
     .with("Game Hub", () => false)
     .with("Home", () => false)
-    .with("Transporter", () => false)
+    .with("Transporter and Dream Radar", () => false)
     .with("USUM Challenges", () => false)
     .with("User Settings", () => false)
     .exhaustive();
 };
 
 const routeToCategory = {
-  "/legends-arceus": ["Legends Arceus", "Switch Tools"],
-  "/crystal": ["Gold, Silver, Crystal"],
-  "/ruby-and-sapphire": ["Ruby and Sapphire", "GBA Tools"],
-  "/gamecube": ["Gamecube"],
-  "/fire-red-and-leaf-green": ["FireRed and LeafGreen", "GBA Tools"],
-  "/emerald": ["Emerald", "GBA Tools"],
-  "/diamond-pearl-and-platinum": ["Diamond, Pearl, and Platinum", "NDS Tools"],
-  "/heart-gold-and-soul-silver": ["HeartGold and SoulSilver", "NDS Tools"],
-  "/black-and-white": ["Black and White", "NDS Tools"],
-  "/black-2-and-white-2": ["Black 2 and White 2", "NDS Tools"],
-  "/x-and-y": ["X and Y", "3DS Tools"],
-  "/omega-ruby-and-alpha-sapphire": [
+  "/transporter-dream-radar/": ["Transporter and Dream Radar"],
+  "/legends-arceus/": ["Legends Arceus", "Switch Tools"],
+  "/crystal/": ["Gold, Silver, Crystal"],
+  "/ruby-and-sapphire/": ["Ruby and Sapphire", "GBA Tools"],
+  "/gamecube/": ["Gamecube"],
+  "/fire-red-and-leaf-green/": ["FireRed and LeafGreen", "GBA Tools"],
+  "/emerald/": ["Emerald", "GBA Tools"],
+  "/diamond-pearl-and-platinum/": ["Diamond, Pearl, and Platinum", "NDS Tools"],
+  "/heart-gold-and-soul-silver/": ["HeartGold and SoulSilver", "NDS Tools"],
+  "/black-and-white/": ["Black and White", "NDS Tools"],
+  "/black-2-and-white-2/": ["Black 2 and White 2", "NDS Tools"],
+  "/x-and-y/": ["X and Y", "3DS Tools"],
+  "/omega-ruby-and-alpha-sapphire/": [
     "Omega Ruby and Alpha Sapphire",
     "3DS Tools",
   ],
-  "/sun-and-moon": ["Sun and Moon", "3DS Tools"],
-  "/ultra-sun-and-ultra-moon": ["Ultra Sun and Ultra Moon", "3DS Tools"],
-  "/sword-and-shield": ["Sword and Shield", "Switch Tools"],
-  "/brilliant-diamond-and-shining-pearl": [
+  "/sun-and-moon/": ["Sun and Moon", "3DS Tools"],
+  "/ultra-sun-and-ultra-moon/": ["Ultra Sun and Ultra Moon", "3DS Tools"],
+  "/sword-and-shield/": ["Sword and Shield", "Switch Tools"],
+  "/brilliant-diamond-and-shining-pearl/": [
     "Brilliant Diamond and Shining Pearl",
     "Switch Tools",
   ],
 } satisfies Partial<Record<Route, Category[]>>;
 
+const GuideCard = styled(Card)({
+  "& .ant-card-body": {
+    padding: 0,
+  },
+  "& .ant-ribbon-wrapper": {
+    height: "100%",
+    display: "flex",
+  },
+});
+
 const CardBackground = styled.div({
   position: "absolute",
   top: 0,
   left: 0,
+  display: "flex",
+  justifyContent: "flex-end",
   width: "100%",
   height: "100%",
   overflow: "hidden",
@@ -78,9 +129,10 @@ const InnerCardBackground = styled.div({
   position: "absolute",
   top: -12,
   transform: "rotate(-35deg)",
+  paddingTop: 12,
 });
 
-type PageSection = GuideMeta["tag"] | "tool";
+type PageSection = GuideTag | "tool" | "patch";
 
 const sectionDisplayOrder: PageSection[] = [
   "info",
@@ -90,6 +142,7 @@ const sectionDisplayOrder: PageSection[] = [
   "emu",
   "retail",
   "tool",
+  "patch",
 ];
 
 const isSectionDsiplay = (section: string): section is PageSection => {
@@ -109,20 +162,25 @@ const getSectionLabel = (section: string) => {
     .with("info", () => "Info")
     .with("retail", () => "Retail")
     .with("tool", () => "Tools")
+    .with("patch", () => "Patches")
     .exhaustive();
 };
 
-const guidesWithFlattenedCategories = flatMap(guides, (guide) => {
-  return guide.meta.categories.map((category) => ({ ...guide.meta, category }));
+const guidesWithFlattenedTags = flatMap(guides, (guide) => {
+  return guide.meta.tags.map((tag) => ({ ...guide.meta, tag }));
 });
+const guidesWithFlattenedCategories = guidesWithFlattenedTags.flatMap(
+  (guide) => {
+    return guide.categories.map((category) => ({ ...guide, category }));
+  },
+);
 const guideByCategory = groupBy(
   guidesWithFlattenedCategories,
   (guide) => guide.category,
 );
 
 export const GamePageComponent = () => {
-  const [route] = useActiveRoute();
-  const abTest = useAbCohort("guidePokeball");
+  const route = useActiveRoute();
 
   const { meta } = getGuide(route);
 
@@ -143,10 +201,6 @@ export const GamePageComponent = () => {
         Guides and Articles
       </Typography.Title>
       {sectionDisplayOrder.map((section) => {
-        if (!abTest.hydrated) {
-          return <Skeleton />;
-        }
-
         const sectionGuides = guidesBySection[section];
         if (sectionGuides == null) {
           return null;
@@ -168,36 +222,49 @@ export const GamePageComponent = () => {
             <Grid mobile={1} tablet={2} desktop={3}>
               {sortBy(filteredGuides, (guide) => guide.navDrawerTitle).map(
                 (guide) => (
-                  <Card
+                  <GuideCard
                     id={`guide-${guide.slug}`}
                     key={guide.slug}
                     fullBody
                     href={guide.slug}
                     borderColor="PrimaryBorderHover"
-                    border="1px solid"
+                    border={guide.isNew ? "2px solid" : "1px solid"}
                   >
-                    {abTest.cohort === "on" && (
-                      <CardBackground>
-                        <InnerCardBackground>
-                          <Icon
-                            name="Pokeball"
-                            size={100}
-                            color="PrimaryBgHover"
-                          />
-                        </InnerCardBackground>
-                      </CardBackground>
-                    )}
-                    <Flex vertical style={{ position: "relative", zIndex: 1 }}>
-                      <Typography.Text
-                        strong
-                        m={0}
-                        fontSize={16}
-                        textAlign="right"
-                      >
-                        {guide.navDrawerTitle}
-                      </Typography.Text>
-                    </Flex>
-                  </Card>
+                    <BadgeRibbon
+                      $isNew={guide.isNew}
+                      text="New"
+                      key={guide.slug}
+                    >
+                      <Flex vertical justify="space-between" flex={1} p={24}>
+                        <Flex vertical minHeight={50} gap={4} height="100%">
+                          <CardBackground>
+                            <InnerCardBackground>
+                              <Icon
+                                name="Pokeball"
+                                size={100}
+                                color="PrimaryBgHover"
+                              />
+                            </InnerCardBackground>
+                          </CardBackground>
+                          {guide.displayAttributes
+                            // Seperate filter for TS to infer types from the null check
+                            .filter((tag) => tag !== null)
+                            .filter((tag) => !isSectionDsiplay(tag))
+                            .map((tag) => (
+                              <Flex key={tag}>
+                                <DisplayTag tag={tag}>
+                                  {startCase(tag)}
+                                </DisplayTag>
+                              </Flex>
+                            ))}
+                        </Flex>
+                        <Flex vertical>
+                          <Divider />
+                          <CardMeta title={guide.navDrawerTitle} />
+                        </Flex>
+                      </Flex>
+                    </BadgeRibbon>
+                  </GuideCard>
                 ),
               )}
             </Grid>

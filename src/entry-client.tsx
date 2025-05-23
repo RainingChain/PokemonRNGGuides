@@ -11,6 +11,8 @@ import {
 } from "@ant-design/cssinjs";
 import createEmotionCache from "@emotion/cache";
 import { CacheProvider as EmotionCacheProvider } from "@emotion/react";
+import { HelmetProvider } from "@dr.pogodin/react-helmet";
+import { MetaTags } from "./components";
 
 const updateSw = registerSW({
   onNeedRefresh: dispatchNeedRefresh,
@@ -34,12 +36,16 @@ const antdCache = createAntdCache();
 const emotionCache = createEmotionCache({ key: "css" });
 
 hydrateRoot(
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Let's assume this exists or else the entire app is broken
   document.getElementById("root")!,
-  <EmotionCacheProvider value={emotionCache}>
-    <AntdCacheProvider cache={antdCache} hashPriority="low">
-      <Router>
-        <App updateSw={updateSw} />
-      </Router>
-    </AntdCacheProvider>
-  </EmotionCacheProvider>,
+  <HelmetProvider>
+    <EmotionCacheProvider value={emotionCache}>
+      <AntdCacheProvider cache={antdCache} hashPriority="low">
+        <Router>
+          <MetaTags />
+          <App updateSw={updateSw} />
+        </Router>
+      </AntdCacheProvider>
+    </EmotionCacheProvider>
+  </HelmetProvider>,
 );

@@ -1,6 +1,6 @@
 import React from "react";
 import { Flex } from "./flex";
-import { Formik, FormikConfig } from "formik";
+import { Formik, FormikHelpers } from "formik";
 import { Form } from "./form";
 import { FormFieldTable, Field } from "./formFieldTable";
 import { Button } from "./button";
@@ -11,7 +11,10 @@ import { AllOrNone, FeatureConfig, OneOf } from "~/types/utils";
 import { z } from "zod";
 import { toFormikValidationSchema } from "zod-formik-adapter";
 
-export type RngToolSubmit<Values> = FormikConfig<Values>["onSubmit"];
+export type RngToolSubmit<Values> = (
+  values: Values,
+  formikHelpers: FormikHelpers<Values>,
+) => Promise<unknown>;
 
 type Props<FormState, Result> = {
   submitTrackerId: string;
@@ -23,6 +26,7 @@ type Props<FormState, Result> = {
 } & OneOf<{
   fields: Field[];
   getFields: (values: FormState) => Field[];
+  children: React.ReactNode;
 }> &
   AllOrNone<{ columns: ResultColumn<Result>[]; results: Result[] }> &
   AllOrNone<{
@@ -46,6 +50,7 @@ export const RngToolForm = <
   onClickResultRow,
   rowKey,
   results,
+  children,
   formContainerId,
   allowReset = false,
   resetTrackerId,
@@ -53,7 +58,7 @@ export const RngToolForm = <
 }: Props<FormState, Result>) => {
   const _validationSchema = React.useMemo(() => {
     return validationSchema == null
-      ? null
+      ? undefined
       : toFormikValidationSchema(validationSchema);
   }, [validationSchema]);
 
@@ -66,13 +71,19 @@ export const RngToolForm = <
       validationSchema={_validationSchema}
     >
       {(formik) => {
-        const fieldsToUse = fields || getFields(formik.values);
+        const fieldsReactNode = (() => {
+          if (children != null) {
+            return children;
+          }
+          const fieldsToUse = fields ?? getFields?.(formik.values) ?? [];
+          return <FormFieldTable fields={fieldsToUse} />;
+        })();
 
         return (
           <Flex vertical gap={16} id={formContainerId}>
             <Form>
               <Flex vertical gap={8}>
-                <FormFieldTable fields={fieldsToUse} />
+                {fieldsReactNode}
                 <Button trackerId={submitTrackerId} htmlType="submit">
                   {submitButtonLabel}
                 </Button>

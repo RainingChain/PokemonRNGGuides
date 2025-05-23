@@ -1,18 +1,18 @@
+use crate::Nature;
+use serde::{Deserialize, Serialize};
+use tsify_next::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[wasm_bindgen]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
 pub enum Gen3Method {
     H1,
     H2,
-    H3,
     H4,
-    H5,
 }
 
-#[wasm_bindgen]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[repr(u8)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
 pub enum EncounterSlot {
     Slot0 = 0,
     Slot1 = 1,
@@ -66,34 +66,8 @@ impl EncounterSlot {
     }
 }
 
-#[wasm_bindgen]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[repr(u8)]
-pub enum Gen3Ability {
-    Ability0 = 0,
-    Ability1 = 1,
-}
-
-impl Gen3Ability {
-    pub fn from_pid(pid: u32) -> Self {
-        if pid & 1 == 0 {
-            Gen3Ability::Ability0
-        } else {
-            Gen3Ability::Ability1
-        }
-    }
-}
-
-#[wasm_bindgen]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
 pub enum Gen3Lead {
-    Synchronize,
-}
-
-#[wasm_bindgen]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum ShinyType {
-    Star,
-    Square,
-    NotShiny,
+    Synchronize(Nature),
 }
