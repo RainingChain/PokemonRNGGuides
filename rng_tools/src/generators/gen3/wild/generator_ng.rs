@@ -1,3 +1,4 @@
+use super::{Gen3WOpts, GeneratedPokemon};
 use crate::Ivs;
 use crate::gen3::EncounterSlot;
 use crate::gen3::Gen3Lead;
@@ -6,16 +7,14 @@ use crate::rng::Rng;
 use crate::rng::StateIterator;
 use crate::rng::lcrng::Pokerng;
 use crate::{AbilityType, Gender, GenderRatio, Nature, PkmFilter, ShinyType, gen3_shiny};
-use super::{Gen3WOpts, GeneratedPokemon};
-
 
 #[derive(Debug)]
 pub struct GeneratedPokemons {
-    pub method1:Vec<(usize,usize, GeneratedPokemon)>,
-    pub method2:Vec<(usize,usize, GeneratedPokemon)>,
-    pub method3:Vec<(usize,usize, GeneratedPokemon)>,
-    pub method4:Vec<(usize,usize, GeneratedPokemon)>,
-    pub method5:Vec<(usize,usize, GeneratedPokemon)>,
+    pub method1: Vec<(usize, usize, GeneratedPokemon)>,
+    pub method2: Vec<(usize, usize, GeneratedPokemon)>,
+    pub method3: Vec<(usize, usize, GeneratedPokemon)>,
+    pub method4: Vec<(usize, usize, GeneratedPokemon)>,
+    pub method5: Vec<(usize, usize, GeneratedPokemon)>,
 }
 
 impl GeneratedPokemons {
@@ -33,8 +32,8 @@ impl GeneratedPokemons {
 
 #[allow(dead_code)]
 pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPokemons {
-    let mut cycle:usize = 0;
-    
+    let mut cycle: usize = 0;
+
     let mut gen_mons = GeneratedPokemons::new();
 
     let encounter_rand = ((rng.rand::<u32>() >> 16) % 100) as u8;
@@ -44,7 +43,6 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
         return gen_mons;
     }
     rng.rand::<u32>(); // level
-
 
     let nature_rand: u8;
 
@@ -62,16 +60,16 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
     };
 
     cycle += 100;
-    
+
     let mut pid: u32;
     loop {
         let pid_low = rng.rand::<u16>() as u32;
-        
+
         if let Some(res) = generate_3wild_method3(rng.clone(), settings, pid_low, nature_rand) {
             gen_mons.method3.push((cycle, cycle + 200, res));
         }
         cycle += 200;
-        
+
         let pid_high = rng.rand::<u16>() as u32;
         pid = (pid_high << 16) | pid_low;
         if pid % 25 == nature_rand as u32 {
@@ -83,13 +81,12 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
         }
     }
 
-
     if let Some(res) = generate_3wild_method2(rng.clone(), settings, pid, nature_rand) {
         gen_mons.method2.push((cycle, cycle + 200, res));
     }
 
-    let iv1= rng.rand::<u16>();
-    
+    let iv1 = rng.rand::<u16>();
+
     if let Some(res) = generate_3wild_method4(rng.clone(), settings, pid, nature_rand, iv1) {
         gen_mons.method4.push((cycle, cycle + 200, res));
     }
@@ -103,7 +100,12 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
     gen_mons
 }
 
-pub fn generate_3wild_method2(mut rng:Pokerng, settings: &Gen3WOpts, pid: u32, nature_rand:u8) -> Option<GeneratedPokemon> {
+pub fn generate_3wild_method2(
+    mut rng: Pokerng,
+    settings: &Gen3WOpts,
+    pid: u32,
+    nature_rand: u8,
+) -> Option<GeneratedPokemon> {
     rng.rand::<u16>(); // Vblank from method2
 
     let ivs = Ivs::new_g3(rng.rand::<u16>(), rng.rand::<u16>());
@@ -111,7 +113,13 @@ pub fn generate_3wild_method2(mut rng:Pokerng, settings: &Gen3WOpts, pid: u32, n
     generate_3wild_end(settings, pid, ivs, nature_rand)
 }
 
-pub fn generate_3wild_method4(mut rng:Pokerng, settings: &Gen3WOpts, pid: u32, nature_rand:u8, iv1:u16) -> Option<GeneratedPokemon> {
+pub fn generate_3wild_method4(
+    mut rng: Pokerng,
+    settings: &Gen3WOpts,
+    pid: u32,
+    nature_rand: u8,
+    iv1: u16,
+) -> Option<GeneratedPokemon> {
     rng.rand::<u16>(); // Vblank from method4
 
     let ivs = Ivs::new_g3(iv1, rng.rand::<u16>());
@@ -119,7 +127,12 @@ pub fn generate_3wild_method4(mut rng:Pokerng, settings: &Gen3WOpts, pid: u32, n
     generate_3wild_end(settings, pid, ivs, nature_rand)
 }
 
-pub fn generate_3wild_method3(mut rng:Pokerng, settings: &Gen3WOpts, pid_low: u32, nature_rand:u8) -> Option<GeneratedPokemon> {
+pub fn generate_3wild_method3(
+    mut rng: Pokerng,
+    settings: &Gen3WOpts,
+    pid_low: u32,
+    nature_rand: u8,
+) -> Option<GeneratedPokemon> {
     rng.rand::<u16>(); // Vblank from method3
     let pid_high = rng.rand::<u16>() as u32;
     let mut pid = (pid_high << 16) | pid_low;
@@ -136,14 +149,16 @@ pub fn generate_3wild_method3(mut rng:Pokerng, settings: &Gen3WOpts, pid_low: u3
     let ivs = Ivs::new_g3(rng.rand::<u16>(), rng.rand::<u16>());
 
     generate_3wild_end(settings, pid, ivs, nature_rand)
-
 }
 
-
-pub fn generate_3wild_method5(mut rng:Pokerng, settings: &Gen3WOpts, nature_rand:u8) -> Option<GeneratedPokemon> {
+pub fn generate_3wild_method5(
+    mut rng: Pokerng,
+    settings: &Gen3WOpts,
+    nature_rand: u8,
+) -> Option<GeneratedPokemon> {
     rng.rand::<u16>(); // Vblank from method5
 
-    let mut pid:u32;
+    let mut pid: u32;
     loop {
         let pid_low = rng.rand::<u16>() as u32;
         let pid_high = rng.rand::<u16>() as u32;
@@ -156,11 +171,14 @@ pub fn generate_3wild_method5(mut rng:Pokerng, settings: &Gen3WOpts, nature_rand
     let ivs = Ivs::new_g3(rng.rand::<u16>(), rng.rand::<u16>());
 
     generate_3wild_end(settings, pid, ivs, nature_rand)
-
 }
 
-
-pub fn generate_3wild_end(settings: &Gen3WOpts, pid:u32, ivs:Ivs, nature_rand:u8) -> Option<GeneratedPokemon> {
+pub fn generate_3wild_end(
+    settings: &Gen3WOpts,
+    pid: u32,
+    ivs: Ivs,
+    nature_rand: u8,
+) -> Option<GeneratedPokemon> {
     // Filters
     let shiny = gen3_shiny(pid, settings.tid, settings.sid);
     if let Some(wanted) = settings.shiny_type {
@@ -202,12 +220,10 @@ pub fn generate_3wild_end(settings: &Gen3WOpts, pid:u32, ivs:Ivs, nature_rand:u8
         ivs,
         nature,
         advance: 0,
-        encounter_slot:EncounterSlot::Slot0,
+        encounter_slot: EncounterSlot::Slot0,
         synch: false,
     })
-
 }
-
 
 #[cfg(test)]
 mod test {
@@ -256,5 +272,4 @@ mod test {
         println!("{:?}", gen_mons);
         assert!(false);
     }
-
 }
