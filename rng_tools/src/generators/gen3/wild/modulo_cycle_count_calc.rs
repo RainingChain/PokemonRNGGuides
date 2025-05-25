@@ -277,12 +277,30 @@ pub fn calc_modulo_cycle_s(dividend: i32, divisor: i32) -> usize {
     cycles
 }
 
+// if divisor is 25, it returns 0x5d555550
+pub fn find_longest_modulo_cycle_u(divisor:u32) -> u32 {
+    let mut max = 0;
+    let mut dividend_for_max = 0;
+    for dividend in 0..=u32::MAX {
+        let cycles = calc_modulo_cycle_u(dividend, divisor);
+        if cycles > max {
+            max = cycles;
+            dividend_for_max = dividend;
+        }
+    }
+    dividend_for_max
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
     fn test_calc_modulo_cycle_u() {
+        // assert_eq!(find_longest_modulo_cycle_u(25), 0x5d555550); // very long
+        assert_eq!(calc_modulo_cycle_u(0x5d555550, 25), 900);
+
         assert_eq!(calc_modulo_cycle_u(24, 25), 18);
         assert_eq!(calc_modulo_cycle_u(25, 25), 126);
 
