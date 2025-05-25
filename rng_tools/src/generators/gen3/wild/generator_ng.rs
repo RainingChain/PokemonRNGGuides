@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use super::{calc_modulo_cycle_u,calc_modulo_cycle_s};
 use super::{Gen3WOpts, GeneratedPokemon};
 use crate::Ivs;
@@ -5,7 +7,6 @@ use crate::gen3::EncounterSlot;
 use crate::gen3::Gen3Lead;
 use crate::gen3::Gen3Method;
 use crate::rng::Rng;
-use crate::rng::StateIterator;
 use crate::rng::lcrng::Pokerng;
 use crate::{AbilityType, Gender, GenderRatio, Nature, PkmFilter, ShinyType, gen3_shiny};
 
@@ -52,22 +53,29 @@ impl GeneratedPokemons {
     }
 }
 
+impl Ivs {
+    pub fn as_short_text(&self) -> String {
+        format!("{} {} {} {} {} {}", self.hp, self.atk, self.def, self.spa, self.spd, self.spe)        
+    }
+}
+
+
 impl std::fmt::Debug for GeneratedPokemonCycle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "PID: {}, IVS: {:?}, Cycle: {}-{}", 
-            self.gen_mon.pid, self.gen_mon.ivs, self.cycle_start, self.cycle_end)
+        write!(f, "PID: {:08x}, IVS: {}, Cycle: {}-{}", 
+            self.gen_mon.pid, self.gen_mon.ivs.as_short_text(), self.cycle_start, self.cycle_end)
     }
 }
 
 impl std::fmt::Debug for GeneratedPokemons {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "[\n  Wild-1: {:?},\n  Wild-2: {:?},\n  Wild-3: {:?},\n  Wild-4: {:?},  Wild-5: {:?},\n\n]", 
+        write!(f, "[\n  Wild-1: {:?},\n  Wild-2: {:?},\n  Wild-3: {:?},\n  Wild-4: {:?},\n  Wild-5: {:?},\n\n]", 
             self.method1, self.method2, self.method3, self.method4, self.method5)
     }
 }
 
 const PID:u32 = 0;
-const VERBOSE:bool = true;
+const VERBOSE:bool = false;
 
 // assumes synchronize in ability slot 0
 // assume no hustle, vital srpiit, pressure, keen_eye, intimidate.
@@ -157,7 +165,7 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
         let method5_range = 140 + calc_modulo_cycle_u(pid, 25);
         
         if let Some(gen_mon) = generate_3wild_method5(rng.clone(), settings, nature_rand) {
-            gen_mons.method5.push(GeneratedPokemonCycle {
+            gen_mons.add_method5(GeneratedPokemonCycle {
                 cycle_start:cycle,
                 cycle_end:cycle + method5_range,
                 gen_mon
@@ -173,11 +181,11 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
         + 36721; // between CreateMonWithNature_pidhigh and CreateBoxMon_ivs1
 
     if let Some(gen_mon) = generate_3wild_method2(rng.clone(), settings, pid, nature_rand) {
-        gen_mons.method2 = Some((GeneratedPokemonCycle {
+        gen_mons.method2 = Some(GeneratedPokemonCycle {
             cycle_start:cycle,
             cycle_end:cycle + method2_range,
             gen_mon
-        }));
+        });
     }
     cycle += method2_range;
 
@@ -187,11 +195,11 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
         + 11103; // between CreateBoxMon_ivs1 and CreateBoxMon_ivs2
 
     if let Some(gen_mon) = generate_3wild_method4(rng.clone(), settings, pid, nature_rand, iv1) {
-        gen_mons.method4 = Some((GeneratedPokemonCycle {
+        gen_mons.method4 = Some(GeneratedPokemonCycle {
             cycle_start:cycle,
             cycle_end:cycle + method4_range,
             gen_mon
-        }));
+        });
     }
     cycle += method4_range;
 
@@ -199,11 +207,11 @@ pub fn generate_pokemons(rng: &mut Pokerng, settings: &Gen3WOpts) -> GeneratedPo
     let ivs = Ivs::new_g3(iv1, iv2);
 
     if let Some(gen_mon) = generate_3wild_end(settings, pid, ivs, nature_rand) {
-        gen_mons.method1 = Some((GeneratedPokemonCycle {
+        gen_mons.method1 = Some(GeneratedPokemonCycle {
             cycle_start:cycle,
             cycle_end:280_896,
             gen_mon
-        }));
+        });
     }
     gen_mons
 }
@@ -350,7 +358,7 @@ mod test {
             method: Gen3Method::H1,
             initial_advances: 0,
             max_advances: 9,
-            synchronize:Some(Gen3Lead::Synchronize((Nature::Hardy))),
+            synchronize:Some(Gen3Lead::Synchronize(Nature::Hardy)),
             filter: PkmFilter {
                 shiny: false,
                 nature: None,
@@ -411,7 +419,7 @@ mod test {
             println!("adv={}, reroll count = {}", i, gen_mons.pid_reroll_count);
 
             if gen_mons.pid_reroll_cycle > max {
-                println!("max cycle: {}, count: {}, adv={}", gen_mons.pid_reroll_cycle, gen_mons.pid_reroll_count, i);
+                println!("max cycle: {}, count: {}, adv={}, mons: {:?}", gen_mons.pid_reroll_cycle, gen_mons.pid_reroll_count, i, gen_mons);
                 max = gen_mons.pid_reroll_cycle;
             }
             rng.advance(1);

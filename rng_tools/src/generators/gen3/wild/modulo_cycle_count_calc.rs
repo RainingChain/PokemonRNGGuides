@@ -100,13 +100,13 @@ pub fn calc_modulo_cycle_u(dividend: u32, divisor: u32) -> usize {
     r3 = r12; // Now at 0x88
     r3 = (r3 << (32 - 3)) | (r3 >> 3);
     if (r2 & r3) != 0 {
-        r0 += r1 >> 3;
+        //r0 += r1 >> 3;
         cycles -= 2;
     }
     r3 = r12;
     r3 = (r3 << (32 - 2)) | (r3 >> 2);
     if (r2 & r3) != 0 {
-        r0 += r1 >> 2;
+        //r0 += r1 >> 2;
         cycles -= 2;
     }
     r3 = r12;
@@ -250,7 +250,7 @@ pub fn calc_modulo_cycle_s(dividend: i32, divisor: i32) -> usize {
     cycles += 17;
     r3 = (r3 << (32 - 3)) | (r3 >> 3);
     if (r2 & r3) != 0 {
-        r0 += r1 >> 3;
+        //r0 += r1 >> 3;
         cycles -= 2;
     }
     r3 = r12;
@@ -258,7 +258,7 @@ pub fn calc_modulo_cycle_s(dividend: i32, divisor: i32) -> usize {
     cycles += 17;
     r3 = (r3 << (32 - 2)) | (r3 >> 2);
     if (r2 & r3) != 0 {
-        r0 += r1 >> 2;
+        //r0 += r1 >> 2;
         cycles -= 2;
     }
     r3 = r12;
@@ -298,6 +298,10 @@ mod test {
 
     #[test]
     fn test_calc_modulo_cycle_u() {
+        assert_eq!(calc_modulo_cycle_u(0x4747745, 1), 868);
+        assert_eq!(calc_modulo_cycle_s(0x4747745, 1), 888);
+
+
         // assert_eq!(find_longest_modulo_cycle_u(25), 0x5d555550); // very long
         assert_eq!(calc_modulo_cycle_u(0x5d555550, 25), 900);
 
