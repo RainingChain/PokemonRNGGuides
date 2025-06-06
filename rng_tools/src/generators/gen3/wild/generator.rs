@@ -50,6 +50,7 @@ pub struct Wild3GeneratorResult {
     pub pid: u32,
     pub ivs: Ivs,
     pub method: Gen3Method,
+    pub cycle_range: (usize, usize),
 }
 
 const LEAD_PID:u32 = 0;
@@ -120,13 +121,14 @@ pub fn generate_gen3_wild(
         let pid_low = rng.rand::<u16>() as u32;
 
         if methods_contains_wild3 {
-            if let Some(gen_mon_wild3) = generate_gen3_wild_method3(
+            if let Some(mut gen_mon_wild3) = generate_gen3_wild_method3(
                 *rng,
                 opts,
                 encounter_slot,
                 pid_low,
                 required_gender,
                 required_nature,
+                (cycle, cycle + 1),
             ) {
                 results.push(gen_mon_wild3);
             }
@@ -157,6 +159,7 @@ pub fn generate_gen3_wild(
                 encounter_slot,
                 required_gender,
                 required_nature,
+                //NO_PROD
             ) {
                 results.push(gen_mon_wild5);
             }
@@ -201,12 +204,13 @@ pub fn generate_gen3_wild_method2(
     opts: &Wild3GeneratorOptions,
     encounter_slot: EncounterSlot,
     pid: u32,
+    cycle_range: (usize, usize),
 ) -> Option<Wild3GeneratorResult> {
     rng.rand::<u16>(); // Vblank from method2
 
     let ivs = Ivs::new_g3(rng.rand::<u16>(), rng.rand::<u16>());
 
-    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild2, encounter_slot)
+    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild2, encounter_slot, cycle_range)
 }
 
 pub fn generate_gen3_wild_method3(
@@ -216,6 +220,7 @@ pub fn generate_gen3_wild_method3(
     pid_low: u32,
     required_gender: Option<Gender>,
     required_nature: Nature,
+    cycle_range: (usize, usize),
 ) -> Option<Wild3GeneratorResult> {
     rng.rand::<u16>(); // Vblank from method3
 
@@ -237,7 +242,7 @@ pub fn generate_gen3_wild_method3(
 
     let ivs = Ivs::new_g3(rng.rand::<u16>(), rng.rand::<u16>());
 
-    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild3, encounter_slot)
+    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild3, encounter_slot, cycle_range)
 }
 
 pub fn generate_gen3_wild_method4(
@@ -246,12 +251,13 @@ pub fn generate_gen3_wild_method4(
     encounter_slot: EncounterSlot,
     pid: u32,
     iv1: u16,
+    cycle_range: (usize, usize),
 ) -> Option<Wild3GeneratorResult> {
     rng.rand::<u16>(); // Vblank from method4
 
     let ivs = Ivs::new_g3(iv1, rng.rand::<u16>());
 
-    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild4, encounter_slot)
+    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild4, encounter_slot, cycle_range)
 }
 
 pub fn generate_gen3_wild_method5(
@@ -260,6 +266,7 @@ pub fn generate_gen3_wild_method5(
     encounter_slot: EncounterSlot,
     required_gender: Option<Gender>,
     required_nature: Nature,
+    cycle_range: (usize, usize),
 ) -> Option<Wild3GeneratorResult> {
     rng.rand::<u16>(); // Vblank from method5
 
@@ -283,7 +290,7 @@ pub fn generate_gen3_wild_method5(
 
     let ivs = Ivs::new_g3(rng.rand::<u16>(), rng.rand::<u16>());
 
-    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild5, encounter_slot)
+    create_if_passes_filter(opts, pid, ivs, Gen3Method::Wild5, encounter_slot, cycle_range)
 }
 
 pub fn passes_pid_filter(opts: &Wild3GeneratorOptions, pid: u32) -> bool {
@@ -328,6 +335,7 @@ pub fn create_if_passes_filter(
     ivs: Ivs,
     method: Gen3Method,
     encounter_slot: EncounterSlot,
+    cycle_range: (usize, usize),
 ) -> Option<Wild3GeneratorResult> {
     if !passes_ivs_filter(opts, &ivs) {
         return None;
@@ -338,5 +346,6 @@ pub fn create_if_passes_filter(
         ivs,
         method,
         encounter_slot,
+        cycle_range,
     })
 }
