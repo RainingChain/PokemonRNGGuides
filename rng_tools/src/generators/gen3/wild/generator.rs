@@ -1,4 +1,4 @@
-use super::Gen3EncounterType;
+use super::{calc_modulo_cycle_u, calc_modulo_cycle_s, Gen3EncounterType};
 use crate::EncounterSlot;
 use crate::Ivs;
 use crate::Species;
@@ -52,28 +52,53 @@ pub struct Wild3GeneratorResult {
     pub method: Gen3Method,
 }
 
+const LEAD_PID:u32 = 0;
+
 pub fn generate_gen3_wild(
     rng: &mut Pokerng,
     opts: &Wild3GeneratorOptions,
 ) -> Vec<Wild3GeneratorResult> {
+    let mut cycle: usize = 74470; //NO_PROD
+
     let mut results: Vec<Wild3GeneratorResult> = vec![];
-    let encounter_rand = ((rng.rand::<u32>() >> 16) % 100) as u8;
+
+    let encounter_rand_val = rng.rand::<u16>() as u32;
+    let encounter_rand = (encounter_rand_val % 100) as u8;    
+    cycle += calc_modulo_cycle_u(encounter_rand_val, 100);
+    
     let encounter_slot = EncounterSlot::from_rand(encounter_rand);
+    cycle += 378; //between ChooseWildMonIndex_Land and ChooseWildMonLevel
+
 
     if !EncounterSlot::passes_filter(opts.encounter_slot.as_deref(), encounter_slot) {
         return results;
     }
-    rng.rand::<u32>(); // level
 
-    let required_gender = match (opts.gender_ratio.has_multiple_genders(), opts.lead) {
-        (true, Some(Gen3Lead::CuteCharm(gender))) if rng.rand::<u16>() % 3 != 0 => {
-            Some(if gender == Gender::Female {
-                Gender::Male
+    let lvl_range_rand_val = rng.rand::<u16>(); // level
+    let lvl_range = 1;
+    cycle += calc_modulo_cycle_s(lvl_range_rand_val as i32, lvl_range);  
+    
+    //between ChooseWildMonLevel and PickWildMonNature_v1
+    cycle += 48 * calc_modulo_cycle_u(LEAD_PID, 24); 
+    cycle += 30921; // range is about 30921-30939 for same pkm
+    
+    //NO_PROD cycle
+    let required_gender = if opts.gender_ratio.has_multiple_genders() {
+        if let Some(Gen3Lead::CuteCharm(gender)) = opts.lead {
+            if rng.rand::<u16>() % 3 != 0 {                                                                                                   
+                Some(if gender == Gender::Female {
+                    Gender::Male
+                } else {
+                    Gender::Female
+                })
             } else {
-                Gender::Female
-            })
-        }
-        _ => None,
+                None
+            }
+        } else {
+            None
+        }        
+    } else {
+        None
     };
 
     let required_nature = match opts.lead {
