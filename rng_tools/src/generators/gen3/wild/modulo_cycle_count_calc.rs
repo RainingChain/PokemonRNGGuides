@@ -278,7 +278,7 @@ pub fn calc_modulo_cycle_s(dividend: i32, divisor: i32) -> usize {
 }
 
 // if divisor is 25, it returns 0x5d555550
-pub fn find_longest_modulo_cycle_u(divisor:u32) -> u32 {
+pub fn find_longest_modulo_cycle_u(divisor: u32) -> u32 {
     let mut max = 0;
     let mut dividend_for_max = 0;
     for dividend in 0..=u32::MAX {
@@ -291,6 +291,14 @@ pub fn find_longest_modulo_cycle_u(divisor:u32) -> u32 {
     dividend_for_max
 }
 
+pub fn calculate_distribution_modulo_cycle_u_24() -> Vec<u32> {
+    let mut res: [u32; 1000] = [0; 1000];
+    for dividend in 0..=u32::MAX {
+        let cycles = calc_modulo_cycle_u(dividend, 24);
+        res[cycles] += 1;
+    }
+    return res.to_vec();
+}
 
 #[cfg(test)]
 mod test {
@@ -298,9 +306,13 @@ mod test {
 
     #[test]
     fn test_calc_modulo_cycle_u() {
+        assert_eq!(calculate_distribution_modulo_cycle_u_24(), vec![]);
+
         assert_eq!(calc_modulo_cycle_u(0x4747745, 1), 868);
         assert_eq!(calc_modulo_cycle_s(0x4747745, 1), 888);
 
+        // assert_eq!(find_longest_modulo_cycle_u(24), 0x59999995); // very long
+        assert_eq!(calc_modulo_cycle_u(0x59999995, 24), 900);
 
         // assert_eq!(find_longest_modulo_cycle_u(25), 0x5d555550); // very long
         assert_eq!(calc_modulo_cycle_u(0x5d555550, 25), 900);
@@ -349,7 +361,7 @@ mod test {
         assert_eq!(calc_modulo_cycle_u_from_lua(-9188001, 97), 764);
         assert_eq!(calc_modulo_cycle_u_from_lua(-1854680, 4), 843);
     }
-    
+
     #[test]
     fn test_calc_modulo_cycle_s() {
         assert_eq!(calc_modulo_cycle_s(1881135926, 25), 836);

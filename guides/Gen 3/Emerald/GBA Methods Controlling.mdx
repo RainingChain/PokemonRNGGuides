@@ -1,0 +1,83 @@
+---
+title: "Methods 1-4 in Emerald"
+navDrawerTitle: "Methods 1-4 P2"
+description: "Understanding why lead PID controls which Wild method is triggered"
+slug: "gba-methods-lead-pid"
+category: "GBA Technical Documentation"
+tag: "any"
+addedOn: "2025-06-08"
+---
+
+<Gist>
+  Gist: Understanding why lead PID controls which Wild method is triggered.
+</Gist>
+
+### Prerequisite
+
+Having read [Methods 1-4](/gba-methods) and [VBlanks](/gba-vblank)
+
+### Pokémon Wild Encounter (Simplified version)
+
+Here's a simplified example of the code executed on a wild encounter:
+
+| Step                          | Cycles  | Total Cycle |
+| ----------------------------- | ------- | ----------- |
+| 1- Update Audio/Visual        | 50K     | 50k         |
+| 2- Misc. updates              | 50k     | 100k        |
+| 3- Prepare wild encounter     | 10k-40K | 100k-150k   |
+| 4- Generate valid PID         | 130k    | 100k        |
+| 5- Create Pokémon without IVs | 10k     | 100k        |
+| 6- Generate Def, Atk, HP IVs  | 35K     | 100k        |
+| 7- Assign Def, Atk, HP IVs    | 10K     | 100k        |
+| 8- Generate SpD, SpA, Spe IVs |         | 100k        |
+
+Reminder: When the cycle count reaches 280K, a VBlank occurs. VBlank occuring during step 5 will cause Wild-2 method. VBlank at step 7 causes Wild-4 method. No VBlank will cause Wild-1.
+
+During the step "3- Prepare wild encounter", the code fetches the ability of the lead Pokémon multiple times. This takes a variable number of cycles depending on the PID of the lead.
+
+By using a carefully selected lead, we can control which wild method will be triggered.
+
+| Step                          | Fast PID\nWild-2 | Average PID\nWild-4 | Slow PID\nWild-1 |
+| ----------------------------- | ---------------- | ------------------- | ---------------- |
+| 1- Update Audio/Visual        | 50k              | 50k                 | 50k              |
+| 2- Misc. updates              | 100k             | 100k                | 100k             |
+| 3- Prepare wild encounter     | 200k             | 200k                | 200k             |
+| 4- Generate valid PID         | 210k             | 210k                | 210k             |
+| 5- Create Pokémon without IVs | 280K (VBlank)    | 250k                | 250K             |
+| 6- Generate Def, Atk, HP IVs  | ...              | 260k                | 260k             |
+| 7- Assign Def, Atk, HP IVs    | ...              | 280K (VBlank)       | 270k             |
+| 8- Generate SpD, SpA, Spe IVs | ...              | ...                 | ...              |
+
+### Determining if a lead PID is slow or fast
+
+A PID is slow or fast depending on the number of program instructions to perform the mathematical operation "Lead_PID modulo 24".
+
+The fastest possible is 18 cycles when Lead_PID is below 25.
+The slowest is 900 cycles (ex: for PID 59999995).
+
+In average, it takes 775 cycles. The top 0.1% fastest PID takes 532 cycles.
+
+When generating a typical wild encounter, the modulo operation is called 48 times. The total difference between the fastest and slowest lead PID is 42_336 cycles.
+
+NO_PROD <Input -> CycleCount>
+
+### Pokémon Wild Encounter (Complete version)
+
+There are two key differences for the complete version of the wild encounters:
+
+- Generating a valid PID takes between 1K-NO_PROD cycles, depending on the RNG state. The number of cycles can be precalculated and will always be the same for all RNG manipulation attempts at that Pokémon.
+
+- Updating the audio takes between 45K and 65K cycles, depending on the audio frame. It is impossible to predict and will vary between each RNG manipulation attempt.
+
+We end up with 9 possible situations which depends on the number of cycles of step "4- Generate valid PID":
+
+| Generate valid PID | Wild-2              | Wild-4 | Wild-1 |
+| ------------------ | ------------------- | ------ | ------ |
+| 100k-120k cycles   | Never               | Never  | Never  |
+| 200k-120k cycles   | Slowest PID + Audio | Never  | Never  |
+
+The simplified example was the case #1 NO_PROD.
+
+### VBlank when generating a valid PID
+
+A VBlank occuring when generating a valid PID would result in a Wild-3 or Wild-5, which will be covered in another article.

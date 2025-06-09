@@ -38,6 +38,7 @@ mod test {
                 spe: 9,
             },
             method: Gen3Method::Wild1,
+            cycle_range: (0, 0),
         }];
         assert_eq!(result, expected_result);
     }
@@ -90,6 +91,7 @@ mod test {
                 spe: 13,
             },
             method: Gen3Method::Wild1,
+            cycle_range: (0, 0),
         }];
         assert_eq!(result, expected_result);
     }
@@ -129,6 +131,7 @@ mod test {
                 spe: 25,
             },
             method: Gen3Method::Wild1,
+            cycle_range: (0, 0),
         }];
         assert_eq!(result, expected_result);
     }
@@ -161,6 +164,7 @@ mod test {
                 spe: 13,
             },
             encounter_slot: EncounterSlot::Slot4,
+            cycle_range: (0, 0),
         }];
         assert_eq!(result, expected_result);
     }
@@ -194,6 +198,7 @@ mod test {
                 spe: 16,
             },
             method: Gen3Method::Wild1,
+            cycle_range: (0, 0),
         }];
         assert_eq!(result, expected_result);
     }
@@ -234,6 +239,7 @@ mod test {
                     spe: 7,
                 },
                 method: Gen3Method::Wild5,
+                cycle_range: (0, 0),
             },
             Wild3GeneratorResult {
                 encounter_slot: EncounterSlot::Slot0,
@@ -247,6 +253,7 @@ mod test {
                     spe: 24,
                 },
                 method: Gen3Method::Wild3,
+                cycle_range: (0, 0),
             },
             Wild3GeneratorResult {
                 encounter_slot: EncounterSlot::Slot0,
@@ -260,6 +267,7 @@ mod test {
                     spe: 22,
                 },
                 method: Gen3Method::Wild2,
+                cycle_range: (0, 0),
             },
             Wild3GeneratorResult {
                 encounter_slot: EncounterSlot::Slot0,
@@ -273,6 +281,7 @@ mod test {
                     spe: 22,
                 },
                 method: Gen3Method::Wild4,
+                cycle_range: (0, 0),
             },
             Wild3GeneratorResult {
                 encounter_slot: EncounterSlot::Slot0,
@@ -286,6 +295,7 @@ mod test {
                     spe: 13,
                 },
                 method: Gen3Method::Wild1,
+                cycle_range: (0, 0),
             },
         ];
         assert_eq!(result, expected_result);
