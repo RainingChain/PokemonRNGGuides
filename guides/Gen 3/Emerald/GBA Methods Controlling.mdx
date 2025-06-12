@@ -55,9 +55,9 @@ A PID is slow or fast depending on the number of program instructions to perform
 The fastest possible is 18 cycles when Lead_PID is below 25.
 The slowest is 900 cycles (ex: for PID 59999995).
 
-In average, it takes 775 cycles. The top 0.1% fastest PID takes 532 cycles.
+In average, it takes 775 cycles. The top 0.1% fastest PID takes 532 cycles or less.
 
-When generating a typical wild encounter, the modulo operation is called 48 times. The total difference between the fastest and slowest lead PID is 42_336 cycles.
+In a typical wild encounter, the modulo operation is called 80 times. The total difference between the fastest and slowest lead PID is 70_560 cycles.
 
 NO_PROD <Input -> CycleCount>
 
