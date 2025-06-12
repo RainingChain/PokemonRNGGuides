@@ -1,4 +1,4 @@
-pub fn calc_modulo_cycle_u(dividend: u32, divisor: u32) -> usize {
+pub const fn calc_modulo_cycle_u(dividend: u32, divisor: u32) -> usize {
     if divisor <= 0 {
         return 0; // error
     }
@@ -118,12 +118,12 @@ pub fn calc_modulo_cycle_u(dividend: u32, divisor: u32) -> usize {
     cycles + 75
 }
 
-pub fn calc_modulo_cycle_u_from_lua(dividend: i32, divisor: u32) -> usize {
+pub const fn calc_modulo_cycle_u_from_lua(dividend: i32, divisor: u32) -> usize {
     // Convert while preserving the underlying bit pattern
     calc_modulo_cycle_u(dividend as u32, divisor)
 }
 
-pub fn calc_modulo_cycle_s(dividend: i32, divisor: i32) -> usize {
+pub const fn calc_modulo_cycle_s(dividend: i32, divisor: i32) -> usize {
     let mut r0: u32;
     let mut r1: u32;
     let mut r2: u32;
