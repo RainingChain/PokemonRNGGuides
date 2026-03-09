@@ -253,6 +253,16 @@ fn select_lvl(
     encounter.min_level + lvl_incr
 }
 
+#[wasm_bindgen]
+pub fn generate_gen3_wild_wasm(
+    initial_seed: u32,
+    advances: usize,
+    opts: &Wild3GeneratorOptions,
+    map_data: &Wild3MapGameData,
+) -> Vec<Wild3GeneratorResult> {
+    generate_gen3_wild(Pokerng::with_jump(initial_seed, advances), opts, map_data).0
+}
+
 pub fn generate_gen3_wild(
     mut rng: Pokerng,
     opts: &Wild3GeneratorOptions,
