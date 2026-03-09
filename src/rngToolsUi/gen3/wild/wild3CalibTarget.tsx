@@ -47,7 +47,6 @@ import { getWild3EmeraldGameData } from "./data/wild3GameData";
 import { getPossibleValuesForMap } from "./dataUtils";
 import { getLooseBaseStats, nature_from_pid } from "~/types";
 import { formatHex } from "~/utils/formatHex";
-import { Tooltip } from "antd";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -286,6 +285,7 @@ const resultToDisplayInfo = async (
 
   const gender = await rngTools.get_species_gender(species, res.pid);
   const { ivs } = res;
+  //NO_PROD Ability
   return (
     <>
       <div>
