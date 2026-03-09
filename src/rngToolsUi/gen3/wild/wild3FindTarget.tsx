@@ -34,6 +34,7 @@ import { Wild3ResultSetupInfos } from "./resultSetupInfos";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
+import { GBA_FPS } from "~/utils/consts";
 
 /*
 Possible UI improvements:
@@ -99,9 +100,11 @@ export type PidPathResult = FlattenIvs<
 
 export type ResultSetupInfo = Wild3SearcherResultMon & {
   uid: number;
+  mapId: string;
   mapName: string;
   actionName: string;
   primaryLikelihood: number;
+  initial_seed: number;
   painting_advs?: {
     adv_before_painting: number;
     adv_after_painting: number;
@@ -171,7 +174,7 @@ const getPidPathColumns = (
         if (paintingAdvs != null) {
           const { adv_before_painting: before, adv_after_painting: after } =
             paintingAdvs;
-          const title = `${formatDuration(before / 59.7275)} | ${formatDuration(after / 59.7275)}`;
+          const title = `${formatDuration(before / GBA_FPS)} | ${formatDuration(after / GBA_FPS)}`;
 
           return (
             <Tooltip title={title}>
@@ -182,7 +185,7 @@ const getPidPathColumns = (
         }
 
         return (
-          <Tooltip title={formatDuration(earliestAdvance / 59.7275)}>
+          <Tooltip title={formatDuration(earliestAdvance / GBA_FPS)}>
             <>~{formatLargeInteger(earliestAdvance)}</>
           </Tooltip>
         );
