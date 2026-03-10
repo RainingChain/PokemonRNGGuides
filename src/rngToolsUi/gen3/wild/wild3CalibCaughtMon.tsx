@@ -1,6 +1,13 @@
 import React from "react";
 import { z } from "zod";
-import { RngToolForm, Field, Flex, ResultColumn, Icon } from "~/components";
+import {
+  RngToolForm,
+  Field,
+  Flex,
+  ResultColumn,
+  Icon,
+  FormFieldTable,
+} from "~/components";
 import { FormikRadio } from "~/components/radio";
 import { FormikSelect } from "~/components/select";
 import { RngToolSubmit } from "~/components/rngToolForm";
@@ -10,9 +17,10 @@ import { Button } from "~/components/button";
 import { toOptions } from "~/utils/options";
 import { natureOptions } from "~/components/pkmFilter";
 import { getStatFields } from "~/rngToolsUi/shared/statFields";
-import { StatFieldsSchema } from "~/types";
-import { Species, Wild3EncounterGameData } from "~/rngTools";
+import { defaultMinMaxStats, StatFieldsSchema } from "~/types";
+import { Gen3Method, Species, Wild3EncounterGameData } from "~/rngTools";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
+import type { FormState as TargetSetup } from "./wild3CalibTarget";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -42,55 +50,88 @@ const initialValues: FormState = {
 };
 
 type Props = {
-  possibleEncounters: Wild3EncounterGameData[];
-  targetAdvance: number;
+  targetSetup: TargetSetup;
+  setLatestHitAdv: (hitAdv: number) => void;
 };
 
 export type CaughtMonResult = {
   advance: number;
   targetAdvance: number;
+  method: Gen3Method;
 };
 
-const getFields = (): Field[] => {
+const Fields = () => {
   //NO_PROD species first. if gender if not genderless etc.
-  return [
-    {
-      label: "Gender",
-      input: (
-        <FormikRadio<FormState>
-          name="gender"
-          options={toOptions(["Male", "Female"] as const)}
-        />
-      ),
-    },
-    {
-      label: "Nature",
-      input: (
-        <FormikSelect<FormState, "nature">
-          name="nature"
-          options={natureOptions.required}
-        />
-      ),
-    },
-    ...getStatFields<FormState>(minMaxStats),
-  ];
+  const speciesList = []; // based on targetSetup
+  const fields = React.useMemo(
+    () => [
+      {
+        label: "Species",
+        input: (
+          <FormikRadio<FormState>
+            name="species"
+            options={toOptions(speciesList)}
+          />
+        ),
+        indent: 1,
+      },
+      /* { //TODO
+        label: "Level",
+        input: (
+          <FormikRadio<FormState>
+            name="gender"
+            options={toOptions(["Male", "Female"] as const)}
+          />
+        ),
+      },*/
+      {
+        label: "Gender",
+        input: (
+          <FormikRadio<FormState>
+            name="gender"
+            options={toOptions(["Male", "Female"] as const)}
+          />
+        ),
+        indent: 1,
+      },
+      {
+        label: "Nature",
+        input: (
+          <FormikSelect<FormState, "nature">
+            name="nature"
+            options={natureOptions.required}
+          />
+        ),
+        indent: 1,
+      },
+      ...getStatFields<FormState>(defaultMinMaxStats), //NO_PROD init defaultMinMaxStats with species
+    ],
+    [],
+  );
+
+  return <FormFieldTable fields={fields} />;
 };
 
-export const CaughtMon = ({ possibleEncounters, targetAdvance }: Props) => {
+export const Wild3CalibCaughtMon = ({
+  targetSetup,
+  setLatestHitAdv,
+}: Props) => {
   const [results, setResults] = React.useState<CaughtMonResult[]>([]);
+  const { targetMethod, targetAdvance } = targetSetup;
 
   const onSubmit = React.useCallback<RngToolSubmit<FormState>>(
     async (opts) => {
-      setResults(
+      //NO_PROD
+      /*setResults(
         await generateCaughtMonResults(
           game,
           targetAdvance,
           targetStarter,
           opts,
         ),
-      );
+      );*/
     },
-    [game, targetAdvance, targetStarter, setResults],
+    [targetAdvance, setResults],
   );
 
   const columns = React.useMemo((): ResultColumn<CaughtMonResult>[] => {
@@ -111,11 +152,18 @@ export const CaughtMon = ({ possibleEncounters, targetAdvance }: Props) => {
         },
       },
       {
+        title: "Method",
+        dataIndex: "method",
+      },
+      {
         title: "",
         dataIndex: "advance",
         render(advance, values) {
-          if (values.advance === values.targetAdvance) {
-            return "Shiny if correct SID";
+          if (
+            values.advance === targetAdvance &&
+            values.method === targetMethod
+          ) {
+            return "Target Pokémon";
           }
 
           return (
@@ -124,7 +172,7 @@ export const CaughtMon = ({ possibleEncounters, targetAdvance }: Props) => {
               color="PrimaryText"
               trackerId="wild3CalibCaughtMon_adv"
               onClick={() => {
-                //setLatestHitAdv(advance); //NO_PROD
+                setLatestHitAdv(advance);
                 setResults([]);
               }}
             >
@@ -135,36 +183,12 @@ export const CaughtMon = ({ possibleEncounters, targetAdvance }: Props) => {
       },
     ];
     return columns;
-  }, [setLatestHitAdv, setResults]);
+  }, [setLatestHitAdv, setResults, targetMethod, targetAdvance]);
   /*
   export const getStatRange = async (
     species: Species,
     levelRange: [number, number] = [5, 5],
   ):*/
-
-  const fields = React.useMemo((): Field[] => {
-    return [
-      {
-        label: "Gender",
-        input: (
-          <FormikRadio<FormState>
-            name="gender"
-            options={toOptions(["Male", "Female"] as const)}
-          />
-        ),
-      },
-      {
-        label: "Nature",
-        input: (
-          <FormikSelect<FormState, "nature">
-            name="nature"
-            options={natureOptions.required}
-          />
-        ),
-      },
-      ...getStatFields<FormState>(minMaxStats),
-    ];
-  }, [minMaxStats]);
 
   return (
     <Flex vertical gap={8}>
@@ -172,17 +196,18 @@ export const CaughtMon = ({ possibleEncounters, targetAdvance }: Props) => {
         Caught Pokémon
       </Typography.Title>
       <RngToolForm<FormState, CaughtMonResult>
-        formContainerId="generate-gen3-caught-starter"
-        fields={fields}
+        formContainerId="generate-wild3-caught"
         columns={columns}
         results={results}
         initialValues={initialValues}
         validationSchema={Validator}
         onSubmit={onSubmit}
-        submitTrackerId="generate_gen3_caught_starter"
-        submitButtonLabel="Find advances matching caught starter Pokémon"
+        submitTrackerId="generate_wild3_caught"
+        submitButtonLabel="Find advances matching caught Pokémon"
         rowKey="advance"
-      />
+      >
+        <Fields />
+      </RngToolForm>
     </Flex>
   );
 };

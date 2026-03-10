@@ -73,7 +73,11 @@ const Validator = z.object({
   targetAdvance: z.number().int().min(0).max(0xffffffff),
 });
 
-type FormState = z.infer<typeof Validator>;
+type Props = {
+  setTargetSetup: (targetSetup: FormState | null) => void;
+};
+
+export type FormState = z.infer<typeof Validator>;
 
 const getInitialValues = (): FormState => {
   return {
@@ -301,7 +305,7 @@ const resultToDisplayInfo = async (
   );
 };
 
-export const Wild3CalibTarget = () => {
+export const Wild3CalibTarget = ({ setTargetSetup }: Props) => {
   const [targetComputed, setTargetComputed] =
     React.useState<React.ReactNode>(null);
 
@@ -335,6 +339,7 @@ export const Wild3CalibTarget = () => {
         (table) => table.map_id === values.map,
       );
       if (map_data == null) {
+        setTargetSetup(null);
         return setTargetComputed(null);
       }
 
@@ -346,6 +351,7 @@ export const Wild3CalibTarget = () => {
       );
 
       if (results.length === 0) {
+        setTargetSetup(null);
         return setTargetComputed(null);
       }
 
@@ -356,13 +362,15 @@ export const Wild3CalibTarget = () => {
         result.encounter_idx,
       );
       if (encounter == null) {
+        setTargetSetup(null);
         return setTargetComputed(null);
       }
 
       const info = await resultToDisplayInfo(result, encounter);
       setTargetComputed(info);
+      setTargetSetup(values);
     },
-    [],
+    [setTargetSetup],
   );
 
   const initialValues = React.useMemo(() => {

@@ -158,9 +158,9 @@ const tools = {
     import("~/rngToolsUi/gen3/wild/wild3FindTarget"),
     (mod) => mod.Wild3SearcherFindTarget,
   ),
-  Wild3CalibTarget: lazyLoad(
-    import("~/rngToolsUi/gen3/wild/wild3CalibTarget"),
-    (mod) => mod.Wild3CalibTarget,
+  Wild3Calib: lazyLoad(
+    import("~/rngToolsUi/gen3/wild/wild3Calib"),
+    (mod) => mod.Wild3Calib,
   ),
   Wild3MethodDistribution: lazyLoad(
     import("~/rngToolsUi/gen3/wild/wild3MethodDistribution"),

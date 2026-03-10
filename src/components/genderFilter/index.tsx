@@ -1,26 +1,10 @@
 import { GenderRatio } from "~/rngTools";
-import { getPossibleGenders } from "~/types/gender";
 import { useFormContext } from "~/hooks/form";
 import { useEffect } from "react";
 import { useWatch } from "react-hook-form";
 import { type PkmFilterFields } from "../pkmFilter";
 import { FormikSelect } from "../select";
-import { genderOptions } from "./options";
-
-const getGenderFilterOptions = (genderRatio?: GenderRatio) => {
-  if (genderRatio == null) {
-    return genderOptions;
-  }
-
-  const possibleGenders = getPossibleGenders(genderRatio);
-  const permitNull = possibleGenders.length > 1;
-  return genderOptions.filter((option) => {
-    if (option.value == null) {
-      return permitNull;
-    }
-    return possibleGenders.includes(option.value);
-  });
-};
+import { getGenderFilterOptions } from "./options";
 
 export const GenderFilter = ({
   genderRatio,
