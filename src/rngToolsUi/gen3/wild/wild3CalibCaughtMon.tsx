@@ -16,17 +16,18 @@ import { Typography } from "~/components/typography";
 import { nature } from "~/types/nature";
 import { Button } from "~/components/button";
 import { toOptions } from "~/utils/options";
-import { natureOptions } from "~/components/pkmFilter";
+import { natureOptions, pkmFilterFieldsToRustInput } from "~/components/pkmFilter";
 import { getStatFields } from "~/rngToolsUi/shared/statFields";
-import { StatFieldsSchema } from "~/types";
-import { Gen3Method, Wild3EncounterGameData } from "~/rngTools";
+import { gen3Methods, StatFieldsSchema } from "~/types";
+import { Gen3Method, rngTools, Wild3EncounterGameData, Wild3MapSetups, Wild3SearcherOptions } from "~/rngTools";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
 import type { FormState as TargetSetup } from "./wild3CalibTarget";
-import { isFishingAction, wild3Actions } from "./utils";
+import { gen3Leads, isFishingAction, wild3Actions } from "./utils";
 import { useWatch } from "react-hook-form";
 import { GenderFilter } from "~/components/genderFilter";
 import { getStatRange } from "~/types/statRange";
 import uniq from "lodash-es/uniq";
+import { gen3PkmFilterFieldsToRustInput } from "~/components/gen3PkmFilter";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -64,6 +65,65 @@ export type CaughtMonResult = {
   advance: number;
   targetAdvance: number;
   method: Gen3Method;
+};
+
+
+const CONFIDENCE_RANGE = 10_000; // we assume the player hits its target advance by more or less 10K (~2m45s)
+
+export const searchCaughtMon = async (values: FormState, targetSetup:TargetSetup) => {
+  const initial_seed =
+    targetSetup.usingPaintingReseeding
+      ? targetSetup.initial_seed
+      : 0;
+
+  const initial_advances = Math.max(targetSetup.targetAdvance - CONFIDENCE_RANGE, 0);
+
+  const map_data = emeraldWildGameData.maps_data.find(
+    (map) => map.map_id === targetSetup.map,
+  );
+  if (!map_data){
+    return null;
+  }
+  const map_setup:Wild3MapSetups = {
+    map_data,
+    actions:[targetSetup.action],
+    roamer_states:[targetSetup.roamerState],
+    mass_outbreak_states:[targetSetup.massOutbreakState],
+    feebas_states:[targetSetup.feebasState],
+  };
+
+  const opts: Wild3SearcherOptions = {
+    initial_seed,
+    tid: values.tid,
+    sid: values.sid,
+    initial_advances,
+    max_advances: CONFIDENCE_RANGE * 2,
+    max_result_count: (2 ** 32) - 1, // No limit
+    filter: pkmFilterFieldsToRustInput(values),
+    gen3_filter: gen3PkmFilterFieldsToRustInput(values, values.species),
+    leads:[gen3Leads[targetSetup.leadIdx]],
+    map_setups:[map_setup],
+    methods: gen3Methods,
+    consider_cycles: true,
+    consider_rng_manipulated_lead_pid: true,
+    generate_even_if_impossible: true,
+    painting_opts:null,
+  };
+
+  const resultsByPidPath = await rngTools.search_wild3(opts);
+  const results = resultsByPidPath
+    .map((pidPath) => pidPath.vec)
+    .flat();
+
+    //targetSetup.targetAdvance
+
+  return results.map(res => {
+      return {
+          advance:res.advance,
+          targetAdvance:targetSetup.advance,
+          method:res.method,
+      };
+  });
 };
 
 const getPossibleEncountersForMap = (targetSetup: TargetSetup) => {
@@ -150,7 +210,6 @@ const Fields = ({ targetSetup }: { targetSetup: TargetSetup }) => {
       setFields([
         speciesField,
         {
-          //NO_PROD buttons
           label: "Level",
           input: (
             <FormikRadio<FormState>
@@ -188,18 +247,12 @@ export const Wild3CalibCaughtMon = ({
   const { targetMethod, targetAdvance } = targetSetup;
 
   const onSubmit = React.useCallback<RngToolSubmit<FormState>>(
-    async (opts) => {
-      //NO_PROD
-      /*setResults(
-        await generateCaughtMonResults(
-          game,
-          targetAdvance,
-          targetStarter,
-          opts,
-        ),
-      );*/
+    async (values) => {
+      setResults(
+        await searchCaughtMon(values, targetSetup)
+      );
     },
-    [targetAdvance, setResults],
+    [setResults, targetSetup],
   );
 
   const columns = React.useMemo((): ResultColumn<CaughtMonResult>[] => {
@@ -252,11 +305,6 @@ export const Wild3CalibCaughtMon = ({
     ];
     return columns;
   }, [setLatestHitAdv, setResults, targetMethod, targetAdvance]);
-  /*
-  export const getStatRange = async (
-    species: Species,
-    levelRange: [number, number] = [5, 5],
-  ):*/
 
   return (
     <Flex vertical gap={8}>

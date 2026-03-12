@@ -370,7 +370,7 @@ export const Wild3CalibTarget = ({ setTargetSetup }: Props) => {
       setTargetComputed(info);
       setTargetSetup(values);
     },
-    [setTargetSetup],
+    [setTargetSetup, setTargetComputed],
   );
 
   const initialValues = React.useMemo(() => {
