@@ -8,7 +8,7 @@ use super::super::{
     Wild3RoamerState, generate_gen3_wild,
 };
 use crate::{
-    AbilityType, Gender, GenderRatio, HiddenPower, Ivs, Nature, PkmFilter, Species,
+    AbilityType, Gender, HiddenPower, Ivs, Nature, PkmFilter, Species,
     gen3::{
         Gen3Lead, Gen3Method, Gen3PkmFilter, SpeciesData, search_wild3_reverse,
         searcher_painter::Wild3PaintingOpts,

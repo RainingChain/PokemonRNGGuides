@@ -7,7 +7,6 @@ import {
   ResultColumn,
   Icon,
   FormFieldTable,
-  FormikNumberInput,
   FormikRadio,
 } from "~/components";
 import { FormikSelect } from "~/components/select";
@@ -16,10 +15,22 @@ import { Typography } from "~/components/typography";
 import { nature } from "~/types/nature";
 import { Button } from "~/components/button";
 import { toOptions } from "~/utils/options";
-import { natureOptions, pkmFilterFieldsToRustInput } from "~/components/pkmFilter";
+import {
+  getPkmFilterInitialValues,
+  natureOptions,
+  pkmFilterFieldsToRustInput,
+} from "~/components/pkmFilter";
 import { getStatFields } from "~/rngToolsUi/shared/statFields";
-import { gen3Methods, StatFieldsSchema } from "~/types";
-import { Gen3Method, rngTools, Wild3EncounterGameData, Wild3MapSetups, Wild3SearcherOptions } from "~/rngTools";
+import { gen3Methods, getLooseBaseStats, StatFieldsSchema } from "~/types";
+import {
+  Gen3Method,
+  rngTools,
+  StatsValue,
+  Wild3EncounterGameData,
+  Wild3MapSetups,
+  Wild3SearcherOptions,
+  Wild3SearcherResultMon,
+} from "~/rngTools";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
 import type { FormState as TargetSetup } from "./wild3CalibTarget";
 import { gen3Leads, isFishingAction, wild3Actions } from "./utils";
@@ -27,7 +38,13 @@ import { useWatch } from "react-hook-form";
 import { GenderFilter } from "~/components/genderFilter";
 import { getStatRange } from "~/types/statRange";
 import uniq from "lodash-es/uniq";
-import { gen3PkmFilterFieldsToRustInput } from "~/components/gen3PkmFilter";
+import {
+  gen3PkmFilterFieldsToRustInput,
+  getGen3PkmFilterInitialValues,
+} from "~/components/gen3PkmFilter";
+import clamp from "lodash-es/clamp";
+import { Tooltip } from "antd";
+import { formatProbability } from "~/utils/formatProbability";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -64,64 +81,132 @@ type Props = {
 export type CaughtMonResult = {
   advance: number;
   targetAdvance: number;
-  method: Gen3Method;
+  methods: Gen3Method[];
+  score: number;
+  probabilityHitMethodsAtAdvance: number;
 };
-
 
 const CONFIDENCE_RANGE = 10_000; // we assume the player hits its target advance by more or less 10K (~2m45s)
 
-export const searchCaughtMon = async (values: FormState, targetSetup:TargetSetup) => {
-  const initial_seed =
-    targetSetup.usingPaintingReseeding
-      ? targetSetup.initial_seed
-      : 0;
+export const searchCaughtMon = async (
+  values: FormState,
+  targetSetup: TargetSetup,
+) => {
+  const initial_seed = targetSetup.usingPaintingReseeding
+    ? targetSetup.targetPaintingSeed
+    : 0;
 
-  const initial_advances = Math.max(targetSetup.targetAdvance - CONFIDENCE_RANGE, 0);
+  const initial_advances = Math.max(
+    targetSetup.targetAdvance - CONFIDENCE_RANGE,
+    0,
+  );
 
   const map_data = emeraldWildGameData.maps_data.find(
     (map) => map.map_id === targetSetup.map,
   );
-  if (!map_data){
-    return null;
+  if (map_data == null) {
+    return [];
   }
-  const map_setup:Wild3MapSetups = {
+  const map_setup: Wild3MapSetups = {
     map_data,
-    actions:[targetSetup.action],
-    roamer_states:[targetSetup.roamerState],
-    mass_outbreak_states:[targetSetup.massOutbreakState],
-    feebas_states:[targetSetup.feebasState],
+    actions: [targetSetup.action],
+    roamer_states: [targetSetup.roamerState],
+    mass_outbreak_states: [targetSetup.massOutbreakState],
+    feebas_states: [targetSetup.feebasState],
   };
+
+  const caughtStats: StatsValue = {
+    hp: values.hpStat,
+    atk: values.atkStat,
+    def: values.defStat,
+    spa: values.spaStat,
+    spd: values.spdStat,
+    spe: values.speStat,
+  };
+
+  const baseStats = getLooseBaseStats(values.species);
+  if (baseStats == null) {
+    return [];
+  }
+
+  console.log(caughtStats);
 
   const opts: Wild3SearcherOptions = {
     initial_seed,
-    tid: values.tid,
-    sid: values.sid,
+    tid: 0, // doesn't matter
+    sid: 0, // doesn't matter
     initial_advances,
     max_advances: CONFIDENCE_RANGE * 2,
-    max_result_count: (2 ** 32) - 1, // No limit
-    filter: pkmFilterFieldsToRustInput(values),
-    gen3_filter: gen3PkmFilterFieldsToRustInput(values, values.species),
-    leads:[gen3Leads[targetSetup.leadIdx]],
-    map_setups:[map_setup],
+    max_result_count: 2 ** 32 - 1, // No limit
+    filter: pkmFilterFieldsToRustInput({
+      ...getPkmFilterInitialValues(),
+      filter_nature: values.nature,
+      filter_gender: values.filter_gender,
+      filter_stats: {
+        lvl: values.lvl,
+        base_stats: baseStats,
+        min_stats: caughtStats,
+        max_stats: caughtStats,
+      },
+    }),
+    gen3_filter: gen3PkmFilterFieldsToRustInput(
+      {
+        ...getGen3PkmFilterInitialValues(),
+        filter_lvl: values.lvl,
+      },
+      values.species,
+    ),
+    leads: [gen3Leads[targetSetup.leadIdx]],
+    map_setups: [map_setup],
     methods: gen3Methods,
     consider_cycles: true,
     consider_rng_manipulated_lead_pid: true,
     generate_even_if_impossible: true,
-    painting_opts:null,
+    painting_opts: null,
   };
 
   const resultsByPidPath = await rngTools.search_wild3(opts);
-  const results = resultsByPidPath
-    .map((pidPath) => pidPath.vec)
-    .flat();
+  const results = resultsByPidPath.map((pidPath) => pidPath.vec).flat();
+  const resultsByAdv = new Map<number, Wild3SearcherResultMon[]>();
+  results.forEach((res) => {
+    const list = resultsByAdv.get(res.advance);
+    if (list != null) {
+      list.push(res);
+    } else {
+      resultsByAdv.set(res.advance, [res]);
+    }
+  });
 
-//NO_PROD sort
-  return results.map(res => {
-      return {
-          advance:res.advance,
-          targetAdvance:targetSetup.advance,
-          method:res.method,
-      };
+  const list = Array.from(resultsByAdv.entries()).map(([adv, results]) => {
+    // TODO: consider the actual lead pid speed by running method_distribution for each results.
+    // right now, we assume common_upper_lead cycle speed (868)
+    const probabilityHitMethodsAtAdvance = results.reduce((prev, res) => {
+      return (
+        prev +
+        (res.cycle_data_by_lead?.common_upper_lead.method_probability ?? 0)
+      );
+    }, 0);
+    const scoreHitMethodsAtAdvance = clamp(
+      probabilityHitMethodsAtAdvance,
+      0.01,
+      1,
+    );
+
+    const distanceFromTarget = Math.abs(targetSetup.targetAdvance - adv);
+
+    const score = -distanceFromTarget * (1 - scoreHitMethodsAtAdvance);
+
+    return {
+      advance: adv,
+      targetAdvance: targetSetup.targetAdvance,
+      methods: uniq(results.map((res) => res.method)).toSorted(),
+      score,
+      probabilityHitMethodsAtAdvance,
+    };
+  });
+
+  return list.sort((res1, res2) => {
+    return res2.score - res1.score;
   });
 };
 
@@ -247,9 +332,7 @@ export const Wild3CalibCaughtMon = ({
 
   const onSubmit = React.useCallback<RngToolSubmit<FormState>>(
     async (values) => {
-      setResults(
-        await searchCaughtMon(values, targetSetup)
-      );
+      setResults(await searchCaughtMon(values, targetSetup));
     },
     [setResults, targetSetup],
   );
@@ -272,8 +355,12 @@ export const Wild3CalibCaughtMon = ({
         },
       },
       {
-        title: "Method",
-        dataIndex: "method",
+        title: "Methods",
+        dataIndex: "methods",
+        render(methods, values) {
+          const title = `${formatProbability(values.probabilityHitMethodsAtAdvance)} likelihood if the hit advance is ${values.advance}`;
+          return <Tooltip title={title}>{methods.join(", ")}</Tooltip>;
+        },
       },
       {
         title: "",
@@ -281,7 +368,7 @@ export const Wild3CalibCaughtMon = ({
         render(advance, values) {
           if (
             values.advance === targetAdvance &&
-            values.method === targetMethod
+            values.methods.includes(targetMethod)
           ) {
             return "Target Pokémon";
           }
