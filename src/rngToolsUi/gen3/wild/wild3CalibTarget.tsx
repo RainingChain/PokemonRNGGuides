@@ -67,7 +67,8 @@ const Validator = z.object({
     .max(gen3Leads.length - 1),
   usingRngManipulatedLead: z.boolean(),
   usingPaintingReseeding: z.boolean(),
-  initial_seed: z.number().min(0).max(0xffffffff),
+  isPaintingSeedConfirmed: z.boolean(),
+  targetPaintingSeed: z.number().min(0).max(0xffffffff),
 
   targetMethod: z.enum(supportedGen3Methods),
   targetAdvance: z.number().int().min(0).max(0xffffffff),
@@ -89,7 +90,8 @@ const getInitialValues = (): FormState => {
     leadIdx: 0,
     usingRngManipulatedLead: false,
     usingPaintingReseeding: false,
-    initial_seed: 0,
+    isPaintingSeedConfirmed: false,
+    targetPaintingSeed: 0,
     targetAdvance: 1000,
     targetMethod: "Wild1",
   };
@@ -155,8 +157,14 @@ const getFields = (
   });
 
   fields.push({
-    label: "Seed after reseeding", //NO_PROD add info that same as advance before reseeding.
-    input: <FormikNumberInput<FormState> name="initial_seed" numType="hex" />,
+    label: "Target painting seed",
+    input: <FormikNumberInput<FormState> name="targetPaintingSeed" numType="hex" />,
+    show: usingPaintingReseeding,
+  });
+
+  fields.push({
+    label: "Battle video has been created after confirming that target painting seed was hit?",
+    input: <FormikSwitch<FormState> name="isPaintingSeedConfirmed" />,
     show: usingPaintingReseeding,
   });
 
@@ -311,8 +319,8 @@ export const Wild3CalibTarget = ({ setTargetSetup }: Props) => {
 
   const onSubmit = React.useCallback<RngToolSubmit<FormState>>(
     async (values) => {
-      const initial_seed = values.usingPaintingReseeding
-        ? values.initial_seed
+      const targetPaintingSeed = values.usingPaintingReseeding
+        ? values.targetPaintingSeed
         : 0;
 
       const opts: Wild3GeneratorOptions = {
@@ -344,7 +352,7 @@ export const Wild3CalibTarget = ({ setTargetSetup }: Props) => {
       }
 
       const results = await rngTools.generate_gen3_wild_wasm(
-        initial_seed,
+        targetPaintingSeed,
         values.targetAdvance,
         opts,
         map_data,

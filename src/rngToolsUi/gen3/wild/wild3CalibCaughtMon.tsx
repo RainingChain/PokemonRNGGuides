@@ -115,8 +115,7 @@ export const searchCaughtMon = async (values: FormState, targetSetup:TargetSetup
     .map((pidPath) => pidPath.vec)
     .flat();
 
-    //targetSetup.targetAdvance
-
+//NO_PROD sort
   return results.map(res => {
       return {
           advance:res.advance,
