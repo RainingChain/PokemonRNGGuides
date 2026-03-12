@@ -6,16 +6,19 @@ export const genderOptions = ([null, ...gender] as const).map((gen) => ({
   value: gen,
 }));
 
-export const getGenderFilterOptions = (genderRatio?: GenderRatio) => {
+export const getGenderFilterOptions = (
+  genderRatio?: GenderRatio,
+  permitAny = true,
+) => {
   if (genderRatio == null) {
     return genderOptions;
   }
 
   const possibleGenders = getPossibleGenders(genderRatio);
-  const permitNull = possibleGenders.length > 1;
+  permitAny = permitAny && possibleGenders.length > 1;
   return genderOptions.filter((option) => {
     if (option.value == null) {
-      return permitNull;
+      return permitAny;
     }
     return possibleGenders.includes(option.value);
   });

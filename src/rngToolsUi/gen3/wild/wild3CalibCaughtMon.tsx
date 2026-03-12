@@ -7,8 +7,9 @@ import {
   ResultColumn,
   Icon,
   FormFieldTable,
+  FormikNumberInput,
+  FormikRadio,
 } from "~/components";
-import { FormikRadio } from "~/components/radio";
 import { FormikSelect } from "~/components/select";
 import { RngToolSubmit } from "~/components/rngToolForm";
 import { Typography } from "~/components/typography";
@@ -17,19 +18,15 @@ import { Button } from "~/components/button";
 import { toOptions } from "~/utils/options";
 import { natureOptions } from "~/components/pkmFilter";
 import { getStatFields } from "~/rngToolsUi/shared/statFields";
-import { defaultMinMaxStats, StatFieldsSchema } from "~/types";
-import {
-  Gen3Method,
-  Species,
-  SpeciesData,
-  Wild3Action,
-  Wild3EncounterGameData,
-} from "~/rngTools";
+import { StatFieldsSchema } from "~/types";
+import { Gen3Method, Wild3EncounterGameData } from "~/rngTools";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
 import type { FormState as TargetSetup } from "./wild3CalibTarget";
 import { isFishingAction, wild3Actions } from "./utils";
 import { useWatch } from "react-hook-form";
 import { GenderFilter } from "~/components/genderFilter";
+import { getStatRange } from "~/types/statRange";
+import uniq from "lodash-es/uniq";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -107,10 +104,16 @@ const getPossibleEncountersForMap = (targetSetup: TargetSetup) => {
 
 const Fields = ({ targetSetup }: { targetSetup: TargetSetup }) => {
   const selectedSpecies = useWatch<FormState, "species">({ name: "species" });
+  const selectedLvl = useWatch<FormState, "lvl">({ name: "lvl" });
+  const selectedNature = useWatch<FormState, "nature">({ name: "nature" });
 
-  const fields = React.useMemo(() => {
+  const [fields, setFields] = React.useState<Field[]>([]);
+
+  React.useEffect(() => {
     const encounters = getPossibleEncountersForMap(targetSetup);
-    const speciesList = encounters.map((enc) => enc.species_data.species);
+    const speciesList = uniq(
+      encounters.map((enc) => enc.species_data.species),
+    ).toSorted();
     const selectedSpeciesInfos = encounters.filter(
       (enc) => enc.species_data.species === selectedSpecies,
     );
@@ -126,50 +129,53 @@ const Fields = ({ targetSetup }: { targetSetup: TargetSetup }) => {
     };
 
     if (selectedSpeciesInfos.length === 0) {
-      return [];
+      setFields([speciesField]);
+      return;
     }
 
-    const genderRatio = selectedSpeciesInfos?.[0].species_data.gender_ratio;
-    const minMaxLvl = Math.min(
-      ...selectedSpeciesInfos.map((info) => info.min_level),
-    );
+    const genderRatio = selectedSpeciesInfos[0].species_data.gender_ratio;
+    const lvls = new Set<number>();
+    selectedSpeciesInfos.forEach((info) => {
+      for (let lvl = info.min_level; lvl <= info.max_level; lvl++) {
+        lvls.add(lvl);
+      }
+    });
+    const sortedLvls = Array.from(lvls).sort((lvl1, lvl2) => lvl1 - lvl2);
 
-    return [
-      {
-        label: "Species",
-        input: (
-          <FormikRadio<FormState>
-            name="species"
-            options={toOptions(speciesList)}
-          />
-        ),
-      },
-      {
-        //TODO
-        label: "Level",
-        input: (
-          <FormikRadio<FormState>
-            name="lvl"
-            options={toOptions(["Male", "Female"] as const)}
-          />
-        ),
-      },
-      {
-        label: "Gender",
-        input: <GenderFilter genderRatio={genderRatio} />,
-      },
-      {
-        label: "Nature",
-        input: (
-          <FormikSelect<FormState, "nature">
-            name="nature"
-            options={natureOptions.required}
-          />
-        ),
-      },
-      ...getStatFields<FormState>(defaultMinMaxStats), //NO_PROD init defaultMinMaxStats with species
-    ];
-  }, [targetSetup]);
+    getStatRange(
+      selectedSpecies,
+      [selectedLvl, selectedLvl],
+      selectedNature,
+    ).then((minMaxStats) => {
+      setFields([
+        speciesField,
+        {
+          //NO_PROD buttons
+          label: "Level",
+          input: (
+            <FormikRadio<FormState>
+              name="lvl"
+              options={toOptions(sortedLvls)}
+            />
+          ),
+        },
+        {
+          label: "Gender",
+          input: <GenderFilter genderRatio={genderRatio} permitAny={false} />,
+        },
+        {
+          label: "Nature",
+          input: (
+            <FormikSelect<FormState, "nature">
+              name="nature"
+              options={natureOptions.required}
+            />
+          ),
+        },
+        ...getStatFields<FormState>(minMaxStats),
+      ]);
+    });
+  }, [targetSetup, selectedSpecies, selectedLvl, selectedNature]);
 
   return <FormFieldTable fields={fields} />;
 };
@@ -269,7 +275,7 @@ export const Wild3CalibCaughtMon = ({
         rowKey="advance"
       >
         <div style={{ paddingLeft: "20px" }}>
-          <Fields />
+          <Fields targetSetup={targetSetup} />
         </div>
       </RngToolForm>
     </Flex>

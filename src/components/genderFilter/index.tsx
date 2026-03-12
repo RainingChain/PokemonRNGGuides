@@ -8,15 +8,17 @@ import { getGenderFilterOptions } from "./options";
 
 export const GenderFilter = ({
   genderRatio,
+  permitAny = true,
 }: {
   genderRatio?: GenderRatio;
+  permitAny?: boolean;
 }) => {
   const { setFieldValue } = useFormContext<PkmFilterFields>();
   const filter_gender = useWatch<PkmFilterFields, "filter_gender">({
     name: "filter_gender",
   });
 
-  const options = getGenderFilterOptions(genderRatio);
+  const options = getGenderFilterOptions(genderRatio, permitAny);
 
   useEffect(() => {
     if (options.some((opt) => opt.value === filter_gender)) {
