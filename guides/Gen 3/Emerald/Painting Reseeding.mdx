@@ -16,40 +16,60 @@
 ## Prerequisites
 
 - Access to the Battle Frontier.
+- Owning a Egg Pokémon and a Pokémon knowing Sweet Scent.
+- Recommended: A Master Ball or a Pokémon knowing False Swipe.
+- Recommended: 5+ Rare Candies.
 - Know how to create a [Battle Video](/emerald-battle-video).
 - Recommended: Having read [Overview of RNG Advancing Techniques](/emerald-advancing-rng-techniques).
 
-## Overview
+## General Overview
 
 Painting Reseeding is a RNG technique to make the RNG state jump by millions of advances instantly, giving access to
 RNG states that would normally not be reachable realistically.
 
-By interacting with a painting in Lilycove contest hall, the RNG state is reseeded using the current visual frame counter. The RNG state before interacting with the painting has no impact on the new RNG state. Players don't need to have participated in a contest for the paintings to be accessible.
+By interacting with a painting in Lilycove contest hall, the RNG state is reseeded using the current visual frame counter. Players don't need to have participated in a contest for the paintings to be accessible.
 
-### Validating
-Performing Painting Reseeding successfully requires a frame-perfect input.
-The new value of the RNG state depends on the exact timing of the button press.
-After performing it, players need to validate whether they successfully hit their target frames before painting.
+This technique requires a frame-perfect input. Players need to validate whether they successfully did the technique by catching a high-level Pokémon.
 
-The best way to validate is to catch a high-level Pokémon in Victory Road, with an egg as the party lead. The egg lead ensure that the caught Pokémon will be generated with [method Wild1](/gba-methods-lead-impact).
-Afterwards, the stats and nature of the caught Pokémon can be used to calculate what was the actual hit painting frame.
-For example, if the RNG advance upon hitting the target painting frame is 99,966,396; and the caught Pokémon doesn't match any possible Pokémon near that advance, we can safely assume that the target painting frame was not hit.
+### Steps Overview
 
-In some cases, multiple possible frames are could have been used to generate the caught Pokémon. Talking with the stat judge in the Battle Frontier can help determine the real hit frame. The stat judge says information about the sum of the IVs of a Pokémon, its highest stat and IV value.
+1. Determine the target frame before painting and advance after painting.
+1. Interact with the painting, create a Battle Video and validate whether the target frame before painting was hit.
+1. Update the Battle Video.
 
-### Post-Validating
-
-
-
-If succesful, players then create a [Battle Video](/emerald-battle-video) to save and restore their RNG state in case they miss their target advances after painting for the Pokémon encounter.
-
-To validate if the target frames before painting was hit
-
-//NO_PROD change all mention of before advance to frame
 
 ## Webtool and Instructions
 
-<BattleVideo />
+1. Save in front of a painting in the Lilycove contest hall, with 3 Pokémon eligible for Battle Tower, and one knowing Fly.
+1. On the website, start the timers.
+1. When the first timer reaches 0, press `START+SELECT+A+B` to soft reset the game.
+1. Select your save file and wait while standing in the front of the painting.
+1. When the 2nd timer reaches 0, press `A` to interact with the painting.
+1. Close the painting and quickly leave the contest hall.
+1. Fly to Battle Frontier and quickly reach the Battle Tower by running.
+1. NO_PROD copy from battle vide
+
+1. Save the game.
+1. Place any Egg Pokémon at the first slot of your party. Withdraw a Pokémon knowing Sweet Scent. Ideally, if you don't own a Master Ball, place a Pokémon knowing False Swipe at the 2nd slot of the party.
+1. Fly to the Victory Road NO_PROD map name. and enter Victory Road cave. Move 1 step away from the entrance, otherwise Sweet Scent will fail.
+1. TODO battel vide
+1. Catch the Pokémon.
+1. Open the Pokémon summary and fill the fields on the website with the Pokémon stats. Press "Generate".
+1. If there's a result matching the target advance before painting, click the "Go Next Step" button and ignore the rest of the steps.
+1. If there are no results or if none of them have a High or higher confidence rating, ensure that the content of the fields are correct.
+1. If there are multiple results with a Very High confidence rating (or multiple High ratings):
+    1. On the website, set the Rare Candy count to 1, and give a Rare Candy to your Pokémon.
+    1. On the website, remove Pokémon entries with stats that don't match the newly improved stats of the Pokémon.
+    1. Repeat the previous steps to feed the Pokémon additional Rare Candies and filter the entries until there's only one Very High confidence rating left (or only one High rating).
+    1. Additionnaly, you can fly to the Battle Frontier, and talk with the stat judge. On the website, remove Pokémon entries that don't match what the stat judge says.
+1. If there is only one result with a Very High confidence rating (or only one High rating), click on its "Calibrate" button.
+1. This painting attempt was not successful, but the timers were adjusted to improve the odds for your next attempt. Go back to step 2.
+
+
+## Technical Info
+- The RNG state before interacting with the painting has no impact on the new RNG state. It is not possible to use Battle Video to speedup the wait before interacting with the painting.
+- The Egg Pokémon lead ensures that the caught Pokémon will be generated with [method Wild1](/gba-methods-lead-impact).
+
 
 ## Credits
 
