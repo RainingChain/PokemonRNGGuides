@@ -1,18 +1,19 @@
 
 
-Create a component where the user must choose one of the modes.
-A small description of the selected mode is displayed, with inputs and outputs.
+Create 2 components in the file src\rngToolsUi\shared\shininessCalculator
 
-Mode 1- Find SID for Shiny Pokémon
-    Description: Find SID to make specific target Pokémon shiny. [Change your SID with ACE]()
+Component 1
+    Header:Find SID for Shiny Pokémon
+    Description: Find SID to make specific target Pokémon shiny. [Change your SID with ACE](TODO link)
     Inputs: TID, PID
     Output:
         SID,
         TSV,
         PSV
 
-Mode 2- Is Pokémon Shiny for given TID/SID?
-    Description: Determine if target Pokémon will be shiny for given TID/SID. [Find your SID](TODO)
+Component 2 
+    Header: Is Pokémon Shiny for given TID/SID?
+    Description: Determine if target Pokémon will be shiny for given TID/SID. [Find your SID](TODO link)
     Inputs: TID, SID, PID
     Output:
         Shiniess: Shiny (Star in Gen 8+), Shiny (Square in Gen 8+), No

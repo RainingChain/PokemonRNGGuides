@@ -185,6 +185,14 @@ const tools = {
     () => import("~/rngToolsUi/gen3/pidSpeedCalculator"),
     (mod) => mod.Gen3PidSpeedCalculator,
   ),
+  FindSidForShinyPokemon: lazyLoad(
+    () => import("~/rngToolsUi/shared/shininessCalculator"),
+    (mod) => mod.FindSidForShinyPokemon,
+  ),
+  IsPokemonShinyForTidSid: lazyLoad(
+    () => import("~/rngToolsUi/shared/shininessCalculator"),
+    (mod) => mod.IsPokemonShinyForTidSid,
+  ),
   EmeraldSeedToAdvances: lazyLoad(
     () => import("~/rngToolsUi/gen3/paintingReseeding/seedToAdvances"),
     (mod) => mod.EmeraldSeedToAdvances,
