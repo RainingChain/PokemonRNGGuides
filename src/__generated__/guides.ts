@@ -1141,7 +1141,7 @@ export const guides = {
       addedOn: "2025-07-03",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-04-28",
+      lastUpdated: "2026-08-09",
       type: "baseGuide",
       canonical: "/consistent-platinum-rng/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/Consistent Platinum RNG.mdx",
