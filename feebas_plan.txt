@@ -5,4 +5,67 @@ adapt reverse searcher.
 adapt method
 
 
+tool to calculate cycle counter for tile = 1, to tile=440
+
+tool to change feebas spot.
+
+
+current:
+Feebas Seed Value: 4C57
+        Tiles:  14 | 25 | 119 | 179 | 301 | 419 |
+
+
+feebas is around Random() to Random()
+
+
+
+
+
+result for tile 4. aka check 739
+  Random() : AdvBef=2643, Frame=2631, Cycle=  81604 (+166498354 + 373012 from modulo) RandomRetVal= 71509d8a : CheckFeebas 80b49e9
+  58476
+  Random() : AdvBef=2645, Frame=2632, Cycle= 165878 (+362428 + 2738 from modulo) RandomRetVal= 7afca5ce : ChooseWildMonLevel_RandomLvl 80b4c97
+
+  +303952 excluding vblank dur
+  ~411 cycle/check
+
+result for tile 447. aka check 809
+  Random() : AdvBef=34674, Frame=31192, Cycle=  87883 (+5587331 + 13821 from modulo) RandomRetVal= 8293f2e0 : CheckFeebas 80b49e9
+  58565
+  Random() : AdvBef=34676, Frame=31193, Cycle= 207404 (+397915 + 2498 from modulo) RandomRetVal= 9bed8cab : ChooseWildMonLevel_RandomLvl 80b4c97
+
+  +339350 excluding vblank dur
+  ~419 cycle/check
+
+
+
+max: 1833 check at tile 131
+  Random() : AdvBef=2499, Frame=2452, Cycle=  72292 (+-35239388 + 405611 from modulo) RandomRetVal= 8709e475 : CheckFeebas 80b49e9
+  Vblank. Vblank cycle count : 51166
+  Vblank. Vblank cycle count : 42741
+  Vblank. Vblank cycle count : 64569
+  Random() : AdvBef=2503, Frame=2455, Cycle= 149254 (+916978 + 2671 from modulo) RandomRetVal= 5ebc1627 : ChooseWildMonLevel_RandomLvl 80b4c97
+  Random() : AdvBef=2504, Frame=2455, Cycle= 222030 (+32139 + 40637 from modulo) RandomRetVal= 4b7b6179 : PickWildMonNature_RandomPickNature 80b4e51
+
+  758K cycle
+  413 cycle/check
+
+
+
+---------------
+
+player selects tiles where feebas can be.
+  identify unstable tiles and safe tiles. safe tile is when vblank is constant no matter the cycle at sweet scent.
+
+  only support safe tiles for now.
+
+
+searcher:
+  create multiple feebas arcs.
+
+  some tiles are better than other
+
+
+
+
 

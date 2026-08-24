@@ -82,6 +82,7 @@ fn search_wild3_naive_at_given_advance(
                     roamer_state: *roamer_state,
                     mass_outbreak_state: *mass_outbreak_state,
                     feebas_state: *feebas_state,
+                    feebas_cycle_count: 0,
                     safari_pokeblock,
                     lead_cycle_speed: opts.lead_cycle_speed,
                     using_white_flute: opts.using_white_flute,

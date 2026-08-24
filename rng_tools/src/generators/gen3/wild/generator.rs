@@ -42,6 +42,7 @@ pub struct Wild3GeneratorOptions {
     pub roamer_state: Wild3RoamerState,
     pub mass_outbreak_state: Wild3MassOutbreakState,
     pub feebas_state: Wild3FeebasState,
+    pub feebas_cycle_count: usize,
     pub using_white_flute: bool,
     pub safari_pokeblock: Option<Wild3SafariPokeblockGenOpt>,
 }
@@ -64,6 +65,7 @@ impl Default for Wild3GeneratorOptions {
             roamer_state: Wild3RoamerState::default(),
             mass_outbreak_state: Wild3MassOutbreakState::default(),
             feebas_state: Wild3FeebasState::default(),
+            feebas_cycle_count: 0,
             using_white_flute: true,
             safari_pokeblock: None,
         }
