@@ -14,6 +14,7 @@ pub enum Moment {
     SweetScentWildEncounter,
     RockSmashWildEncounter,
     FishingWildEncounter,
+    CheckFeebas,
     ChooseWildMonIndex_Land_Random,
     ChooseWildMonIndex_WaterRock_Random,
     ChooseWildMonIndex_Fishing_Random,

@@ -11,7 +11,8 @@ use crate::{
         CycleAndModCount, CycleAndModRange, CycleCounter, CycleRange, Gen3Lead, Gen3Method,
         Gen3PkmFilter, Moment, Wild3Action, Wild3EncounterGameData, Wild3EncounterIndex,
         Wild3FeebasState, Wild3MapGameData, Wild3MassOutbreakState, Wild3RoamerState,
-        Wild3SafariPokeblockGenOpt, passes_pid_filter, wild::lcrng_distance,
+        Wild3SafariPokeblockGenOpt, get_min_max_vblank_cycle_duration,
+        get_min_mid_max_pre_sweet_scent_cycle, passes_pid_filter, wild::lcrng_distance,
     },
     gen3_tsv, is_max_size,
     rng::{Rng, lcrng::Pokerng},
@@ -183,6 +184,59 @@ fn select_encounter_idx_ability_attract_type(
     }
 }
 
+fn apply_cycles_causing_vblanks_on_cycle_counter(
+    cycle: usize,
+    cycle_to_add: usize,
+    vblank_dur: usize,
+) -> (usize /*new_cycle*/, usize /*vblank_count*/) {
+    let cycles_until_vblank = VBLANK_FREQ - cycle;
+    if cycle_to_add < cycles_until_vblank {
+        return (cycle + cycle_to_add, 0);
+    }
+
+    let remaining = cycle_to_add - cycles_until_vblank;
+    let cycles_between_vblanks = VBLANK_FREQ - vblank_dur;
+    let vblank_count = 1 + remaining / cycles_between_vblanks;
+    let new_cycle = vblank_dur + remaining % cycles_between_vblanks;
+
+    (new_cycle, vblank_count)
+}
+
+fn handle_feebas_cycle_counter(
+    rng: &mut Pokerng,
+    cycle_counter: &mut CycleCounter,
+    feebas_cycle_count: usize,
+) {
+    cycle_counter.on_moment_reached(Moment::CheckFeebas);
+
+    let (min, mid, max) = get_min_mid_max_pre_sweet_scent_cycle(Wild3Action::OldRod);
+    let (min_vblank, mid_vblank, max_vblank) = get_min_max_vblank_cycle_duration();
+
+    let (_, min_case_vblank) =
+        apply_cycles_causing_vblanks_on_cycle_counter(min, feebas_cycle_count, min_vblank);
+    let (mid_case_cycle, mid_case_vblank) =
+        apply_cycles_causing_vblanks_on_cycle_counter(mid, feebas_cycle_count, mid_vblank);
+    let (_, max_case_vblank) =
+        apply_cycles_causing_vblanks_on_cycle_counter(max, feebas_cycle_count, max_vblank);
+
+    //NO_PROD add big example text.
+    // The Feebas tile is stable. Assume the mid_case.
+    rng.jump(mid_case_vblank);
+
+    let abs_cycle_from_cycle_counter = cycle_counter.cycle.cycle + mid; // At this points, lead_pid_mod is 0.
+    // Limitation: We can only add cycles. In most cases, mid_case_cycle should be > abs_cycle_from_cycle_counter, because abs_cycle_from_cycle_counter is small.
+    if mid_case_cycle > abs_cycle_from_cycle_counter {
+        cycle_counter.add_cycle(mid_case_cycle - abs_cycle_from_cycle_counter);
+    }
+
+    // NO_PROD: do
+
+    // add a flag on cycle_counter that says it's unstable.
+    if min_case_vblank == max_case_vblank {
+        return;
+    }
+}
+
 fn select_encounter_idx(
     rng: &mut Pokerng,
     opts: &Wild3GeneratorOptions,
@@ -236,6 +290,7 @@ fn select_encounter_idx(
         && opts.action.is_fishing()
         && rand_next_u16(rng, "select_encounter_idx.OnFeebasTile", 100) % 100 <= 49
     {
+        handle_feebas_cycle_counter(rng, cycle_counter, opts.feebas_cycle_count);
         return Some(Wild3EncounterIndex::Feebas);
     }
 

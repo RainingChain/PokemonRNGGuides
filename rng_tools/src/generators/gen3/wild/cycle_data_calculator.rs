@@ -237,6 +237,21 @@ fn calculate_pre_sweet_scent_cycle_range(
     CycleRange::from_start_end(pre_sweet_scent_start, pre_sweet_scent_end)
 }
 
+pub fn get_min_mid_max_pre_sweet_scent_cycle(action: Wild3Action) -> (usize, usize, usize) {
+    match action {
+        Wild3Action::RockSmash => (30_000, 52_500, 75_000),
+        _ => (
+            MOST_PROBABLE_PRE_SWEET_SCENT_CYCLE - 10_000,
+            MOST_PROBABLE_PRE_SWEET_SCENT_CYCLE,
+            MOST_PROBABLE_PRE_SWEET_SCENT_CYCLE + 20_000,
+        ),
+    }
+}
+
+pub fn get_min_max_vblank_cycle_duration() -> (usize, usize, usize) {
+    (45_000, 55_000, 65000)
+}
+
 #[wasm_bindgen]
 pub fn calculate_method_probability(
     pre_sweet_scent_range: &CycleRange<usize>,
@@ -246,14 +261,9 @@ pub fn calculate_method_probability(
         return 0.0;
     }
 
-    let min_pre_sweet_scent_cycle = match action {
-        Wild3Action::RockSmash => 30_000,
-        _ => MOST_PROBABLE_PRE_SWEET_SCENT_CYCLE - 10_000,
-    };
-    let max_pre_sweet_scent_cycle = match action {
-        Wild3Action::RockSmash => 75_000,
-        _ => MOST_PROBABLE_PRE_SWEET_SCENT_CYCLE + 20_000,
-    };
+    let (min_pre_sweet_scent_cycle, _, max_pre_sweet_scent_cycle) =
+        get_min_mid_max_pre_sweet_scent_cycle(action);
+
     let pre_sweet_scent_cycle_range = max_pre_sweet_scent_cycle - min_pre_sweet_scent_cycle;
 
     // Constant probability in the range (over-simplification of the real probability)
