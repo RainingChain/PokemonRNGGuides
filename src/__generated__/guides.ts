@@ -2850,6 +2850,48 @@ export const guides = {
       return file.default;
     }),
   },
+  "/emerald-largest-lotad-seedot/": {
+    meta: {
+      id: "/emerald-largest-lotad-seedot/",
+      categories: ["Emerald"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Largest Lotad/Seedot",
+      isNew: true,
+      title: "Largest Lotad/Seedot",
+      navDrawerTitle: "Largest Lotad/Seedot",
+      description:
+        "Catching the largest possible Lotad and Seedot to show to Sootopolis City brothers",
+      slug: "/emerald-largest-lotad-seedot/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-08-23",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-08-23",
+      type: "baseGuide",
+      canonical: "/emerald-largest-lotad-seedot/",
+      file: "guides/Gen 3/Emerald/Largest Pokemon.mdx",
+      translations: null,
+      guideGroupId: "en:false-Largest Lotad/Seedot:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-largest-lotad-seedot/" },
+        cfwEmu: null,
+      },
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/Largest Pokemon.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/Largest Pokemon.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
   "/emerald-mirage-island/": {
     meta: {
       id: "/emerald-mirage-island/",
@@ -2916,7 +2958,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-08-22",
+      lastUpdated: "2026-08-23",
       type: "baseGuide",
       canonical: "/emerald-overview/",
       file: "guides/Gen 3/Emerald/Emerald Overview.mdx",
@@ -17204,6 +17246,7 @@ export const guideSlugs = [
   "/e-tips-rng/",
   "/emerald-advancing-rng-techniques/",
   "/emerald-battle-video/",
+  "/emerald-largest-lotad-seedot/",
   "/emerald-mirage-island/",
   "/emerald-overview/",
   "/emerald-painting-reseeding/",
