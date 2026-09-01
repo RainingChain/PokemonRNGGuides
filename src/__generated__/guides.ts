@@ -1441,7 +1441,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: { enSlug: "/emerald-overview/", language: "de" },
       layout: "guide",
-      lastUpdated: "2026-05-27",
+      lastUpdated: "2026-08-22",
       type: "translatedGuide",
       canonical: "/de-emerald-overview/",
       file: "guides/Translations/de/Gen 3/Emerald/Emerald Overview.mdx",
@@ -2850,6 +2850,48 @@ export const guides = {
       return file.default;
     }),
   },
+  "/emerald-largest-lotad-seedot/": {
+    meta: {
+      id: "/emerald-largest-lotad-seedot/",
+      categories: ["Emerald"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Largest Lotad/Seedot",
+      isNew: true,
+      title: "Largest Lotad/Seedot",
+      navDrawerTitle: "Largest Lotad/Seedot",
+      description:
+        "Catching the largest possible Lotad and Seedot to show to Sootopolis City brothers",
+      slug: "/emerald-largest-lotad-seedot/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-08-23",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-08-23",
+      type: "baseGuide",
+      canonical: "/emerald-largest-lotad-seedot/",
+      file: "guides/Gen 3/Emerald/Largest Pokemon.mdx",
+      translations: null,
+      guideGroupId: "en:false-Largest Lotad/Seedot:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-largest-lotad-seedot/" },
+        cfwEmu: null,
+      },
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/Largest Pokemon.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/Largest Pokemon.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
   "/emerald-mirage-island/": {
     meta: {
       id: "/emerald-mirage-island/",
@@ -2916,7 +2958,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-07-12",
+      lastUpdated: "2026-08-23",
       type: "baseGuide",
       canonical: "/emerald-overview/",
       file: "guides/Gen 3/Emerald/Emerald Overview.mdx",
@@ -3092,7 +3134,7 @@ export const guides = {
       },
       guideGroupId: "en:false-Pokérus:Emerald",
       guideVariantLinks: {
-        retail: null,
+        retail: { type: "slug", slug: "/emerald-pokerus-retail/" },
         cfwEmu: { type: "slug", slug: "/emerald-pokerus-emu/" },
       },
       displayAttributes: ["video_guide"],
@@ -3100,6 +3142,47 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Pokerus.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 3/Emerald/Pokerus.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/emerald-pokerus-retail/": {
+    meta: {
+      id: "/emerald-pokerus-retail/",
+      categories: ["Emerald"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Pokérus",
+      isNew: false,
+      title: "Pokérus in Emerald",
+      navDrawerTitle: "Pokérus",
+      description: "How to be infected by Pokérus",
+      slug: "/emerald-pokerus-retail/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-08-06",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-08-22",
+      type: "baseGuide",
+      canonical: "/emerald-pokerus-retail/",
+      file: "guides/Gen 3/Emerald/Pokerus Retail.mdx",
+      translations: null,
+      guideGroupId: "en:false-Pokérus:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-pokerus-retail/" },
+        cfwEmu: { type: "slug", slug: "/emerald-pokerus-emu/" },
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/Pokerus Retail.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/Pokerus Retail.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -6886,7 +6969,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: { enSlug: "/emerald-overview/", language: "it" },
       layout: "guide",
-      lastUpdated: "2026-05-27",
+      lastUpdated: "2026-08-22",
       type: "translatedGuide",
       canonical: "/it-emerald-overview/",
       file: "guides/Translations/it/Gen 3/Emerald/Emerald Overview.mdx",
@@ -11052,7 +11135,7 @@ export const guides = {
       addedOn: "2025-05-17",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-08-22",
       type: "baseGuide",
       canonical: "/rs-pokerus-retail/",
       file: "guides/Gen 3/Ruby and Sapphire/Pokerus Retail.mdx",
@@ -16899,7 +16982,7 @@ export const guides = {
       addedOn: "2025-05-17",
       translation: { enSlug: "/rs-pokerus-retail/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-08-08",
       type: "translatedGuide",
       canonical: "/zh-rs-pokerus-retail/",
       file: "guides/Translations/zh/Gen 3/Ruby and Sapphire/Pokerus Retail.mdx",
@@ -17163,12 +17246,14 @@ export const guideSlugs = [
   "/e-tips-rng/",
   "/emerald-advancing-rng-techniques/",
   "/emerald-battle-video/",
+  "/emerald-largest-lotad-seedot/",
   "/emerald-mirage-island/",
   "/emerald-overview/",
   "/emerald-painting-reseeding/",
   "/emerald-painting-rng/",
   "/emerald-painting-seed-searcher/",
   "/emerald-pokerus-emu/",
+  "/emerald-pokerus-retail/",
   "/emerald-rng-with-ace/",
   "/emerald-shiny-starter/",
   "/emerald-sid-feebas/",
