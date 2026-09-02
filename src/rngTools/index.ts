@@ -248,7 +248,8 @@ export const rngTools = new Proxy(
         const tools = await getRngTools();
         const func = tools[functionName];
         // The type signature guarantees this is used correctly.
-        // @ts-maybe-error -- Distributed union type from comlink makes this complex to type correctly
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore -- Distributed union type from comlink makes this complex to type correctly. Sometimes, it's considered an error and sometimes not.
         return func(...args);
       };
     },
