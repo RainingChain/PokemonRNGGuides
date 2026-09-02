@@ -10,12 +10,19 @@ import {
   MultiTimer,
   Flex,
   NumberInput,
+  Select,
   Switch,
 } from "~/components";
 import { rngTools, Gen3TidSidShinyResult } from "~/rngTools";
-import { GBA_FPS, MS_PER_GBA_FRAME } from "~/utils/consts";
+import {
+  Gen3Console,
+  gen3ConsoleFpsMap,
+  gen3ConsoleOptions,
+} from "~/types/console";
+import { GBA_FPS } from "~/utils/consts";
 import {
   ShinyStarterTidSidResult,
+  shinyStarterConsoleAtom,
   shinyStarterTidSidResultsAtom,
   usingDeadBatteryAtom,
 } from "./state";
@@ -130,6 +137,7 @@ const TimerFields = ({
   setAdvFromOffset,
 }: FieldsProps) => {
   const [, setUsingDeadBattery] = useAtom(usingDeadBatteryAtom);
+  const [consoleType, setConsoleType] = useAtom(shinyStarterConsoleAtom);
   const [idealAdvance, setIdealAdvance] = useState(0);
 
   React.useEffect(() => {
@@ -143,7 +151,9 @@ const TimerFields = ({
 
   const milliseconds = (() => {
     const advFromTimer = idealAdvance - (advFromOffset ?? 0) - OFFSET;
-    let milliseconds = Math.round(advFromTimer * MS_PER_GBA_FRAME);
+    let milliseconds = Math.round(
+      (advFromTimer * 1000) / gen3ConsoleFpsMap[consoleType],
+    );
     if (milliseconds < 0) {
       milliseconds = 0;
     }
@@ -154,6 +164,17 @@ const TimerFields = ({
     {
       label: "Using dead battery?",
       input: <Switch value={hasDeadBattery} onChange={setHasDeadBattery} />,
+    },
+    {
+      label: "Console",
+      input: (
+        <Select<Gen3Console>
+          name="console"
+          value={consoleType}
+          options={gen3ConsoleOptions}
+          onSelect={setConsoleType}
+        />
+      ),
     },
     {
       label: "Offset",

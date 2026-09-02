@@ -15,9 +15,11 @@ import { CaughtMon } from "./caughtMon";
 import { FormFieldTable } from "~/components/formFieldTable";
 import { TargetPokemon } from "./targetPokemon";
 import { defaultMinMaxStats, MinMaxStats } from "~/types/stat";
-import { GBA_FPS, MS_PER_GBA_FRAME } from "~/utils/consts";
+import { gen3ConsoleFpsMap } from "~/types/console";
+import { GBA_FPS } from "~/utils/consts";
 import {
   ShinyStarterTidSidResult,
+  shinyStarterConsoleAtom,
   shinyStarterTidSidResultsAtom,
   usingDeadBatteryAtom,
 } from "./state";
@@ -119,6 +121,7 @@ Data for testing:
 
 export const ShinyEmeraldStarter = ({ game }: Props) => {
   const [usingDeadBattery] = useAtom(usingDeadBatteryAtom);
+  const [consoleType] = useAtom(shinyStarterConsoleAtom);
   const [selectedTarget, setSelectedTarget] =
     React.useState<ShinyStarterTidSidResult | null>(null);
   const [tidSidResults, setTidSidResults] = useAtom(
@@ -166,7 +169,10 @@ export const ShinyEmeraldStarter = ({ game }: Props) => {
   }, [game, selectedTarget, usingDeadBattery]);
 
   const advFromTimer = targetAdvance - (humanInputDelay ?? 0) - CALIB - OFFSET;
-  const milliseconds = [5000, Math.round(advFromTimer * MS_PER_GBA_FRAME)];
+  const milliseconds = [
+    5000,
+    Math.round((advFromTimer * 1000) / gen3ConsoleFpsMap[consoleType]),
+  ];
 
   const fields: Field[] = [
     { label: "TID", input: <>{selectedTarget?.tid ?? 0}</> },
