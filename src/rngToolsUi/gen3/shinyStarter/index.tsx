@@ -1,11 +1,27 @@
 import React from "react";
-import { Flex, MultiTimer, Field, Input } from "~/components";
-import { FindTargetAdvance } from "./findTarget";
+import { useAtom } from "jotai";
+import {
+  Alert,
+  Button,
+  Flex,
+  MultiTimer,
+  Field,
+  NumberInput,
+  ResultColumn,
+  ResultTable,
+  Typography,
+} from "~/components";
 import { CaughtMon } from "./caughtMon";
 import { FormFieldTable } from "~/components/formFieldTable";
 import { TargetPokemon } from "./targetPokemon";
 import { defaultMinMaxStats, MinMaxStats } from "~/types/stat";
-import { MS_PER_GBA_FRAME } from "~/utils/consts";
+import { GBA_FPS, MS_PER_GBA_FRAME } from "~/utils/consts";
+import {
+  ShinyStarterTidSidResult,
+  shinyStarterTidSidResultsAtom,
+  usingDeadBatteryAtom,
+} from "./state";
+import { findTargetAdvanceForShinyPokemon } from "./calc";
 
 export type Game = "emerald" | "rs";
 export type Starter = "Mudkip" | "Torchic" | "Treecko";
@@ -19,51 +35,196 @@ type Props = {
   game: Game;
 };
 
-export const ShinyHoennStarter = ({ game }: Props) => {
+type SelectButtonProps = {
+  result: ShinyStarterTidSidResult;
+  onSelect: (target: ShinyStarterTidSidResult) => void;
+};
+
+const SelectButton = ({ result, onSelect }: SelectButtonProps) => {
+  return (
+    <Button
+      trackerId="select_gen3_shiny_starter_tid_sid"
+      onClick={() => {
+        onSelect(result);
+      }}
+    >
+      Select
+    </Button>
+  );
+};
+
+const getColumns = (
+  onSelect: SelectButtonProps["onSelect"],
+): ResultColumn<ShinyStarterTidSidResult>[] => [
+  {
+    title: "Select",
+    dataIndex: "tid",
+    disableVerticalPadding: true,
+    render: (_, result) => <SelectButton result={result} onSelect={onSelect} />,
+  },
+  {
+    title: (
+      <div>
+        Hit advance for
+        <br />
+        TID/SID generation
+      </div>
+    ),
+    key: "tid_gen_adv",
+    dataIndex: "tid_gen_adv",
+    render: (val, values) => {
+      const diffWithTarget = val - values.tid_gen_target_adv;
+      if (diffWithTarget === 0) {
+        return `${val}`;
+      }
+      if (diffWithTarget > 0) {
+        return `${val} (+${diffWithTarget})`;
+      }
+      return `${val} (${diffWithTarget})`;
+    },
+  },
+  {
+    title: "SID",
+    dataIndex: "sid",
+    render: (sid, { crossedOut }) => {
+      return <Typography.Text delete={crossedOut}>{sid}</Typography.Text>;
+    },
+  },
+  {
+    title: (
+      <div>
+        Advance for shiny
+        <br />
+        starter
+      </div>
+    ),
+    key: "Advance",
+    dataIndex: "earliest_shiny_adv",
+    render: (val) => {
+      const durInMinutes = (val / GBA_FPS / 60).toFixed(1);
+      return `${val} (~${durInMinutes} min)`;
+    },
+  },
+];
+
+const CALIB = 9;
+const OFFSET = 3;
+
+/*
+Data for testing: 
+  TID=0. SID=10059.
+  Target =    Male, Brave, HP 21, ATK 13, Def 10, Spa 10, Spd 10, Spe 8
+  -1220 adv = Male, Brave, HP 21, ATK 13, Def 10, Spa 10, Spd 10, Spe 9
+*/
+
+export const ShinyEmeraldStarter = ({ game }: Props) => {
+  const [usingDeadBattery] = useAtom(usingDeadBatteryAtom);
+  const [selectedTarget, setSelectedTarget] =
+    React.useState<ShinyStarterTidSidResult | null>(null);
+  const [tidSidResults, setTidSidResults] = useAtom(
+    shinyStarterTidSidResultsAtom,
+  );
   const [targetAdvance, setTargetAdvance] = React.useState(0);
   const [targetStarter, setTargetStarter] = React.useState<TargetStarter>({
     species: "Mudkip",
     minMaxStats: defaultMinMaxStats,
   });
 
-  // 9 adv for calibration to open the bag. 3 adv for offset between pressing A and generating the Pokémon
-  const [calibrationAndOffset, setCalibrationAndOffset] = React.useState(9 + 3);
+  const [humanInputDelay, setHumanInputDelay] = React.useState<number | null>(
+    0,
+  );
+  const crossOutSid = (sid: number) => {
+    setTidSidResults((results) =>
+      results.map((result) =>
+        result.sid === sid ? { ...result, crossedOut: true } : result,
+      ),
+    );
+  };
 
-  const advFromTimer = targetAdvance - calibrationAndOffset;
+  React.useEffect(() => {
+    if (selectedTarget == null) {
+      return;
+    }
+
+    let cancelled = false;
+    setTargetAdvance(0);
+
+    findTargetAdvanceForShinyPokemon(
+      game,
+      selectedTarget.tid,
+      selectedTarget.sid,
+      usingDeadBattery,
+    ).then((advance) => {
+      if (!cancelled && advance !== null) {
+        setTargetAdvance(advance);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [game, selectedTarget, usingDeadBattery]);
+
+  const advFromTimer = targetAdvance - (humanInputDelay ?? 0) - CALIB - OFFSET;
   const milliseconds = [5000, Math.round(advFromTimer * MS_PER_GBA_FRAME)];
 
   const fields: Field[] = [
+    { label: "TID", input: <>{selectedTarget?.tid ?? 0}</> },
+    { label: "SID", input: <>{selectedTarget?.sid ?? 0}</> },
     {
       label: "Target advance",
       input: <>{targetAdvance}</>,
     },
     {
-      label: "Calibration + Offset",
+      label: "Calibration",
+      tooltip: "Number of RNG advances not caused by frames. (Ex: NPC moving)",
+      input: `${CALIB}`,
+    },
+    {
+      label: "Offset",
+      tooltip:
+        "Number of RNG advances between the last player input and when the start of the Pokémon generation.",
+      input: `${OFFSET}`,
+    },
+    {
+      label: "Human input delay (advance)",
+      tooltip:
+        "Number of RNG advances caused by human reaction time between the timer ending and pressing the input.",
       input: (
-        <Input
+        <NumberInput
           name="offset"
-          onChange={(event) => {
-            const num = Number(event.target.value);
-            setCalibrationAndOffset(Number.isFinite(num) ? num : 0);
-          }}
-          value={calibrationAndOffset}
+          numType="decimal"
+          onChange={setHumanInputDelay}
+          value={humanInputDelay}
         />
       ),
     },
   ];
 
   const setLatestHitAdv = (val: number) => {
-    setCalibrationAndOffset(calibrationAndOffset + val - targetAdvance);
+    setHumanInputDelay((humanInputDelay ?? 0) + val - targetAdvance);
   };
 
   return (
     <Flex gap={32} vertical>
-      <FindTargetAdvance game={game} setTargetAdvance={setTargetAdvance} />
-      {targetAdvance !== 0 && (
+      {tidSidResults.length === 0 ? (
+        <Alert type="warning" title="Complete Step 1 before continuing." />
+      ) : (
+        <ResultTable<ShinyStarterTidSidResult>
+          columns={getColumns(setSelectedTarget)}
+          dataSource={tidSidResults}
+          rowKey="sid"
+        />
+      )}
+      {selectedTarget != null && targetAdvance !== 0 && (
         <>
           <FormFieldTable fields={fields} />
           <MultiTimer
             milliseconds={milliseconds}
+            labels={[
+              "Soft reset START+SELECT+A+B",
+              "Select YES to choose your Pokémon",
+            ]}
             startButtonTrackerId="start_gen3_shiny_starter_timer"
             stopButtonTrackerId="stop_gen3_shiny_starter_timer"
           />
@@ -77,6 +238,8 @@ export const ShinyHoennStarter = ({ game }: Props) => {
             targetAdvance={targetAdvance}
             targetStarter={targetStarter}
             setLatestHitAdv={setLatestHitAdv}
+            sid={selectedTarget?.sid ?? 0}
+            crossOutSid={crossOutSid}
           />
         </>
       )}

@@ -280,13 +280,13 @@ const tools = {
     () => import("~/rngToolsUi/gen6/xyPokeRadar"),
     (mod) => mod.XyPokeRadar,
   ),
-  ShinyHoennStarter: lazyLoad(
+  ShinyEmeraldStarter: lazyLoad(
     () => import("~/rngToolsUi/gen3/shinyStarter"),
-    (mod) => mod.ShinyHoennStarter,
+    (mod) => mod.ShinyEmeraldStarter,
   ),
-  GenerateHoennTidSid: lazyLoad(
+  GenerateEmeraldTidSid: lazyLoad(
     () => import("~/rngToolsUi/gen3/shinyStarter/generateTidSid"),
-    (mod) => mod.GenerateHoennTidSid,
+    (mod) => mod.GenerateEmeraldTidSid,
   ),
   MultibootJirachi: lazyLoad(
     () => import("~/rngToolsUi/gen3/multibootJirachi"),

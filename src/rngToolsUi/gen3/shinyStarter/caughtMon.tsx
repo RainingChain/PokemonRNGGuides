@@ -39,6 +39,8 @@ type Props = {
   targetAdvance: number;
   targetStarter: TargetStarter;
   setLatestHitAdv: (hitAdv: number) => void;
+  crossOutSid: (sid: number) => void;
+  sid: number;
 };
 
 export const CaughtMon = ({
@@ -46,6 +48,8 @@ export const CaughtMon = ({
   targetAdvance,
   targetStarter,
   setLatestHitAdv,
+  crossOutSid,
+  sid,
 }: Props) => {
   const [results, setResults] = React.useState<CaughtMonResult[]>([]);
 
@@ -56,9 +60,9 @@ export const CaughtMon = ({
   };
 
   const columns: ResultColumn<CaughtMonResult>[] = [
-    { title: "Target", dataIndex: "targetAdvance" },
+    { title: "Target advance", dataIndex: "targetAdvance" },
     {
-      title: "Advance",
+      title: "Hit advance",
       dataIndex: "advance",
       render: (val, values) => {
         const diffWithTarget = val - values.targetAdvance;
@@ -76,7 +80,25 @@ export const CaughtMon = ({
       dataIndex: "advance",
       render: (advance, values) => {
         if (values.advance === values.targetAdvance) {
-          return "Shiny if correct SID";
+          return (
+            <Flex vertical>
+              <div>If shiny: Your SID is {sid}.</div>
+              <div>If not shiny: Your SID is not {sid}.</div>
+              <div>
+                <Button
+                  type="text"
+                  color="PrimaryText"
+                  trackerId="shinyStarter_crossOutSid"
+                  onClick={() => {
+                    crossOutSid(sid);
+                    setResults([]);
+                  }}
+                >
+                  Cross out SID {sid}
+                </Button>
+              </div>
+            </Flex>
+          );
         }
 
         return (

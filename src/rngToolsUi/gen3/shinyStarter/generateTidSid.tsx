@@ -1,38 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
+import { useAtom } from "jotai";
 import { z } from "zod";
 import {
   FormikNumberInput,
-  ResultColumn,
   RngToolForm,
   Field,
   FormFieldTable,
   RngToolSubmit,
   MultiTimer,
   Flex,
+  NumberInput,
+  Switch,
 } from "~/components";
-import { Game } from "./index";
-import { rngTools, Gen3NearbySid, Gen3TidSidShinyResult } from "~/rngTools";
-import { useWatch_UNSAFE } from "~/hooks/form";
+import { rngTools, Gen3TidSidShinyResult } from "~/rngTools";
 import { GBA_FPS, MS_PER_GBA_FRAME } from "~/utils/consts";
+import {
+  ShinyStarterTidSidResult,
+  shinyStarterTidSidResultsAtom,
+  usingDeadBatteryAtom,
+} from "./state";
+import { Tooltip } from "antd";
 
 const Validator = z.object({
-  offset: z.number().int().min(-999).max(999),
   tid: z.number().int().min(0).max(65535),
 });
 
 export type FormState = z.infer<typeof Validator>;
 
+const OFFSET = 50;
+
 const initialValues: FormState = {
-  offset: 50, // offset on Emerald on mgba 0.11-8764
   tid: 0,
 };
 
 type Props = {
-  game: Game;
-};
-
-type Result = Gen3NearbySid & {
-  tid_gen_target_adv: number;
+  game: "emerald"; // The component and rust code only support emerald. RS is not supported.
 };
 
 const QUALITATIVE_RATINGS = [
@@ -45,43 +47,19 @@ const QUALITATIVE_RATINGS = [
   "Very bad",
 ] as const;
 
-const RECOMMEND_REDO_MSG = (chanceInPct: number) =>
-  `Redo Step 1 to generate a new easier TID (~${chanceInPct}% chance that each new TID is significately better)`;
+const RECOMMEND_REDO_MSG = (chanceInPct: number) => (
+  <Flex vertical>
+    <div>Generate a new TID.</div>
+    <div>
+      ~{chanceInPct}% chance that the new TID will be significately faster to
+      validate.
+    </div>
+  </Flex>
+);
 
-const RECOMMEND_KEEP_MSG = `Keep that TID and go to Step 2.`;
+const RECOMMEND_KEEP_MSG = `Keep that TID and go to the next step.`;
 
-const IDEAL_TIDSID_ADVANCE_WITH_OFFSET = (game: Game) =>
-  game === "emerald" ? 1410 : 1633;
 const ADDITIONAL_DUR_IN_MINUTES = 30; // Duration not caused by in-game waiting (ex: filling form etc.)
-
-const columns: ResultColumn<Result>[] = [
-  {
-    title: "TID/SID advance",
-    dataIndex: "tid_gen_adv",
-    render: (val, values) => {
-      const diffWithTarget = val - values.tid_gen_target_adv;
-      if (diffWithTarget === 0) {
-        return `${val}`;
-      }
-      if (diffWithTarget > 0) {
-        return `${val} (+${diffWithTarget})`;
-      }
-      return `${val} (${diffWithTarget})`;
-    },
-  },
-  {
-    title: "SID",
-    dataIndex: "sid",
-  },
-  {
-    title: "Earliest Method-1 advance for shiny starter",
-    dataIndex: "earliest_shiny_adv",
-    render: (val) => {
-      const durInMinutes = (val / GBA_FPS / 60).toFixed(1);
-      return `${val} (~${durInMinutes} min)`;
-    },
-  },
-];
 
 export const GenerateTidSidRating = ({
   result,
@@ -114,14 +92,20 @@ export const GenerateTidSidRating = ({
     return QUALITATIVE_RATINGS[6];
   })();
 
-  const estimatedTime = `~${durInMinutes + ADDITIONAL_DUR_IN_MINUTES} min (${qualitativeRating})`;
+  const estimatedTime = (
+    <Tooltip title={`Percentile ${pct}`}>
+      <span>{`~${durInMinutes + ADDITIONAL_DUR_IN_MINUTES} min (${qualitativeRating})`}</span>
+    </Tooltip>
+  );
   const recommendation = result.should_improve_tid
     ? RECOMMEND_REDO_MSG(pct)
     : RECOMMEND_KEEP_MSG;
 
   const fields = [
     {
-      label: "Estimated time to determine SID for obtained TID:",
+      label: `Estimated time to determine SID for TID ${result.tid}:`,
+      tooltip:
+        "This estimation is based on how many advances in average you'll need to wait to get a shiny starter.",
       input: estimatedTime,
     },
     {
@@ -133,16 +117,32 @@ export const GenerateTidSidRating = ({
 };
 
 type FieldsProps = {
-  idealAdvance: number;
+  hasDeadBattery: boolean;
+  setHasDeadBattery: (hasDeadBattery: boolean) => void;
+  advFromOffset: number | null;
+  setAdvFromOffset: React.Dispatch<React.SetStateAction<number | null>>;
 };
 
-const Fields = ({ idealAdvance }: FieldsProps) => {
-  const advFromOffset = useWatch_UNSAFE<FormState, "offset">({
-    name: "offset",
-  });
+const TimerFields = ({
+  hasDeadBattery,
+  setHasDeadBattery,
+  advFromOffset,
+  setAdvFromOffset,
+}: FieldsProps) => {
+  const [, setUsingDeadBattery] = useAtom(usingDeadBatteryAtom);
+  const [idealAdvance, setIdealAdvance] = useState(0);
+
+  React.useEffect(() => {
+    setUsingDeadBattery(hasDeadBattery);
+    rngTools
+      .get_emerald_ideal_tidsid_advance_with_offset(hasDeadBattery)
+      .then((adv) => {
+        setIdealAdvance(adv);
+      });
+  }, [hasDeadBattery, setUsingDeadBattery]);
 
   const milliseconds = (() => {
-    const advFromTimer = idealAdvance - advFromOffset;
+    const advFromTimer = idealAdvance - (advFromOffset ?? 0) - OFFSET;
     let milliseconds = Math.round(advFromTimer * MS_PER_GBA_FRAME);
     if (milliseconds < 0) {
       milliseconds = 0;
@@ -152,67 +152,114 @@ const Fields = ({ idealAdvance }: FieldsProps) => {
 
   const fields: Field[] = [
     {
-      label: "Offset",
-      input: <FormikNumberInput<FormState> name="offset" numType="decimal" />,
+      label: "Using dead battery?",
+      input: <Switch value={hasDeadBattery} onChange={setHasDeadBattery} />,
     },
     {
-      label: "TID/SID Timer",
-      direction: "column",
+      label: "Offset",
+      tooltip:
+        "Number of advances between pressing the last input and the TID/SID generation.",
+      input: `${OFFSET}`,
+    },
+    {
+      label: "Human input delay (advance)",
+      tooltip:
+        "Number of RNG advances caused by human reaction time between the timer ending and pressing the input.",
       input: (
-        <MultiTimer
-          milliseconds={milliseconds}
-          startButtonTrackerId="start_gen3_shiny_starter_tidsid_timer"
-          stopButtonTrackerId="stop_gen3_shiny_starter_tidsid_timer"
+        <NumberInput
+          numType="decimal"
+          value={advFromOffset}
+          onChange={(value) => {
+            if (value == null || (value >= -999 && value <= 999)) {
+              setAdvFromOffset(value);
+            }
+          }}
         />
       ),
     },
+  ];
+
+  return (
+    <Flex vertical gap={10}>
+      <FormFieldTable fields={fields} />
+      <MultiTimer
+        milliseconds={milliseconds}
+        labels={["Confirm your name.", "Close Professor Birch's message."]}
+        startButtonTrackerId="start_gen3_shiny_starter_tidsid_timer"
+        stopButtonTrackerId="stop_gen3_shiny_starter_tidsid_timer"
+      />
+    </Flex>
+  );
+};
+
+export const GenerateEmeraldTidSid = ({ game }: Props) => {
+  const [result, setResult] = React.useState<Gen3TidSidShinyResult | null>(
+    null,
+  );
+  const [, setTidSidResults] = useAtom(shinyStarterTidSidResultsAtom);
+  const [hasDeadBattery, setHasDeadBattery] = useState(true);
+  const [advFromOffset, setAdvFromOffset] = useState<number | null>(0);
+
+  const updateDeadBattery = (value: boolean) => {
+    setHasDeadBattery(value);
+    setResult(null);
+    setTidSidResults([]);
+  };
+
+  const onSubmit: RngToolSubmit<FormState> = async (opts) => {
+    const seed = game === "emerald" ? 0 : 0x5a0;
+    const idealAdvance =
+      await rngTools.get_emerald_ideal_tidsid_advance_with_offset(
+        hasDeadBattery,
+      );
+    const rng_res = await rngTools.gen3_calculate_tidsid_shiny_for_tid(
+      seed,
+      idealAdvance,
+      opts.tid,
+      hasDeadBattery,
+    );
+
+    setResult(rng_res);
+    setTidSidResults(
+      rng_res.nearby_sids.map((res) => ({
+        ...res,
+        tid: opts.tid,
+        tid_gen_target_adv: idealAdvance,
+        crossedOut: false,
+      })),
+    );
+  };
+
+  const fields = [
     {
       label: "Obtained TID",
       input: <FormikNumberInput<FormState> name="tid" numType="decimal" />,
     },
   ];
 
-  return <FormFieldTable fields={fields} />;
-};
-
-export const GenerateHoennTidSid = ({ game }: Props) => {
-  const idealAdvance = IDEAL_TIDSID_ADVANCE_WITH_OFFSET(game);
-
-  const [formResults, setFormResults] = React.useState<Result[]>([]);
-  const [result, setResult] = React.useState<Gen3TidSidShinyResult | null>(
-    null,
-  );
-
-  const onSubmit: RngToolSubmit<FormState> = async (opts) => {
-    const seed = game === "emerald" ? 0 : 0x5a0;
-    const rng_res = await rngTools.gen3_calculate_tidsid_shiny_for_tid(
-      seed,
-      idealAdvance,
-      opts.tid,
-    );
-    const res = rng_res.nearby_sids.map((res) => {
-      return { ...res, tid_gen_target_adv: idealAdvance };
-    });
-
-    setResult(rng_res);
-
-    setFormResults(res);
-  };
-
   return (
-    <Flex vertical>
-      <RngToolForm<FormState, Result>
-        formContainerId="generate-tid-sid-for-shiny-starter"
-        results={formResults}
-        columns={columns}
-        validationSchema={Validator}
-        initialValues={initialValues}
-        submitButtonLabel="Generate possible SIDs"
-        submitTrackerId="generate_tid_sid_for_shiny_starter"
-        onSubmit={onSubmit}
-      >
-        <Fields idealAdvance={idealAdvance} />
-      </RngToolForm>
+    <Flex vertical gap={40}>
+      <Flex vertical>
+        <h2>Setup</h2>
+        <TimerFields
+          hasDeadBattery={hasDeadBattery}
+          setHasDeadBattery={updateDeadBattery}
+          advFromOffset={advFromOffset}
+          setAdvFromOffset={setAdvFromOffset}
+        />
+      </Flex>
+      <Flex vertical>
+        <h2>Result</h2>
+        <RngToolForm<FormState, ShinyStarterTidSidResult>
+          formContainerId="generate-tid-sid-for-shiny-starter"
+          validationSchema={Validator}
+          initialValues={initialValues}
+          submitButtonLabel="Evaluate obtained TID"
+          submitTrackerId="generate_tid_sid_for_shiny_starter"
+          onSubmit={onSubmit}
+          fields={fields}
+        ></RngToolForm>
+      </Flex>
       {result != null && <GenerateTidSidRating result={result} />}
     </Flex>
   );
