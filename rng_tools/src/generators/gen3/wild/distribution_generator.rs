@@ -51,7 +51,12 @@ pub fn generate_gen3_wild_distribution(
     };
 
     let rng = Pokerng::with_jump(initial_seed, advances);
-    let generated = generate_gen3_wild(rng, &opts, game_data);
+    let Some(generated) = generate_gen3_wild(rng, &opts, game_data) else {
+        return Wild3MethodDistributionResults {
+            results: vec![],
+            cycle_at_moments: vec![],
+        };
+    };
     let gen_results = generated.results;
     let cycle_counter = generated.cycle_counter;
     let search_results = gen_results

@@ -247,7 +247,7 @@ fn handle_feebas_cycle_counter(
             // With 250k, the vblank must be 30k more than expected (which is unlikely).
             let dist_min_to_vblank = VBLANK_FREQ.saturating_sub(min_case_cycle);
             let vblank_range = max_vblank - min_vblank;
-            let unstability = (min_buffer as f32 / vblank_range as f32).clamp(0.0, 1.0);
+            let unstability = (dist_min_to_vblank as f32 / vblank_range as f32).clamp(0.0, 1.0);
             1.0f32 - unstability
         }
         _ => 0f32,

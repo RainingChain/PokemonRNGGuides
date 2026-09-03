@@ -88,11 +88,8 @@ fn search_wild3_naive_at_given_advance(
                     using_white_flute: opts.using_white_flute,
                 };
 
-                // TODO: Adapt generate_gen3_wild callers with new Option return type
-                generate_gen3_wild(rng, &gen_opts, &map_setups.map_data)
-                    .results
-                    .iter()
-                    .for_each(|gen_res| {
+                if let Some(generated) = generate_gen3_wild(rng, &gen_opts, &map_setups.map_data) {
+                    generated.results.iter().for_each(|gen_res| {
                         let encounter = map_setups
                             .map_data
                             .get_encounter(gen_opts.action, gen_res.encounter_idx)
@@ -105,6 +102,7 @@ fn search_wild3_naive_at_given_advance(
                             encounter,
                         ));
                     });
+                }
             }
         }
     }
