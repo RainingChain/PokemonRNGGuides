@@ -525,15 +525,14 @@ pub fn generate_gen3_wild_wasm(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
 ) -> Vec<Wild3GeneratorResult> {
-    generate_gen3_wild(Pokerng::with_jump(initial_seed, advances), opts, map_data)
-        .map_or_else(Vec::new, |generated| generated.results)
+    generate_gen3_wild(Pokerng::with_jump(initial_seed, advances), opts, map_data).results
 }
 
 pub fn generate_gen3_wild(
     mut rng: Pokerng,
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
-) -> Option<Gen3GeneratorResults> {
+) -> Gen3GeneratorResults {
     let mut results: Vec<Wild3GeneratorResult> = vec![];
 
     let mut cycle_counter = CycleCounter::default();
@@ -541,21 +540,21 @@ pub fn generate_gen3_wild(
     let encounter_idx = select_encounter_idx(&mut rng, opts, map_data, &mut cycle_counter);
     if encounter_idx.is_none() {
         // no encounter
-        return None;
+        return Gen3GeneratorResults { results, cycle_counter };
     }
 
     let encounter_idx = encounter_idx.unwrap();
     let encounter = map_data.get_encounter(opts.action, encounter_idx);
     if encounter.is_none() {
         // impossible to trigger in-game
-        return None;
+        return Gen3GeneratorResults { results, cycle_counter };
     }
 
     let encounter = encounter.unwrap();
     if let Some(species) = opts.gen3_filter.species
         && species != encounter.species_data.species
     {
-        return None;
+        return Gen3GeneratorResults { results, cycle_counter };
     }
 
     let lvl = select_lvl(&mut rng, opts.lead, encounter, &mut cycle_counter);
@@ -563,7 +562,7 @@ pub fn generate_gen3_wild(
     if let Some(wanted_lvl) = opts.gen3_filter.lvl
         && lvl != wanted_lvl
     {
-        return None;
+        return Gen3GeneratorResults { results, cycle_counter };
     }
 
     if matches!(encounter_idx, Wild3EncounterIndex::Roamer(_)) {
@@ -580,7 +579,7 @@ pub fn generate_gen3_wild(
             },
             used_safari_pokeblock: None,
         });
-        return None;
+        return Gen3GeneratorResults { results, cycle_counter };
     }
 
     let encounter_gender_ratio = encounter.species_data.gender_ratio();
@@ -758,10 +757,10 @@ pub fn generate_gen3_wild(
 
     if !passes_pid_filter_internal(&gen_data, pid) {
         retain_methods_possible_to_trigger(opts, &mut results);
-        return Some(Gen3GeneratorResults {
+        return Gen3GeneratorResults {
             results,
             cycle_counter,
-        });
+        };
     }
 
     // between CreateMonWithNature_pidhigh and CreateBoxMon_ivs1
@@ -816,10 +815,10 @@ pub fn generate_gen3_wild(
 
     retain_methods_possible_to_trigger(opts, &mut results);
 
-    Some(Gen3GeneratorResults {
+    Gen3GeneratorResults {
         results,
         cycle_counter,
-    })
+    }
 }
 
 fn generate_gen3_wild_method2(

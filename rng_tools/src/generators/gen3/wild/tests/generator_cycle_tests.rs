@@ -17,11 +17,12 @@ fn test_generate_wild3_cycle_method_3() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_gen3_wild(
         Pokerng::with_advances(0, 3012),
         &options,
         &Wild3MapGameData::default(),
-    );
+    )
+    .results;
     let expected_result = vec![
         Wild3GeneratorResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot5),
@@ -56,11 +57,12 @@ fn test_generate_wild3_cycle_method_3_no_rng_lead_pid() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_gen3_wild(
         Pokerng::with_advances(0, 3013),
         &options,
         &Wild3MapGameData::default(),
-    );
+    )
+    .results;
     assert_eq!(result, vec![]);
 }
 
@@ -73,11 +75,12 @@ fn test_generate_wild3_cycle_method_5() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_gen3_wild(
         Pokerng::with_advances(0, 4894),
         &options,
         &Wild3MapGameData::default(),
-    );
+    )
+    .results;
     let expected_result = vec![
         Wild3GeneratorResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot5),
@@ -125,11 +128,12 @@ fn test_generate_wild3_cycle_methods_1_2_4() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_gen3_wild(
         Pokerng::with_advances(0, 3001),
         &options,
         &Wild3MapGameData::default(),
-    );
+    )
+    .results;
     let expected_result = vec![
         Wild3GeneratorResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot3),

@@ -88,21 +88,20 @@ fn search_wild3_naive_at_given_advance(
                     using_white_flute: opts.using_white_flute,
                 };
 
-                if let Some(generated) = generate_gen3_wild(rng, &gen_opts, &map_setups.map_data) {
-                    generated.results.iter().for_each(|gen_res| {
-                        let encounter = map_setups
-                            .map_data
-                            .get_encounter(gen_opts.action, gen_res.encounter_idx)
-                            .unwrap();
-                        results.push(Wild3SearcherResultMon::new(
-                            gen_res,
-                            &gen_opts,
-                            rng.seed(),
-                            advance,
-                            encounter,
-                        ));
-                    });
-                }
+                let generated = generate_gen3_wild(rng, &gen_opts, &map_setups.map_data);
+                generated.results.iter().for_each(|gen_res| {
+                    let encounter = map_setups
+                        .map_data
+                        .get_encounter(gen_opts.action, gen_res.encounter_idx)
+                        .unwrap();
+                    results.push(Wild3SearcherResultMon::new(
+                        gen_res,
+                        &gen_opts,
+                        rng.seed(),
+                        advance,
+                        encounter,
+                    ));
+                });
             }
         }
     }
