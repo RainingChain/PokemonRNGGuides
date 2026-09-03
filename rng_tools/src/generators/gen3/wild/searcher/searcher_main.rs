@@ -4,7 +4,7 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use super::super::{
-    Wild3FeebasState, Wild3GeneratorOptions, Wild3GeneratorResult, Wild3MassOutbreakState,
+    Wild3FeebasState, Wild3GeneratorOptions, Wild3GeneratorMonResult, Wild3MassOutbreakState,
     Wild3RoamerState, generate_gen3_wild,
 };
 use crate::{
@@ -179,7 +179,7 @@ pub struct Wild3SearcherResultMon {
 
 impl Wild3SearcherResultMon {
     pub fn new(
-        gen_res: &Wild3GeneratorResult,
+        gen_res: &Wild3GeneratorMonResult,
         gen_opts: &Wild3GeneratorOptions,
         seed: u32,
         advance: usize,

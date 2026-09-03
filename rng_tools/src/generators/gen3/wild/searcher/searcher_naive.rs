@@ -89,7 +89,7 @@ fn search_wild3_naive_at_given_advance(
                 };
 
                 let generated = generate_gen3_wild(rng, &gen_opts, &map_setups.map_data);
-                generated.results.iter().for_each(|gen_res| {
+                generated.mon_results.iter().for_each(|gen_res| {
                     let encounter = map_setups
                         .map_data
                         .get_encounter(gen_opts.action, gen_res.encounter_idx)

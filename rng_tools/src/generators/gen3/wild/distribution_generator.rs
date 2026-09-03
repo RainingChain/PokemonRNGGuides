@@ -52,7 +52,7 @@ pub fn generate_gen3_wild_distribution(
 
     let rng = Pokerng::with_jump(initial_seed, advances);
     let generated = generate_gen3_wild(rng, &opts, game_data);
-    let gen_results = generated.results;
+    let gen_results = generated.mon_results;
     let cycle_counter = generated.cycle_counter;
     let search_results = gen_results
         .iter()

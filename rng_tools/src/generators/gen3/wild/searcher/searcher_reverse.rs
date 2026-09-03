@@ -357,7 +357,7 @@ fn create_result(
             };
 
             generate_gen3_wild(Pokerng::new(path.seed), &gen_opts, &map_setups.map_data)
-                .results
+                .mon_results
                 .iter()
                 .map(|gen_res| {
                     let encounter = map_setups
@@ -365,9 +365,7 @@ fn create_result(
                         .get_encounter(gen_opts.action, gen_res.encounter_idx)
                         .unwrap();
                     let advance = lcrng_distance(opts.initial_seed, path.seed) as usize;
-                    Wild3SearcherResultMon::new(
-                        gen_res, &gen_opts, path.seed, advance, encounter,
-                    )
+                    Wild3SearcherResultMon::new(gen_res, &gen_opts, path.seed, advance, encounter)
                 })
                 .collect_vec()
         })
