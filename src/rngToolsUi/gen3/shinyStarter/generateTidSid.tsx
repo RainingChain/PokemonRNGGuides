@@ -32,16 +32,16 @@ const Validator = z.object({
   tid: z.number().int().min(0).max(65535),
 });
 
+// The component and rust code only support emerald. RS is not supported.
+
 export type FormState = z.infer<typeof Validator>;
 
 const OFFSET = 50;
 
+const INITIAL_SEED = 0;
+
 const initialValues: FormState = {
   tid: 0,
-};
-
-type Props = {
-  game: "emerald"; // The component and rust code only support emerald. RS is not supported.
 };
 
 const QUALITATIVE_RATINGS = [
@@ -213,7 +213,7 @@ const TimerFields = ({
   );
 };
 
-export const GenerateEmeraldTidSid = ({ game }: Props) => {
+export const GenerateEmeraldTidSid = () => {
   const [result, setResult] = React.useState<Gen3TidSidShinyResult | null>(
     null,
   );
@@ -228,13 +228,12 @@ export const GenerateEmeraldTidSid = ({ game }: Props) => {
   };
 
   const onSubmit: RngToolSubmit<FormState> = async (opts) => {
-    const seed = game === "emerald" ? 0 : 0x5a0;
     const idealAdvance =
       await rngTools.get_emerald_ideal_tidsid_advance_with_offset(
         hasDeadBattery,
       );
     const rng_res = await rngTools.gen3_calculate_tidsid_shiny_for_tid(
-      seed,
+      INITIAL_SEED,
       idealAdvance,
       opts.tid,
       hasDeadBattery,
