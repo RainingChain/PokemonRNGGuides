@@ -248,7 +248,7 @@ pub fn get_min_mid_max_pre_sweet_scent_cycle(action: Wild3Action) -> (usize, usi
     }
 }
 
-pub fn get_min_max_vblank_cycle_duration() -> (usize, usize, usize) {
+pub fn get_min_mid_max_vblank_cycle_duration() -> (usize, usize, usize) {
     (45_000, 55_000, 65000)
 }
 

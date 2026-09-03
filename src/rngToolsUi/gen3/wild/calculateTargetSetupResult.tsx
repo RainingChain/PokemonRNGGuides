@@ -145,14 +145,14 @@ export const calculateTargetSetupResult = async (
     return { content: null, hasEncounter: false };
   }
 
-  const results = await rngTools.generate_gen3_wild_wasm(
+  const genRes = await rngTools.generate_gen3_wild_wasm(
     targetSetup.targetPaintingAdvs.before,
     targetSetup.targetPaintingAdvs.after,
     opts,
     map_data,
   );
 
-  if (results.length === 0) {
+  if (genRes == null || genRes.results.length === 0) {
     if (targetSetup.action === "RockSmash") {
       return {
         content: (
@@ -164,7 +164,7 @@ export const calculateTargetSetupResult = async (
     return { content: null, hasEncounter: false };
   }
 
-  const res = results[0];
+  const res = genRes.results[0];
   const encounter = await rngTools.get_encounter_for_wild3_map_game_data(
     map_data,
     targetSetup.action,

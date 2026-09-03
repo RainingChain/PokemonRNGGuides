@@ -88,8 +88,9 @@ fn search_wild3_naive_at_given_advance(
                     using_white_flute: opts.using_white_flute,
                 };
 
+                // TODO: Adapt generate_gen3_wild callers with new Option return type
                 generate_gen3_wild(rng, &gen_opts, &map_setups.map_data)
-                    .0
+                    .results
                     .iter()
                     .for_each(|gen_res| {
                         let encounter = map_setups

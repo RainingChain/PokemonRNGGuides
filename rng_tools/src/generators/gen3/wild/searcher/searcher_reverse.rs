@@ -357,7 +357,7 @@ fn create_result(
             };
 
             generate_gen3_wild(Pokerng::new(path.seed), &gen_opts, &map_setups.map_data)
-                .0
+                .results
                 .iter()
                 .map(|gen_res| {
                     let encounter = map_setups
