@@ -107,7 +107,7 @@ const WIDTH = tiles[0].length;
 const SECTION_HEIGHTS = [45, 91];
 const CYCLE_PER_CHECK = 413;
 
-type FeebasTile = {
+export type FeebasTile = {
   websiteImageY: number;
   websiteImageX: number;
   canContainFeebas: boolean;
@@ -118,35 +118,37 @@ type FeebasTile = {
   tileNoInSection: number;
 };
 
-export const getFeebasTiles = (): FeebasTile[][] => {
-  return tiles.map((row, websiteImageY) => {
-    return row.split("").map((val, websiteImageX) => {
-      const ingameX = websiteImageX;
-      const ingameY = 16 + websiteImageY;
-      const [section, yInSection] = match(ingameY)
-        .when(
-          (y) => y <= SECTION_HEIGHTS[0],
-          (y) => [0, y],
-        )
-        .when(
-          (y) => y <= SECTION_HEIGHTS[1],
-          (y) => [1, y - SECTION_HEIGHTS[0]],
-        )
-        .otherwise((y) => [2, y - SECTION_HEIGHTS[1]]);
+export const getFeebasTiles = (): FeebasTile[] => {
+  return tiles
+    .map((row, websiteImageY) => {
+      return row.split("").map((val, websiteImageX) => {
+        const ingameX = websiteImageX;
+        const ingameY = 16 + websiteImageY;
+        const [section, yInSection] = match(ingameY)
+          .when(
+            (y) => y <= SECTION_HEIGHTS[0],
+            (y) => [0, y],
+          )
+          .when(
+            (y) => y <= SECTION_HEIGHTS[1],
+            (y) => [1, y - SECTION_HEIGHTS[0]],
+          )
+          .otherwise((y) => [2, y - SECTION_HEIGHTS[1]]);
 
-      const tileNoInSection = yInSection * WIDTH + ingameX;
-      const cycleCounter = tileNoInSection * CYCLE_PER_CHECK;
+        const tileNoInSection = yInSection * WIDTH + ingameX;
+        const cycleCounter = tileNoInSection * CYCLE_PER_CHECK;
 
-      return {
-        websiteImageY,
-        websiteImageX,
-        canContainFeebas: val === "1",
-        cycleCounter: cycleCounter,
-        instability: 0,
-        section,
-        yInSection,
-        tileNoInSection,
-      };
-    });
-  });
+        return {
+          websiteImageY,
+          websiteImageX,
+          canContainFeebas: val === "1",
+          cycleCounter: cycleCounter,
+          instability: 0,
+          section,
+          yInSection,
+          tileNoInSection,
+        };
+      });
+    })
+    .flat();
 };

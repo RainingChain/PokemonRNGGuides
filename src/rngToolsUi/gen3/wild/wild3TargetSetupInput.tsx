@@ -39,6 +39,7 @@ import { calculateTargetSetupResult } from "./calculateTargetSetupResult";
 import { Pokeblock, pokeblockSchema } from "~/types/pokeblock";
 import { getPaintingReseedingFields } from "../pokemonRng/targetSetupInput";
 import { lcrng_distance } from "~/utils/lcrng";
+import { FeebasMap } from "./feebasMap";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -216,6 +217,11 @@ const getFields = ({
       ),
       show: feebas_states.length > 1,
     },
+    {
+      label: "Feebas map",
+      input: <FeebasMap setSelectedTiles={() => {}} />,
+    },
+
     {
       label: "Roamer state",
       input: (

@@ -27,6 +27,7 @@ import {
   getPaintingSetupFilterFields as getPaintingSetupFilterFields,
   getTidSidSetupFilterFields,
 } from "../pokemonRng/targetSetupSearcher";
+import { FeebasMap } from "./feebasMap";
 
 const supportedGen3Methods = [
   "Wild1",
@@ -44,8 +45,9 @@ const getSetupFields = (obj: {
   letSearcherFindPaintingSeed: boolean;
   showAdvancedPaintingSettings: boolean;
   usingAceForSid: boolean;
+  feebasStates: FormState["feebasStates"];
 }): Field[] => {
-  const { species, recommendedSetups } = obj;
+  const { species, recommendedSetups, feebasStates } = obj;
 
   const possVals = getPossibleValuesForSpecies(species);
   const showAdvancedSetups = !recommendedSetups;
@@ -161,6 +163,11 @@ const getSetupFields = (obj: {
       indent: 1,
     },
     {
+      label: "Feebas map",
+      input: <FeebasMap setSelectedTiles={() => {}} />,
+      show: showAdvancedSetups && feebasStates.includes("OnFeebasTile"),
+    },
+    {
       label: "Methods",
       tooltip: (
         <>
@@ -248,6 +255,9 @@ export const Wild3SetupFilter = () => {
   >({
     name: "showAdvancedPaintingSettings",
   });
+  const feebasStates = useWatch_UNSAFE<FormState, "feebasStates">({
+    name: "feebasStates",
+  });
 
   const fields: Field[] = getSetupFields({
     species,
@@ -257,6 +267,7 @@ export const Wild3SetupFilter = () => {
     letSearcherFindPaintingSeed,
     showAdvancedPaintingSettings,
     usingAceForSid,
+    feebasStates,
   });
 
   return (
