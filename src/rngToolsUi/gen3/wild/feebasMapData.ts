@@ -118,6 +118,17 @@ export type FeebasTile = {
   tileNoInSection: number;
 };
 
+const getInstability = (cycleCounter: number) => {
+  const isStable =
+    (cycleCounter >= 0 && cycleCounter <= 205_895) ||
+    (cycleCounter >= 235_896 && cycleCounter <= 421_791) ||
+    (cycleCounter >= 471_792 && cycleCounter <= 637_687) ||
+    (cycleCounter >= 707_688 && cycleCounter <= 800_000);
+
+  // TODO: Improve formula to return values between 0 and 1.
+  return isStable ? 0 : 1;
+};
+
 export const getFeebasTiles = (): FeebasTile[] => {
   return tiles
     .map((row, websiteImageY) => {
@@ -143,7 +154,7 @@ export const getFeebasTiles = (): FeebasTile[] => {
           websiteImageX,
           canContainFeebas: val === "1",
           cycleCounter: cycleCounter,
-          instability: 0,
+          instability: getInstability(cycleCounter),
           section,
           yInSection,
           tileNoInSection,

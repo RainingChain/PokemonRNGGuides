@@ -47,6 +47,7 @@ export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
     );
   };
 
+  // TODO: If tile.instability is 0, make the tile glow green. If instability is 1, make it red. If not selected, the opacity of the green or red is 0.2. If it's selected, it's opacity is 0.7.
   const features = selectableTiles.map((tile): MapFeature => {
     const x = tile.websiteImageX * TILE_WIDTH_PERCENT;
     const y = tile.websiteImageY * TILE_HEIGHT_PERCENT;

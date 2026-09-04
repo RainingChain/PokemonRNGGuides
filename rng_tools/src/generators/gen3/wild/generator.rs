@@ -202,6 +202,7 @@ fn apply_cycles_causing_vblanks_on_cycle_counter(
     (new_cycle, vblank_count)
 }
 
+// TODO: Assuming cycle_counter is at 0 when handle_feebas_cycle_counter is called, what are the ranges of feebas_cycle_count that results in a cycle_instability of 0.0. feebas_cycle_count is always between 0 and 800000
 fn handle_feebas_cycle_counter(
     rng: &mut Pokerng,
     cycle_counter: &mut CycleCounter,
