@@ -26,6 +26,7 @@ export const findTargetAdvanceForShinyPokemon = async (
   game: Game,
   tid: number,
   sid: number,
+  usingDeadBattery: boolean,
 ): Promise<number | null> => {
   if (tid < 0 || tid > 0xffff) {
     return null;
@@ -35,7 +36,12 @@ export const findTargetAdvanceForShinyPokemon = async (
   }
 
   const seed = game === "emerald" ? 0 : 0x5a0;
-  return rngTools.gen3_earliest_shiny_starter_adv(seed, tid, sid);
+  return rngTools.gen3_earliest_shiny_starter_adv(
+    seed,
+    tid,
+    sid,
+    usingDeadBattery,
+  );
 };
 
 export const getTargetPokemonDesc = async (
