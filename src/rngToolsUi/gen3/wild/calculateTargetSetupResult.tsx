@@ -152,7 +152,7 @@ export const calculateTargetSetupResult = async (
     map_data,
   );
 
-  if (genRes == null || genRes.results.length === 0) {
+  if (genRes.mon_results.length === 0) {
     if (targetSetup.action === "RockSmash") {
       return {
         content: (
@@ -164,7 +164,7 @@ export const calculateTargetSetupResult = async (
     return { content: null, hasEncounter: false };
   }
 
-  const res = genRes.results[0];
+  const res = genRes.mon_results[0];
   const encounter = await rngTools.get_encounter_for_wild3_map_game_data(
     map_data,
     targetSetup.action,

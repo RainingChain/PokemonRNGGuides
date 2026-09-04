@@ -239,18 +239,17 @@ fn handle_feebas_cycle_counter(
     }
 
     let vblank_diff = max_case_vblank - min_case_vblank;
-    cycle_counter.feebas_stability = match vblank_diff {
-        0 => 1.0,
+    cycle_counter.cycle_instability = match vblank_diff {
+        0 => 0.0,
         1 => {
             // Ex: It's better that the min is 270k, then at 250k.
             // With 270k, if the vblank is 10k more than expected (which is possible), we end up with the same rng states as mid and max.
             // With 250k, the vblank must be 30k more than expected (which is unlikely).
             let dist_min_to_vblank = VBLANK_FREQ.saturating_sub(min_case_cycle);
             let vblank_range = max_vblank - min_vblank;
-            let unstability = (dist_min_to_vblank as f32 / vblank_range as f32).clamp(0.0, 1.0);
-            1.0f32 - unstability
+            (dist_min_to_vblank as f32 / vblank_range as f32).clamp(0.0, 1.0)
         }
-        _ => 0f32,
+        _ => 1.0,
     }
 }
 
@@ -513,9 +512,20 @@ pub fn calculate_nature_from_safari_pokeblock(
     }
 }
 
+#[derive(Clone, Debug, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct Wild3GeneratorResults {
     pub mon_results: Vec<Wild3GeneratorMonResult>,
     pub cycle_counter: CycleCounter,
+}
+
+impl Wild3GeneratorResults {
+    pub fn empty() -> Wild3GeneratorResults {
+        Wild3GeneratorResults {
+            mon_results: vec![],
+            cycle_counter: CycleCounter::default(),
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -524,8 +534,8 @@ pub fn generate_gen3_wild_wasm(
     advances: usize,
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
-) -> Vec<Wild3GeneratorMonResult> {
-    generate_gen3_wild(Pokerng::with_jump(initial_seed, advances), opts, map_data).mon_results
+) -> Wild3GeneratorResults {
+    generate_gen3_wild(Pokerng::with_jump(initial_seed, advances), opts, map_data)
 }
 
 pub fn generate_gen3_wild(
@@ -533,37 +543,26 @@ pub fn generate_gen3_wild(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
 ) -> Wild3GeneratorResults {
-    let mut results: Vec<Wild3GeneratorMonResult> = vec![];
-
     let mut cycle_counter = CycleCounter::default();
 
     let encounter_idx = select_encounter_idx(&mut rng, opts, map_data, &mut cycle_counter);
     if encounter_idx.is_none() {
         // no encounter
-        return Wild3GeneratorResults {
-            mon_results: results,
-            cycle_counter,
-        };
+        return Wild3GeneratorResults::empty();
     }
 
     let encounter_idx = encounter_idx.unwrap();
     let encounter = map_data.get_encounter(opts.action, encounter_idx);
     if encounter.is_none() {
         // impossible to trigger in-game
-        return Wild3GeneratorResults {
-            mon_results: results,
-            cycle_counter,
-        };
+        return Wild3GeneratorResults::empty();
     }
 
     let encounter = encounter.unwrap();
     if let Some(species) = opts.gen3_filter.species
         && species != encounter.species_data.species
     {
-        return Wild3GeneratorResults {
-            mon_results: results,
-            cycle_counter,
-        };
+        return Wild3GeneratorResults::empty();
     }
 
     let lvl = select_lvl(&mut rng, opts.lead, encounter, &mut cycle_counter);
@@ -571,12 +570,10 @@ pub fn generate_gen3_wild(
     if let Some(wanted_lvl) = opts.gen3_filter.lvl
         && lvl != wanted_lvl
     {
-        return Wild3GeneratorResults {
-            mon_results: results,
-            cycle_counter,
-        };
+        return Wild3GeneratorResults::empty();
     }
 
+    let mut results: Vec<Wild3GeneratorMonResult> = vec![];
     if matches!(encounter_idx, Wild3EncounterIndex::Roamer(_)) {
         results.push(Wild3GeneratorMonResult {
             encounter_idx,

@@ -60,8 +60,14 @@ pub fn generate_gen3_wild_distribution(
             let encounter = game_data
                 .get_encounter(opts.action, gen_res.encounter_idx)
                 .unwrap();
-            let searcher_res =
-                Wild3SearcherResultMon::new(gen_res, &opts, rng.seed(), advances, encounter);
+            let searcher_res = Wild3SearcherResultMon::new(
+                gen_res,
+                &opts,
+                rng.seed(),
+                advances,
+                encounter,
+                cycle_counter.cycle_instability,
+            );
             let cycle_data = calculate_cycle_data(
                 &searcher_res
                     .cycle_data_by_lead

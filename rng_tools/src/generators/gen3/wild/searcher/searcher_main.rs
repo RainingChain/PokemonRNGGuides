@@ -4,7 +4,7 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use super::super::{
-    Wild3FeebasState, Wild3GeneratorOptions, Wild3GeneratorMonResult, Wild3MassOutbreakState,
+    Wild3FeebasState, Wild3GeneratorMonResult, Wild3GeneratorOptions, Wild3MassOutbreakState,
     Wild3RoamerState, generate_gen3_wild,
 };
 use crate::{
@@ -152,6 +152,7 @@ pub struct Wild3SearcherResultMon {
     pub encounter_idx: Wild3EncounterIndex,
     pub lvl: u8,
     pub cycle_data_by_lead: Option<Wild3SearcherCycleDataByLead>,
+    pub cycle_instability: f32,
     pub used_safari_pokeblock: Option<[u8; 5]>,
 
     pub species: Species,
@@ -184,6 +185,7 @@ impl Wild3SearcherResultMon {
         seed: u32,
         advance: usize,
         encounter: &Wild3EncounterGameData,
+        cycle_instability: f32,
     ) -> Wild3SearcherResultMon {
         let cycle_data_by_lead = gen_res.cycle_range.map(|cycle_range| {
             let is_egg = matches!(gen_opts.lead, Gen3Lead::Egg);
@@ -220,6 +222,7 @@ impl Wild3SearcherResultMon {
             roamer_state: gen_opts.roamer_state,
             feebas_state: gen_opts.feebas_state,
             mass_outbreak_state: gen_opts.mass_outbreak_state,
+            cycle_instability,
         }
     }
 }

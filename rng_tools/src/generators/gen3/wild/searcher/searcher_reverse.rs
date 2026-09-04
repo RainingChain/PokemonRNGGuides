@@ -356,7 +356,10 @@ fn create_result(
                 using_white_flute: opts.using_white_flute,
             };
 
-            generate_gen3_wild(Pokerng::new(path.seed), &gen_opts, &map_setups.map_data)
+            let gen_results =
+                generate_gen3_wild(Pokerng::new(path.seed), &gen_opts, &map_setups.map_data);
+
+            gen_results
                 .mon_results
                 .iter()
                 .map(|gen_res| {
@@ -365,7 +368,14 @@ fn create_result(
                         .get_encounter(gen_opts.action, gen_res.encounter_idx)
                         .unwrap();
                     let advance = lcrng_distance(opts.initial_seed, path.seed) as usize;
-                    Wild3SearcherResultMon::new(gen_res, &gen_opts, path.seed, advance, encounter)
+                    Wild3SearcherResultMon::new(
+                        gen_res,
+                        &gen_opts,
+                        path.seed,
+                        advance,
+                        encounter,
+                        gen_results.cycle_counter.cycle_instability,
+                    )
                 })
                 .collect_vec()
         })

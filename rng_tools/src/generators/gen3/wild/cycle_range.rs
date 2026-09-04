@@ -135,13 +135,13 @@ impl CycleAtMoment {
     }
 }
 
-#[derive(Debug, Clone, Tsify, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct CycleCounter {
     pub cycle: CycleAndModCount,
     #[serde(with = "crate::serde_utils::arrayvec")]
     pub cycle_at_moments: ArrayVec<CycleAndModAtMoment, MOMENT_COUNT>,
-    pub feebas_stability: f32,
+    pub cycle_instability: f32,
 }
 
 impl CycleCounter {
@@ -161,15 +161,5 @@ impl CycleCounter {
             lead_pid_mod: self.cycle.lead_pid_mod,
             moment,
         });
-    }
-}
-
-impl Default for CycleCounter {
-    fn default() -> Self {
-        Self {
-            cycle: Default::default(),
-            cycle_at_moments: Default::default(),
-            feebas_stability: 1.0,
-        }
     }
 }
