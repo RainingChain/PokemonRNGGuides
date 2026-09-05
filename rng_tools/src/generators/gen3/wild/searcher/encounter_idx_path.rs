@@ -4,7 +4,7 @@ use crate::{
     EncounterSlot, Gender, GenderRatio, Species,
     gen3::{
         Gen3Lead, SpeciesData, Wild3Action, Wild3EncounterGameData, Wild3EncounterIndex,
-        Wild3FeebasState, Wild3MassOutbreakState,
+        Wild3FeebasState, Wild3MassOutbreakState, get_feebas_possible_vblank_count,
         wild::{
             lcrng_distance,
             searcher::{
@@ -15,8 +15,6 @@ use crate::{
     },
     rng::lcrng::Pokerng,
 };
-
-const MAX_FEEBAS_VBLANK: usize = 3;
 
 #[derive(Default, Debug, PartialEq, Clone, Copy)]
 /** seed when sweet scent is triggered (state right before Roamer test) */
@@ -222,6 +220,7 @@ impl<'a> EncounterIdxPathGenerator<'a> {
         map_setups: &'a [Wild3MapSetups],
         species_data: Option<SpeciesData>,
         using_white_flute: bool,
+        feebas_cycles: &[usize],
     ) -> Self {
         let actions: Vec<Wild3Action> = map_setups
             .iter()
@@ -248,7 +247,13 @@ impl<'a> EncounterIdxPathGenerator<'a> {
         }
 
         if permit_feebas_arc(&species_data) {
-            for vblank_count in 0usize..=MAX_FEEBAS_VBLANK {
+            // TODO:
+            let possible_vblanks = feebas_cycles
+                .iter()
+                .flat_map(|cycle| get_feebas_possible_vblank_count(*cycle))
+                .collect();
+
+            for vblank_count in possible_vblanks {
                 arcs.push(EncounterIdxToLvlArc::FeebasSuccess { vblank_count });
             }
         }

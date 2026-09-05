@@ -1,5 +1,23 @@
 feebas plan:
 
+
+searcher only contains possible vblanks.
+ui asks rust for stable range.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 adapt reverse searcher.
 
 adapt method

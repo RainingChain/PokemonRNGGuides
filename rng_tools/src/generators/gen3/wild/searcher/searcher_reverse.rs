@@ -128,6 +128,7 @@ fn extend_pid_paths_to_results(
         &opts.map_setups,
         encounter_species_data,
         opts.using_white_flute,
+        &opts.feebas_cycles,
     );
 
     iter.filter_map(|pid_path| {
@@ -379,6 +380,60 @@ fn create_result(
                 })
                 .collect_vec()
         })
+        .collect()
+}
+
+#[derive(PartialEq, Debug)]
+pub struct MinMax {
+    min: usize,
+    max: usize,
+    has_val: bool,
+}
+
+impl MinMax {
+    pub fn contains(&self, val: &usize) -> bool {
+        *val >= self.min && *val <= self.max
+    }
+    pub fn update_bounds(&mut self, new_val: usize) {
+        if !self.has_val {
+            self.min = new_val;
+            self.max = new_val;
+            self.has_val = true;
+        } else {
+            self.min = new_val.min(self.min);
+            self.max = new_val.max(self.max);
+        }
+    }
+
+    pub const fn new(min: usize, max: usize) -> Self {
+        Self {
+            min,
+            max,
+            has_val: true,
+        }
+    }
+    pub fn empty() -> Self {
+        Self {
+            min: 0,
+            max: 0,
+            has_val: false,
+        }
+    }
+}
+
+// Generated with test: cargo test test_generate_wild3_feebas_vblank_group
+pub const FEEBAS_CYCLE_COUNT_BY_VBLANK: [MinMax; 4] = [
+    MinMax::new(0, 235895),
+    MinMax::new(205896, 471791),
+    MinMax::new(421792, 707687),
+    MinMax::new(637688, 800000),
+];
+
+pub fn get_feebas_possible_vblank_count(feebas_cycle: usize) -> Vec<usize> {
+    FEEBAS_CYCLE_COUNT_BY_VBLANK
+        .iter()
+        .enumerate()
+        .filter_map(|(count, range)| range.contains(&feebas_cycle).then_some(count))
         .collect()
 }
 

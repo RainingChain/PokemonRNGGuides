@@ -1,8 +1,11 @@
 use crate::{
     EncounterSlot, Ivs, Nature, PkmFilter,
     gen3::{
-        CycleRange, Gen3Lead, Gen3Method, INFINITE_CYCLE, Wild3EncounterIndex,
-        Wild3GeneratorMonResult, Wild3GeneratorOptions, Wild3MapGameData, generate_gen3_wild,
+        CycleRange, Gen3Lead, Gen3Method, INFINITE_CYCLE, MinMax, VBLANK_BY_FEEBAS_CYCLE_COUNT,
+        VBLANK_FREQ, Wild3Action, Wild3EncounterIndex, Wild3GeneratorMonResult,
+        Wild3GeneratorOptions, Wild3MapGameData, generate_gen3_wild,
+        get_min_mid_max_pre_sweet_scent_cycle, get_min_mid_max_vblank_cycle_duration,
+        wild::generator::apply_cycles_causing_vblanks_on_cycle_counter,
     },
     rng::lcrng::Pokerng,
 };
@@ -161,4 +164,36 @@ fn test_generate_wild3_cycle_methods_1_2_4() {
         },
     ];
     assert_eq!(result, expected_result);
+}
+
+#[test]
+fn test_generate_wild3_feebas_vblank_group() {
+    let mut groups: [MinMax; 4] = [
+        MinMax::empty(),
+        MinMax::empty(),
+        MinMax::empty(),
+        MinMax::empty(),
+    ];
+
+    for feebas_cycle_count in 0..=800_000 {
+        let (min_presweet, _, max_presweet) =
+            get_min_mid_max_pre_sweet_scent_cycle(Wild3Action::OldRod);
+        let (min_vblank_dur, _, max_vblank_dur) = get_min_mid_max_vblank_cycle_duration();
+
+        let (_, min_vblank_count) = apply_cycles_causing_vblanks_on_cycle_counter(
+            min_presweet,
+            feebas_cycle_count,
+            min_vblank_dur,
+        );
+        let (_, max_vblank_count) = apply_cycles_causing_vblanks_on_cycle_counter(
+            max_presweet,
+            feebas_cycle_count,
+            max_vblank_dur,
+        );
+
+        groups[min_vblank_count].update_bounds(feebas_cycle_count);
+        groups[max_vblank_count].update_bounds(feebas_cycle_count);
+    }
+
+    assert_eq!(groups, VBLANK_BY_FEEBAS_CYCLE_COUNT);
 }
