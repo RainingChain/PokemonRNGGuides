@@ -16,6 +16,8 @@ use crate::{
     rng::lcrng::Pokerng,
 };
 
+const MAX_FEEBAS_VBLANK: usize = 3;
+
 #[derive(Default, Debug, PartialEq, Clone, Copy)]
 /** seed when sweet scent is triggered (state right before Roamer test) */
 pub struct EncounterIdxPath {
@@ -147,7 +149,9 @@ pub enum EncounterIdxToLvlArc {
     SlotMagnetPullSuccess,
     SlotStaticSuccess,
     MassOutbreakSuccess(Wild3MassOutbreakState),
-    FeebasSuccess,
+    FeebasSuccess {
+        vblank_count: usize,
+    },
     // Failure for MagnetPull, Static, MassOutbreak, Feebas are not considered because they add no
     // additional possibilities because it only shifts the very first random call.
     // Triggering SweetScent an advance later gives the same result.
@@ -244,7 +248,9 @@ impl<'a> EncounterIdxPathGenerator<'a> {
         }
 
         if permit_feebas_arc(&species_data) {
-            arcs.push(EncounterIdxToLvlArc::FeebasSuccess);
+            for vblank_count in 0usize..=MAX_FEEBAS_VBLANK {
+                arcs.push(EncounterIdxToLvlArc::FeebasSuccess { vblank_count });
+            }
         }
 
         let map_setups: Vec<Wild3MapSetupsForReverse<'a>> = map_setups
@@ -267,8 +273,6 @@ impl<'a> EncounterIdxPathGenerator<'a> {
     }
 
     pub fn extend_path_for_all_arcs(&self, lvl_path: &LvlPath) -> Vec<EncounterIdxPath> {
-        // TODO for caughtMon searcher: filter by wanted_lvl
-
         self.arcs
             .iter()
             .flat_map(|arc| match *arc {
@@ -293,8 +297,8 @@ impl<'a> EncounterIdxPathGenerator<'a> {
                     self.species_data.as_ref().unwrap(),
                     &self.actions,
                 ),
-                EncounterIdxToLvlArc::FeebasSuccess => {
-                    extend_path_for_feebas(lvl_path, &self.map_setups)
+                EncounterIdxToLvlArc::FeebasSuccess { vblank_count } => {
+                    extend_path_for_feebas(lvl_path, &self.map_setups, vblank_count)
                 }
             })
             .collect()
@@ -649,6 +653,7 @@ fn extend_path_for_static(
 fn extend_path_for_feebas(
     lvl_path: &LvlPath,
     maps_setups_for_rev: &[Wild3MapSetupsForReverse],
+    vblank_count: usize,
 ) -> Vec<EncounterIdxPath> {
     maps_setups_for_rev
         .iter()
@@ -671,6 +676,7 @@ fn extend_path_for_feebas(
                 .find(|action| action.is_fishing())?;
 
             let mut rng = Pokerng::new(lvl_path.seed);
+            rng.reverse_jump(vblank_count);
             let got_feebas = rng.prev_rand() % 100 <= 49;
             if !got_feebas {
                 return None;
@@ -680,7 +686,7 @@ fn extend_path_for_feebas(
                 rng.seed(),
                 map_setups_for_rev.map_setups_idx,
                 *action,
-                EncounterIdxToLvlArc::FeebasSuccess,
+                EncounterIdxToLvlArc::FeebasSuccess { vblank_count },
                 lvl_path,
             ))
         })

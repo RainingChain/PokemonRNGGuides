@@ -116,6 +116,7 @@ pub struct Wild3SearcherOptions {
     pub painting_opts: Option<Wild3PaintingOpts>,
     pub using_white_flute: bool,
     pub considered_safari_pokeblocks: Wild3SafariPokeblockSearchOpt,
+    pub feebas_cycles: Vec<usize>,
 }
 
 impl Default for Wild3SearcherOptions {
@@ -139,6 +140,7 @@ impl Default for Wild3SearcherOptions {
             lead_cycle_speed: None,
             using_white_flute: true,
             considered_safari_pokeblocks: Wild3SafariPokeblockSearchOpt::default(),
+            feebas_cycles: vec![],
         }
     }
 }

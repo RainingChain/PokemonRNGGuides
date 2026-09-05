@@ -163,9 +163,11 @@ const getSetupFields = (obj: {
       indent: 1,
     },
     {
-      label: "Feebas map",
+      label: "Feebas fishing spots",
+      tooltip:
+        "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause erratic vblanks.",
       input: <FeebasMap setSelectedTiles={() => {}} />,
-      show: showAdvancedSetups && feebasStates.includes("OnFeebasTile"),
+      show: species === "Feebas",
     },
     {
       label: "Methods",

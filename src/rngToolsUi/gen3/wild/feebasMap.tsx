@@ -15,14 +15,13 @@ export type FeebasMapProps = {
 const getTileKey = (tile: FeebasTile) =>
   `${tile.websiteImageX},${tile.websiteImageY}`;
 
-const TileGlow = styled(MapGlow)<{ $selected: boolean }>(({ $selected }) =>
-  $selected
-    ? {
-        backgroundColor: "red",
-        opacity: 0.6,
-      }
-    : {},
-);
+const TileGlow = styled(MapGlow)<{
+  $instability: FeebasTile["instability"];
+  $selected: boolean;
+}>(({ $instability, $selected }) => ({
+  backgroundColor: $instability === 0 ? "lightgreen" : "red",
+  opacity: $selected ? 1 : $instability === 0 ? 0 : 0.2,
+}));
 
 export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
   const [selectedTileKeys, setSelectedTileKeys] = useState<Set<string>>(
@@ -47,7 +46,6 @@ export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
     );
   };
 
-  // TODO: If tile.instability is 0, make the tile glow green. If instability is 1, make it red. If not selected, the opacity of the green or red is 0.2. If it's selected, it's opacity is 0.7.
   const features = selectableTiles.map((tile): MapFeature => {
     const x = tile.websiteImageX * TILE_WIDTH_PERCENT;
     const y = tile.websiteImageY * TILE_HEIGHT_PERCENT;
@@ -63,6 +61,7 @@ export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
       ],
       node: (
         <TileGlow
+          $instability={tile.instability}
           $selected={isSelected}
           onClick={() => toggleTile(tile)}
           role="button"

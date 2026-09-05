@@ -66,7 +66,18 @@ fn search_wild3_naive_at_given_advance(
                 vec![None]
             };
 
-            for safari_pokeblock in pokeblock_states {
+            let feebas_cycles = if *feebas_state == Wild3FeebasState::OnFeebasTile
+                && action.is_fishing()
+                && !opts.feebas_cycles.is_empty()
+            {
+                opts.feebas_cycles.clone()
+            } else {
+                vec![0]
+            };
+
+            let pokeblock_feebas_products = iproduct!(&pokeblock_states, &feebas_cycles,);
+
+            for (safari_pokeblock, feebas_cycle) in pokeblock_feebas_products {
                 let gen_opts = Wild3GeneratorOptions {
                     tid: opts.tid,
                     sid: opts.sid,
@@ -82,8 +93,8 @@ fn search_wild3_naive_at_given_advance(
                     roamer_state: *roamer_state,
                     mass_outbreak_state: *mass_outbreak_state,
                     feebas_state: *feebas_state,
-                    feebas_cycle_count: 0,
-                    safari_pokeblock,
+                    feebas_cycle_count: *feebas_cycle,
+                    safari_pokeblock: safari_pokeblock.clone(),
                     lead_cycle_speed: opts.lead_cycle_speed,
                     using_white_flute: opts.using_white_flute,
                 };
