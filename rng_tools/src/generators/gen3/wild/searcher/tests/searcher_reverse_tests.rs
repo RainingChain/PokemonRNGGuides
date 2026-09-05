@@ -3,7 +3,8 @@ use crate::{
     EncounterSlot, PokemonType,
     gen3::{
         FASTEST_DIVIDENDS_MOD_24_RANGE, Gen3PidSpeedFilter, Wild3SpecialEncounterGameData,
-        search_wild3_naive,
+        apply_cycles_causing_vblanks_on_cycle_counter, get_min_mid_max_pre_sweet_scent_cycle,
+        get_min_mid_max_vblank_cycle_duration, search_wild3_naive,
     },
 };
 
@@ -378,6 +379,7 @@ fn test_search_reverse_wild3_feebas() {
             species: Some(Species::Feebas),
             ..Default::default()
         },
+        feebas_cycles: vec![0],
         ..Default::default()
     };
 
@@ -691,4 +693,36 @@ fn test_search_reverse_wild2_synchronize_multiple_natures() {
         }),
         "all results should use the synchronize lead matching their nature"
     );
+}
+
+#[test]
+fn test_search_reverse_wild3_vblank_group_feebas() {
+    let mut groups: [MinMax; 4] = [
+        MinMax::empty(),
+        MinMax::empty(),
+        MinMax::empty(),
+        MinMax::empty(),
+    ];
+
+    for feebas_cycle_count in 0..=800_000 {
+        let (min_presweet, _, max_presweet) =
+            get_min_mid_max_pre_sweet_scent_cycle(Wild3Action::OldRod);
+        let (min_vblank_dur, _, max_vblank_dur) = get_min_mid_max_vblank_cycle_duration();
+
+        let (_, min_vblank_count) = apply_cycles_causing_vblanks_on_cycle_counter(
+            min_presweet,
+            feebas_cycle_count,
+            min_vblank_dur,
+        );
+        let (_, max_vblank_count) = apply_cycles_causing_vblanks_on_cycle_counter(
+            max_presweet,
+            feebas_cycle_count,
+            max_vblank_dur,
+        );
+
+        groups[min_vblank_count].update_bounds(feebas_cycle_count);
+        groups[max_vblank_count].update_bounds(feebas_cycle_count);
+    }
+
+    assert_eq!(groups, FEEBAS_CYCLE_COUNT_BY_VBLANK);
 }

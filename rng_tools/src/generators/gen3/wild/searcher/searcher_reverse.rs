@@ -421,7 +421,7 @@ impl MinMax {
     }
 }
 
-// Generated with test: cargo test test_generate_wild3_feebas_vblank_group
+// Generated with test: cargo test test_search_reverse_wild3_vblank_group_feebas
 pub const FEEBAS_CYCLE_COUNT_BY_VBLANK: [MinMax; 4] = [
     MinMax::new(0, 235895),
     MinMax::new(205896, 471791),

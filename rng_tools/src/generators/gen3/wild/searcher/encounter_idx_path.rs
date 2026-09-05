@@ -4,7 +4,8 @@ use crate::{
     EncounterSlot, Gender, GenderRatio, Species,
     gen3::{
         Gen3Lead, SpeciesData, Wild3Action, Wild3EncounterGameData, Wild3EncounterIndex,
-        Wild3FeebasState, Wild3MassOutbreakState, get_feebas_possible_vblank_count,
+        Wild3FeebasState, Wild3MassOutbreakState,
+        searcher_reverse::get_feebas_possible_vblank_count,
         wild::{
             lcrng_distance,
             searcher::{
@@ -247,11 +248,12 @@ impl<'a> EncounterIdxPathGenerator<'a> {
         }
 
         if permit_feebas_arc(&species_data) {
-            // TODO:
-            let possible_vblanks = feebas_cycles
+            let mut possible_vblanks: Vec<usize> = feebas_cycles
                 .iter()
                 .flat_map(|cycle| get_feebas_possible_vblank_count(*cycle))
                 .collect();
+            possible_vblanks.sort_unstable();
+            possible_vblanks.dedup();
 
             for vblank_count in possible_vblanks {
                 arcs.push(EncounterIdxToLvlArc::FeebasSuccess { vblank_count });

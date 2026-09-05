@@ -184,7 +184,7 @@ fn select_encounter_idx_ability_attract_type(
     }
 }
 
-fn apply_cycles_causing_vblanks_on_cycle_counter(
+pub fn apply_cycles_causing_vblanks_on_cycle_counter(
     cycle: usize,
     cycle_to_add: usize,
     vblank_dur: usize,
