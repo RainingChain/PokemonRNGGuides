@@ -3,8 +3,8 @@ import {
   rngTools,
   Species,
   Wild3Action,
+  Wild3GeneratorMonResult,
   Wild3GeneratorOptions,
-  Wild3GeneratorResult,
 } from "~/rngTools";
 import { AVERAGE_LEAD_CYCLE_SPEED } from "./wild3LeadCycleSpeedInput";
 import { TargetSetup } from "./wild3TargetSetupInput";
@@ -23,7 +23,7 @@ import { formatHex } from "~/utils/formatHex";
 import { Flex } from "~/components";
 
 const getProbabilityInfo = async (
-  res: Wild3GeneratorResult,
+  res: Wild3GeneratorMonResult,
   action: Wild3Action,
   lead_cycle_speed: number | null,
 ) => {
@@ -128,7 +128,7 @@ export const calculateTargetSetupResult = async (
     roamer_state: targetSetup.roamerState,
     mass_outbreak_state: targetSetup.massOutbreakState,
     feebas_state: targetSetup.feebasState,
-    feebas_cycle_count: 0,
+    feebas_cycles: targetSetup.feebasCycles,
     lead_cycle_speed,
     safari_pokeblock:
       targetSetup.safariPokeblock != null

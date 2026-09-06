@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { InteractableMap, MapGlow, type MapFeature } from "~/components";
+import { Button, InteractableMap, MapGlow, type MapFeature } from "~/components";
 import styled from "@emotion/styled";
 import { type FeebasTile, getFeebasTiles } from "./feebasMapData";
 
@@ -10,6 +10,7 @@ const TILE_HEIGHT_PERCENT = 100 / 100;
 
 export type FeebasMapProps = {
   setSelectedTiles: (tiles: FeebasTile[]) => void;
+  canOnlySelectOne?: boolean;
 };
 
 const getTileKey = (tile: FeebasTile) =>
@@ -23,7 +24,10 @@ const TileGlow = styled(MapGlow)<{
   opacity: $selected ? 1 : $instability === 0 ? 0 : 0.2,
 }));
 
-export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
+export const FeebasTilesSelector = ({
+  setSelectedTiles,
+  canOnlySelectOne = false,
+}: FeebasMapProps) => {
   const [selectedTileKeys, setSelectedTileKeys] = useState<Set<string>>(
     () => new Set(),
   );
@@ -35,6 +39,9 @@ export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
     if (nextSelectedTileKeys.has(tileKey)) {
       nextSelectedTileKeys.delete(tileKey);
     } else {
+      if (canOnlySelectOne) {
+        nextSelectedTileKeys.clear();
+      }
       nextSelectedTileKeys.add(tileKey);
     }
 
@@ -76,5 +83,84 @@ export const FeebasMap = ({ setSelectedTiles }: FeebasMapProps) => {
       features={features}
       src="/images/Emerald/Wild/FeebasMap.png"
     />
+  );
+};
+
+const TileViewport = styled.svg({
+  display: "block",
+  width: "100%",
+  aspectRatio: "1",
+  overflow: "hidden",
+  imageRendering: "pixelated",
+});
+
+export const FeebasTileVisualizer = ({
+  selectedTileCycle,
+}: {
+  selectedTileCycle: number;
+}) => {
+  const tile = tiles.find((tile) => tile.cycleCounter === selectedTileCycle);
+  if (tile == null) {
+    return null;
+  }
+
+  const viewportSize = 20;
+  const mapWidth = 100 / TILE_WIDTH_PERCENT;
+  const mapHeight = 100 / TILE_HEIGHT_PERCENT;
+  const x = Math.max(
+    0,
+    Math.min(
+      tile.websiteImageX + 0.5 - viewportSize / 2,
+      mapWidth - viewportSize,
+    ),
+  );
+  const y = Math.max(
+    0,
+    Math.min(
+      tile.websiteImageY + 0.5 - viewportSize / 2,
+      mapHeight - viewportSize,
+    ),
+  );
+
+  return (
+    <TileViewport
+      viewBox={`${x} ${y} ${viewportSize} ${viewportSize}`}
+      role="img"
+      aria-label={`Route 119 Feebas map around tile cycle ${selectedTileCycle}`}
+    >
+      <image
+        href="/images/Emerald/Wild/FeebasMap.png"
+        width={mapWidth}
+        height={mapHeight}
+        preserveAspectRatio="none"
+      />
+    </TileViewport>
+  );
+};
+
+export const FeebasTileVisualizerButton = ({
+  selectedTileCycle,
+}: {
+  selectedTileCycle: number;
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const tile = tiles.find((tile) => tile.cycleCounter === selectedTileCycle);
+  if (tile == null) {
+    return null;
+  }
+
+  return (
+    <>
+      <Button
+        trackerId="feebas-tile-visualizer-toggle"
+        aria-expanded={isVisible}
+        onClick={() => setIsVisible((visible) => !visible)}
+      >
+        {`Tile ${tile.ingameX},${tile.ingameY}`}
+      </Button>
+      {isVisible && (
+        <FeebasTileVisualizer selectedTileCycle={selectedTileCycle} />
+      )}
+    </>
   );
 };

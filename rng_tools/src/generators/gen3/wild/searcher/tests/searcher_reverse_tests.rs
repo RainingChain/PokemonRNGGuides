@@ -365,7 +365,7 @@ fn test_search_reverse_wild3_mass_outbreak() {
 }
 
 #[test]
-fn test_search_reverse_wild3_feebas() {
+fn test_search_reverse_wild3_feebas_no_cyles() {
     let mut options = Wild3SearcherOptions {
         methods: vec![Gen3Method::Wild2],
         max_result_count: 1,
@@ -380,6 +380,57 @@ fn test_search_reverse_wild3_feebas() {
             ..Default::default()
         },
         feebas_cycles: vec![0],
+        ..Default::default()
+    };
+
+    options.map_setups[0].actions = vec![Wild3Action::SuperRod];
+    options.map_setups[0].feebas_states = vec![Wild3FeebasState::OnFeebasTile];
+    options.map_setups[0].map_data.feebas = Some(Wild3EncounterGameData {
+        species_data: SpeciesData {
+            species: Species::Feebas,
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+
+    let expected_results = [Wild3SearcherResultMon {
+        encounter_idx: Wild3EncounterIndex::Feebas,
+        pid: 1969203656,
+        advance: 15522,
+        seed: Pokerng::with_jump(options.initial_seed, 15522).seed(),
+        shiny: false,
+        nature: Nature::Docile,
+        ability: AbilityType::First,
+        ivs: Ivs::new(6, 27, 31, 31, 31, 31),
+        gender: Gender::Male,
+        method: Gen3Method::Wild2,
+        lead: Gen3Lead::Vanilla,
+        hidden_power: HiddenPower::new(PokemonType::Dragon, 70),
+        species: Species::Feebas,
+        feebas_state: Wild3FeebasState::OnFeebasTile,
+        action: Wild3Action::SuperRod,
+        ..Default::default()
+    }];
+    let result = search_wild3_reverse_flatten(&options);
+    assert_eq!(result, expected_results);
+}
+
+#[test]
+fn test_search_reverse_wild3_feebas_many_cyles() {
+    let mut options = Wild3SearcherOptions {
+        methods: vec![Gen3Method::Wild2],
+        max_result_count: 1,
+        leads: vec![Gen3Lead::Vanilla],
+        filter: PkmFilter {
+            min_ivs: Ivs::new(6, 27, 31, 31, 31, 31),
+            max_ivs: Ivs::new(6, 27, 31, 31, 31, 31),
+            ..Default::default()
+        },
+        gen3_filter: Gen3PkmFilter {
+            species: Some(Species::Feebas),
+            ..Default::default()
+        },
+        feebas_cycles: vec![100_000, 500_000],
         ..Default::default()
     };
 
@@ -704,24 +755,24 @@ fn test_search_reverse_wild3_vblank_group_feebas() {
         MinMax::empty(),
     ];
 
-    for feebas_cycle_count in 0..=800_000 {
+    for feebas_cycles in 0..=800_000 {
         let (min_presweet, _, max_presweet) =
             get_min_mid_max_pre_sweet_scent_cycle(Wild3Action::OldRod);
         let (min_vblank_dur, _, max_vblank_dur) = get_min_mid_max_vblank_cycle_duration();
 
         let (_, min_vblank_count) = apply_cycles_causing_vblanks_on_cycle_counter(
             min_presweet,
-            feebas_cycle_count,
+            feebas_cycles,
             min_vblank_dur,
         );
         let (_, max_vblank_count) = apply_cycles_causing_vblanks_on_cycle_counter(
             max_presweet,
-            feebas_cycle_count,
+            feebas_cycles,
             max_vblank_dur,
         );
 
-        groups[min_vblank_count].update_bounds(feebas_cycle_count);
-        groups[max_vblank_count].update_bounds(feebas_cycle_count);
+        groups[min_vblank_count].update_bounds(feebas_cycles);
+        groups[max_vblank_count].update_bounds(feebas_cycles);
     }
 
     assert_eq!(groups, FEEBAS_CYCLE_COUNT_BY_VBLANK);

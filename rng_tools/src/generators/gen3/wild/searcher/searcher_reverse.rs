@@ -351,7 +351,7 @@ fn create_result(
                 roamer_state: Wild3RoamerState::Inactive,
                 mass_outbreak_state,
                 feebas_state,
-                feebas_cycle_count: 0,
+                feebas_cycles: 0,
                 safari_pokeblock: safari_pokeblock.clone(),
                 lead_cycle_speed: opts.lead_cycle_speed,
                 using_white_flute: opts.using_white_flute,
@@ -429,11 +429,11 @@ pub const FEEBAS_CYCLE_COUNT_BY_VBLANK: [MinMax; 4] = [
     MinMax::new(637688, 800000),
 ];
 
-pub fn get_feebas_possible_vblank_count(feebas_cycle: usize) -> Vec<usize> {
+pub fn get_feebas_possible_vblank_count(feebas_cycles: usize) -> Vec<usize> {
     FEEBAS_CYCLE_COUNT_BY_VBLANK
         .iter()
         .enumerate()
-        .filter_map(|(count, range)| range.contains(&feebas_cycle).then_some(count))
+        .filter_map(|(count, range)| range.contains(&feebas_cycles).then_some(count))
         .collect()
 }
 

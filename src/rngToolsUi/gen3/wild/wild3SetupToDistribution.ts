@@ -91,7 +91,7 @@ export const setupToDistributions = async (
     roamer_state: targetSetup.roamerState,
     mass_outbreak_state: targetSetup.massOutbreakState,
     feebas_state: targetSetup.feebasState,
-    feebas_cycle_count: 0,
+    feebas_cycles: targetSetup.feebasCycles,
     lead_cycle_speed,
     safari_pokeblock:
       canUsePokeblock && targetSetup.safariPokeblock !== null

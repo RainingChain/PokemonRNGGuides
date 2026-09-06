@@ -77,7 +77,7 @@ fn search_wild3_naive_at_given_advance(
 
             let pokeblock_feebas_products = iproduct!(&pokeblock_states, &feebas_cycles,);
 
-            for (safari_pokeblock, feebas_cycle) in pokeblock_feebas_products {
+            for (safari_pokeblock, feebas_cycles) in pokeblock_feebas_products {
                 let gen_opts = Wild3GeneratorOptions {
                     tid: opts.tid,
                     sid: opts.sid,
@@ -93,7 +93,7 @@ fn search_wild3_naive_at_given_advance(
                     roamer_state: *roamer_state,
                     mass_outbreak_state: *mass_outbreak_state,
                     feebas_state: *feebas_state,
-                    feebas_cycle_count: *feebas_cycle,
+                    feebas_cycles: *feebas_cycles,
                     safari_pokeblock: safari_pokeblock.clone(),
                     lead_cycle_speed: opts.lead_cycle_speed,
                     using_white_flute: opts.using_white_flute,

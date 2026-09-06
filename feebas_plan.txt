@@ -1,5 +1,10 @@
 feebas plan:
 
+update the generators input to provide feebas tile.
+add validation if none if provided.
+
+
+
 
 searcher only contains possible vblanks.
 ui asks rust for stable range.

@@ -39,7 +39,7 @@ import { calculateTargetSetupResult } from "./calculateTargetSetupResult";
 import { Pokeblock, pokeblockSchema } from "~/types/pokeblock";
 import { getPaintingReseedingFields } from "../pokemonRng/targetSetupInput";
 import { lcrng_distance } from "~/utils/lcrng";
-import { FeebasMap } from "./feebasMap";
+import { FeebasTilesSelector } from "./feebasMap";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -65,6 +65,7 @@ const Validator = z.object({
   targetAdvance: z.number().int().min(0).max(0xffffffff),
   requiresWhiteFlute: z.boolean(),
   safariPokeblock: pokeblockSchema,
+  feebas_cycles: z.number().int().min(0).max(0xffffffff),
 });
 
 type Props = {
@@ -75,6 +76,7 @@ export type TargetSetup = {
   map: string;
   action: Wild3Action;
   feebasState: Wild3FeebasState;
+  feebasCycles: number;
   roamerState: Wild3RoamerState;
   massOutbreakState: Wild3MassOutbreakState;
   lead: Gen3Lead;
@@ -102,6 +104,7 @@ const getInitialValues = (): FormState => {
     targetMethod: "Wild1",
     requiresWhiteFlute: false,
     safariPokeblock: null,
+    feebas_cycles: 0,
   };
 };
 
@@ -112,6 +115,7 @@ const convertFormStateValuesToTargetSetup = (
     map: values.map,
     action: values.action,
     feebasState: values.feebasState,
+    feebasCycles: values.feebas_cycles,
     roamerState: values.roamerState,
     massOutbreakState: values.massOutbreakState,
     lead: gen3Leads[values.leadIdx],
@@ -134,11 +138,13 @@ const getFields = ({
   action,
   usingPaintingReseeding,
   equivalentInitialAdvs,
+  setFieldValue,
 }: {
   mapId: string;
   action: Wild3Action;
   usingPaintingReseeding: boolean;
   equivalentInitialAdvs: number;
+  setFieldValue: ReturnType<typeof useFormContext<FormState>>["setFieldValue"];
 }): Field[] => {
   const {
     actions,
@@ -219,7 +225,14 @@ const getFields = ({
     },
     {
       label: "Feebas map",
-      input: <FeebasMap setSelectedTiles={() => {}} />,
+      input: (
+        <FeebasTilesSelector
+          canOnlySelectOne
+          setSelectedTiles={(tiles) => {
+            setFieldValue("feebas_cycles", tiles[0]?.cycleCounter ?? 0);
+          }}
+        />
+      ),
     },
 
     {
@@ -291,6 +304,7 @@ export const Wild3TargetSetupInputFields = ({
     action,
     usingPaintingReseeding,
     equivalentInitialAdvs,
+    setFieldValue,
   });
 
   React.useEffect(() => {

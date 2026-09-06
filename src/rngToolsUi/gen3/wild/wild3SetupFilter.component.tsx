@@ -27,7 +27,7 @@ import {
   getPaintingSetupFilterFields as getPaintingSetupFilterFields,
   getTidSidSetupFilterFields,
 } from "../pokemonRng/targetSetupSearcher";
-import { FeebasMap } from "./feebasMap";
+import { FeebasTilesSelector } from "./feebasMap";
 
 const supportedGen3Methods = [
   "Wild1",
@@ -166,7 +166,7 @@ const getSetupFields = (obj: {
       label: "Feebas fishing spots",
       tooltip:
         "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause erratic vblanks.",
-      input: <FeebasMap setSelectedTiles={() => {}} />,
+      input: <FeebasTilesSelector setSelectedTiles={() => {}} />,
       show: species === "Feebas",
     },
     {

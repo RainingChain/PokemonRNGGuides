@@ -43,7 +43,7 @@ pub struct Wild3GeneratorOptions {
     pub roamer_state: Wild3RoamerState,
     pub mass_outbreak_state: Wild3MassOutbreakState,
     pub feebas_state: Wild3FeebasState,
-    pub feebas_cycle_count: usize,
+    pub feebas_cycles: usize,
     pub using_white_flute: bool,
     pub safari_pokeblock: Option<Wild3SafariPokeblockGenOpt>,
 }
@@ -66,7 +66,7 @@ impl Default for Wild3GeneratorOptions {
             roamer_state: Wild3RoamerState::default(),
             mass_outbreak_state: Wild3MassOutbreakState::default(),
             feebas_state: Wild3FeebasState::default(),
-            feebas_cycle_count: 0,
+            feebas_cycles: 0,
             using_white_flute: true,
             safari_pokeblock: None,
         }
@@ -205,7 +205,7 @@ pub fn apply_cycles_causing_vblanks_on_cycle_counter(
 fn handle_feebas_cycle_counter(
     rng: &mut Pokerng,
     cycle_counter: &mut CycleCounter,
-    feebas_cycle_count: usize,
+    feebas_cycles: usize,
 ) {
     cycle_counter.on_moment_reached(Moment::CheckFeebas);
 
@@ -213,11 +213,11 @@ fn handle_feebas_cycle_counter(
     let (min_vblank, mid_vblank, max_vblank) = get_min_mid_max_vblank_cycle_duration();
 
     let (min_case_cycle, min_case_vblank) =
-        apply_cycles_causing_vblanks_on_cycle_counter(min, feebas_cycle_count, min_vblank);
+        apply_cycles_causing_vblanks_on_cycle_counter(min, feebas_cycles, min_vblank);
     let (mid_case_cycle, mid_case_vblank) =
-        apply_cycles_causing_vblanks_on_cycle_counter(mid, feebas_cycle_count, mid_vblank);
+        apply_cycles_causing_vblanks_on_cycle_counter(mid, feebas_cycles, mid_vblank);
     let (_, max_case_vblank) =
-        apply_cycles_causing_vblanks_on_cycle_counter(max, feebas_cycle_count, max_vblank);
+        apply_cycles_causing_vblanks_on_cycle_counter(max, feebas_cycles, max_vblank);
 
     /*
     It's impossible to predict the exact duration of the vblanks, but it's typically between 45K and 65K.
@@ -306,7 +306,7 @@ fn select_encounter_idx(
         && opts.action.is_fishing()
         && rand_next_u16(rng, "select_encounter_idx.OnFeebasTile", 100) % 100 <= 49
     {
-        handle_feebas_cycle_counter(rng, cycle_counter, opts.feebas_cycle_count);
+        handle_feebas_cycle_counter(rng, cycle_counter, opts.feebas_cycles);
         return Some(Wild3EncounterIndex::Feebas);
     }
 

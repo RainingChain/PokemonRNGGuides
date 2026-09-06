@@ -177,6 +177,7 @@ pub struct Wild3SearcherResultMon {
     pub action: Wild3Action,
     pub roamer_state: Wild3RoamerState,
     pub feebas_state: Wild3FeebasState,
+    pub feebas_cycles: usize,
     pub mass_outbreak_state: Wild3MassOutbreakState,
 }
 
@@ -223,6 +224,7 @@ impl Wild3SearcherResultMon {
             action: gen_opts.action,
             roamer_state: gen_opts.roamer_state,
             feebas_state: gen_opts.feebas_state,
+            feebas_cycles: gen_opts.feebas_cycles,
             mass_outbreak_state: gen_opts.mass_outbreak_state,
             cycle_instability,
         }

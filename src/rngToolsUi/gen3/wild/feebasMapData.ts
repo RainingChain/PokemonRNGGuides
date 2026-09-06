@@ -110,6 +110,8 @@ const CYCLE_PER_CHECK = 413;
 export type FeebasTile = {
   websiteImageY: number;
   websiteImageX: number;
+  ingameY: number;
+  ingameX: number;
   canContainFeebas: boolean;
   cycleCounter: number;
   section: number;
@@ -147,11 +149,13 @@ export const getFeebasTiles = (): FeebasTile[] => {
           .otherwise((y) => [2, y - SECTION_HEIGHTS[1]]);
 
         const tileNoInSection = yInSection * WIDTH + ingameX;
-        const cycleCounter = tileNoInSection * CYCLE_PER_CHECK;
+        const cycleCounter = tileNoInSection * CYCLE_PER_CHECK + section;
 
         return {
           websiteImageY,
           websiteImageX,
+          ingameY,
+          ingameX,
           canContainFeebas: val === "1",
           cycleCounter: cycleCounter,
           instability: getInstability(cycleCounter),
