@@ -19,7 +19,7 @@ import {
   formatFeebasStateName,
   leadsLabels,
 } from "./utils";
-import { useWatch_UNSAFE } from "~/hooks/form";
+import { useFormContext, useWatch_UNSAFE } from "~/hooks/form";
 import { FormState } from "./wild3TargetSetupSearcher";
 import { getPossibleValuesForSpecies } from "./wild3TargetMon";
 import { wild3SafariPokeblockSearchOptLabels } from "~/types/pokeblock";
@@ -46,8 +46,9 @@ const getSetupFields = (obj: {
   showAdvancedPaintingSettings: boolean;
   usingAceForSid: boolean;
   feebasCycles: number[];
+  setFieldValue: ReturnType<typeof useFormContext<FormState>>["setFieldValue"];
 }): Field[] => {
-  const { species, recommendedSetups, feebasCycles } = obj;
+  const { species, recommendedSetups, feebasCycles, setFieldValue } = obj;
 
   const possVals = getPossibleValuesForSpecies(species);
   const showAdvancedSetups = !recommendedSetups;
@@ -168,8 +169,9 @@ const getSetupFields = (obj: {
         "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause unstable results.",
       input: (
         <FeebasTilesSelector
-          setSelectedTiles={() => {
-            //NO_PROD
+          selectedTiles={feebasCycles}
+          setSelectedTiles={(tiles) => {
+            setFieldValue("feebasCycles", tiles);
           }}
         />
       ),
@@ -233,6 +235,7 @@ const getSetupFields = (obj: {
 };
 
 export const Wild3SetupFilter = () => {
+  const { setFieldValue } = useFormContext<FormState>();
   const species = useWatch_UNSAFE<FormState, "species">({
     name: "species",
   });
@@ -263,9 +266,6 @@ export const Wild3SetupFilter = () => {
   >({
     name: "showAdvancedPaintingSettings",
   });
-  const feebasStates = useWatch_UNSAFE<FormState, "feebasStates">({
-    name: "feebasStates",
-  });
   const feebasCycles = useWatch_UNSAFE<FormState, "feebasCycles">({
     name: "feebasCycles",
   });
@@ -279,6 +279,7 @@ export const Wild3SetupFilter = () => {
     showAdvancedPaintingSettings,
     usingAceForSid,
     feebasCycles,
+    setFieldValue,
   });
 
   return (

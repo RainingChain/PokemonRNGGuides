@@ -229,7 +229,7 @@ const getFields = ({
         <FeebasTilesSelector
           canOnlySelectOne
           setSelectedTiles={(tiles) => {
-            setFieldValue("feebas_cycles", tiles[0]?.cycleCounter ?? 0);
+            setFieldValue("feebas_cycles", tiles[0] ?? 0);
           }}
         />
       ),

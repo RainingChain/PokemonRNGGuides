@@ -186,7 +186,7 @@ export const searchWild3Target = async (values: FormState) => {
     leads: leadsToUse,
     map_setups,
     methods,
-    feebas_cycles: values.feebasStates, //NO_PROD
+    feebas_cycles: values.feebasCycles,
     consider_cycles: true,
     consider_rng_manipulated_lead_pid: values.rngManipulatedLeadPid,
     generate_even_if_impossible: values.generate_even_if_impossible,

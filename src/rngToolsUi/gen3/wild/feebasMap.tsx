@@ -14,7 +14,8 @@ const TILE_WIDTH_PERCENT = 100 / 40;
 const TILE_HEIGHT_PERCENT = 100 / 100;
 
 export type FeebasMapProps = {
-  setSelectedTiles: (tiles: FeebasTile[]) => void;
+  selectedTiles?: number[];
+  setSelectedTiles: (tiles: number[]) => void;
   canOnlySelectOne?: boolean;
 };
 
@@ -35,12 +36,21 @@ const FeebasMapContainer = styled.div({
 });
 
 export const FeebasTilesSelector = ({
+  selectedTiles,
   setSelectedTiles,
   canOnlySelectOne = false,
 }: FeebasMapProps) => {
-  const [selectedTileKeys, setSelectedTileKeys] = useState<Set<string>>(
+  const [internalSelectedTileKeys, setSelectedTileKeys] = useState<Set<string>>(
     () => new Set(),
   );
+  const selectedTileKeys =
+    selectedTiles == null
+      ? internalSelectedTileKeys
+      : new Set(
+          selectableTiles
+            .filter((tile) => selectedTiles.includes(tile.cycleCounter))
+            .map(getTileKey),
+        );
 
   const toggleTile = (tile: FeebasTile) => {
     const tileKey = getTileKey(tile);
@@ -55,11 +65,15 @@ export const FeebasTilesSelector = ({
       nextSelectedTileKeys.add(tileKey);
     }
 
-    setSelectedTileKeys(nextSelectedTileKeys);
+    if (selectedTiles == null) {
+      setSelectedTileKeys(nextSelectedTileKeys);
+    }
     setSelectedTiles(
-      selectableTiles.filter((selectableTile) =>
-        nextSelectedTileKeys.has(getTileKey(selectableTile)),
-      ),
+      selectableTiles
+        .filter((selectableTile) =>
+          nextSelectedTileKeys.has(getTileKey(selectableTile)),
+        )
+        .map((tile) => tile.cycleCounter),
     );
   };
 
