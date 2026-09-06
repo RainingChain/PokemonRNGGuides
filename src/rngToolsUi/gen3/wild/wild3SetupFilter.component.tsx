@@ -45,9 +45,9 @@ const getSetupFields = (obj: {
   letSearcherFindPaintingSeed: boolean;
   showAdvancedPaintingSettings: boolean;
   usingAceForSid: boolean;
-  feebasStates: FormState["feebasStates"];
+  feebasCycles: number[];
 }): Field[] => {
-  const { species, recommendedSetups, feebasStates } = obj;
+  const { species, recommendedSetups, feebasCycles } = obj;
 
   const possVals = getPossibleValuesForSpecies(species);
   const showAdvancedSetups = !recommendedSetups;
@@ -165,8 +165,14 @@ const getSetupFields = (obj: {
     {
       label: "Feebas fishing spots",
       tooltip:
-        "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause erratic vblanks.",
-      input: <FeebasTilesSelector setSelectedTiles={() => {}} />,
+        "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause unstable results.",
+      input: (
+        <FeebasTilesSelector
+          setSelectedTiles={() => {
+            //NO_PROD
+          }}
+        />
+      ),
       show: species === "Feebas",
     },
     {
@@ -260,6 +266,9 @@ export const Wild3SetupFilter = () => {
   const feebasStates = useWatch_UNSAFE<FormState, "feebasStates">({
     name: "feebasStates",
   });
+  const feebasCycles = useWatch_UNSAFE<FormState, "feebasCycles">({
+    name: "feebasCycles",
+  });
 
   const fields: Field[] = getSetupFields({
     species,
@@ -269,7 +278,7 @@ export const Wild3SetupFilter = () => {
     letSearcherFindPaintingSeed,
     showAdvancedPaintingSettings,
     usingAceForSid,
-    feebasStates,
+    feebasCycles,
   });
 
   return (

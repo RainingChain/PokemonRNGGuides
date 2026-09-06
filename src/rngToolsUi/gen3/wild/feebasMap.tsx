@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Button, InteractableMap, MapGlow, type MapFeature } from "~/components";
+import {
+  Button,
+  InteractableMap,
+  MapGlow,
+  type MapFeature,
+} from "~/components";
 import styled from "@emotion/styled";
 import { type FeebasTile, getFeebasTiles } from "./feebasMapData";
 
@@ -23,6 +28,11 @@ const TileGlow = styled(MapGlow)<{
   backgroundColor: $instability === 0 ? "lightgreen" : "red",
   opacity: $selected ? 1 : $instability === 0 ? 0 : 0.2,
 }));
+
+const FeebasMapContainer = styled.div({
+  width: "100%",
+  maxWidth: 400,
+});
 
 export const FeebasTilesSelector = ({
   setSelectedTiles,
@@ -78,11 +88,14 @@ export const FeebasTilesSelector = ({
   });
 
   return (
-    <InteractableMap
-      alt="Route 119 Feebas fishing tiles"
-      features={features}
-      src="/images/Emerald/Wild/FeebasMap.png"
-    />
+    <FeebasMapContainer>
+      <InteractableMap
+        maxViewportHeight={400}
+        alt="Route 119 Feebas fishing tiles"
+        features={features}
+        src="/images/Emerald/Wild/FeebasMap.png"
+      />
+    </FeebasMapContainer>
   );
 };
 
