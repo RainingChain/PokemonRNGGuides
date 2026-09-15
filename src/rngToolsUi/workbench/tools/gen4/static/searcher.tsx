@@ -121,7 +121,7 @@ const RngInfoFields = () => {
       children: (
         <FormikSelect<FormState, "lead">
           name="lead"
-          options={getLeadOptions(encounter.method)}
+          options={getLeadOptions(encounter)}
         />
       ),
     },
