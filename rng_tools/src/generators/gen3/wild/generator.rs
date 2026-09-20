@@ -11,7 +11,7 @@ use crate::{
         CycleAndModCount, CycleAndModRange, CycleCounter, CycleRange, Gen3Lead, Gen3Method,
         Gen3PkmFilter, Moment, Wild3Action, Wild3EncounterGameData, Wild3EncounterIndex,
         Wild3FeebasState, Wild3MapGameData, Wild3MassOutbreakState, Wild3RoamerState,
-        Wild3SafariPokeblockGenOpt, get_min_mid_max_pre_sweet_scent_cycle,
+        Wild3SafariPokeblockGenOpt, generate_wild3, get_min_mid_max_pre_sweet_scent_cycle,
         get_min_mid_max_vblank_cycle_duration, passes_pid_filter, wild::lcrng_distance,
     },
     gen3_tsv, is_max_size,
@@ -19,6 +19,8 @@ use crate::{
 };
 
 /*
+Main entry point: generate_gen3_wild
+
 Limitation: When generating Wild5, only 1 vblank is supported. There's a very small chance that multiple vblanks occur.
 */
 
@@ -216,7 +218,7 @@ pub fn get_feebas_vblank_from_feebas_cycle(feebas_cycles: usize) -> usize {
     mid_case_vblank
 }
 
-fn handle_feebas_cycle_counter(
+pub(super) fn handle_feebas_cycle_counter(
     rng: &mut Pokerng,
     cycle_counter: &mut CycleCounter,
     feebas_cycles: usize,
@@ -548,7 +550,17 @@ pub fn generate_gen3_wild_wasm(
     generate_gen3_wild(Pokerng::with_jump(initial_seed, advances), opts, map_data)
 }
 
+// Entry point
 pub fn generate_gen3_wild(
+    rng: Pokerng,
+    opts: &Wild3GeneratorOptions,
+    map_data: &Wild3MapGameData,
+) -> Wild3GeneratorResults {
+    generate_wild3(rng, opts, map_data)
+}
+
+// Entry point
+pub fn generate_gen3_wild_old(
     mut rng: Pokerng,
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
@@ -562,6 +574,17 @@ pub fn generate_gen3_wild(
     }
 
     let encounter_idx = encounter_idx.unwrap();
+    generate_wild3_from_encounter(rng, opts, map_data, cycle_counter, encounter_idx, None)
+}
+
+pub(super) fn generate_wild3_from_encounter(
+    mut rng: Pokerng,
+    opts: &Wild3GeneratorOptions,
+    map_data: &Wild3MapGameData,
+    mut cycle_counter: CycleCounter,
+    encounter_idx: Wild3EncounterIndex,
+    selected_level: Option<u8>,
+) -> Wild3GeneratorResults {
     let encounter = map_data.get_encounter(opts.action, encounter_idx);
     if encounter.is_none() {
         // impossible to trigger in-game
@@ -575,7 +598,8 @@ pub fn generate_gen3_wild(
         return Wild3GeneratorResults::empty();
     }
 
-    let lvl = select_lvl(&mut rng, opts.lead, encounter, &mut cycle_counter);
+    let lvl = selected_level
+        .unwrap_or_else(|| select_lvl(&mut rng, opts.lead, encounter, &mut cycle_counter));
 
     if let Some(wanted_lvl) = opts.gen3_filter.lvl
         && lvl != wanted_lvl
