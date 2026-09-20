@@ -247,9 +247,10 @@ export const rngTools = new Proxy(
       ) => {
         const tools = await getRngTools();
         const func = tools[functionName];
-        // Casting as unknown[] fixes complex union errors.
         // The type signature guarantees this is used correctly.
-        return func(...(args as unknown[]));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore -- Distributed union type from comlink makes this complex to type correctly. Sometimes, it's considered an error and sometimes not.
+        return func(...args);
       };
     },
   },

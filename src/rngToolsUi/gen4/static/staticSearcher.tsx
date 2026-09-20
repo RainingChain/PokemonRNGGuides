@@ -46,7 +46,7 @@ import { type Encounter } from "../encounters/encounter";
 import { useField, useWatch } from "~/hooks/form";
 import { useActiveRouteTranslations } from "~/hooks/useActiveRoute";
 import { normalizeTargetLead } from "./utils";
-import { static4LeadSchema, leadOptions } from "../shared/leads";
+import { static4LeadSchema, getLeadOptions } from "../shared/leads";
 
 type Result = FlattenIvs<
   Static4State["state"] & {
@@ -285,7 +285,10 @@ const Fields = ({ game, encountersByGame }: FieldsProps) => {
     {
       label: t["Lead"],
       input: (
-        <FormikSelect<FormState, "lead"> name="lead" options={leadOptions} />
+        <FormikSelect<FormState, "lead">
+          name="lead"
+          options={getLeadOptions(encounter)}
+        />
       ),
     },
     ...getPkmFilterFields({ species: encounter?.species }, t),

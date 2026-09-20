@@ -18,10 +18,15 @@ export const static4LeadSchema = z.enum(leadInputs);
 
 type LeadOption = { label: string; value: Static4LeadInput };
 
-export const leadOptions = [
+const leadOptions = [
   { label: "No Lead", value: "None" },
   { label: "Cute Charm (Female)", value: "CutecharmF" },
   { label: "Cute Charm (Male)", value: "CutecharmM" },
+  { label: "Synchronize", value: "Synchronize" },
+] as const satisfies LeadOption[];
+
+const fixedGenderLeadOptions = [
+  { label: "No Lead", value: "None" },
   { label: "Synchronize", value: "Synchronize" },
 ] as const satisfies LeadOption[];
 
@@ -29,9 +34,18 @@ const noLeadOptions = [
   { label: "No Lead", value: "None" },
 ] as const satisfies LeadOption[];
 
-export const getLeadOptions = (method: Static4Method) => {
-  if (method === "One") {
+export const getLeadOptions = (
+  opts: {
+    method: Static4Method;
+    isFixedGender: boolean;
+  } | null,
+) => {
+  if (opts == null || opts.method === "One") {
     return noLeadOptions;
+  }
+
+  if (opts.isFixedGender) {
+    return fixedGenderLeadOptions;
   }
 
   return leadOptions;

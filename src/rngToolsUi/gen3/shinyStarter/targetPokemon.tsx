@@ -22,7 +22,27 @@ export const TargetPokemon = ({
   targetAdvance,
   setTargetStarter,
 }: Props) => {
+  const [species, setSpecies] =
+    React.useState<TargetStarter["species"]>("Mudkip");
   const [targetPokemonDesc, setTargetPokemonDesc] = React.useState<string>("");
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    void Promise.all([
+      getStatRange({ species }),
+      getTargetPokemonDesc(game, targetAdvance, species),
+    ]).then(([minMaxStats, desc]) => {
+      if (!cancelled) {
+        setTargetStarter({ species, minMaxStats });
+        setTargetPokemonDesc(desc);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [game, species, setTargetStarter, targetAdvance]);
 
   const fields: Field[] = [
     {
@@ -31,20 +51,10 @@ export const TargetPokemon = ({
         <RadioGroup
           name="targetStarter"
           optionType="button"
-          onChange={async ({ target }) => {
+          value={species}
+          onChange={({ target }) => {
             // RadioGroup is not able to infer the value type, so we have to cast it
-            const species = target.value as TargetStarter["species"];
-            setTargetStarter({
-              species,
-              minMaxStats: await getStatRange({ species }),
-            });
-
-            const desc = await getTargetPokemonDesc(
-              game,
-              targetAdvance,
-              species,
-            );
-            setTargetPokemonDesc(desc);
+            setSpecies(target.value as TargetStarter["species"]);
           }}
           options={toOptions(["Mudkip", "Torchic", "Treecko"])}
         />

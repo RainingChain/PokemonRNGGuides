@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  RngToolForm,
-  Field,
-  RngToolSubmit,
-  FormikNumberInput,
-} from "~/components";
+import { RngToolForm, Field, RngToolSubmit } from "~/components";
 import { Game } from "./index";
 import { findTargetAdvanceForShinyPokemon } from "./calc";
 
@@ -23,25 +18,27 @@ const initialValues: FormState = {
 type Props = {
   game: Game;
   setTargetAdvance: (targetAdvance: number) => void;
+  usingDeadBattery: boolean;
+  initialTidSid?: FormState;
 };
 
-const fields: Field[] = [
-  {
-    label: "TID",
-    input: <FormikNumberInput<FormState> name="tid" numType="decimal" />,
-  },
-  {
-    label: "SID",
-    input: <FormikNumberInput<FormState> name="sid" numType="decimal" />,
-  },
-];
+export const FindTargetAdvance = ({
+  game,
+  setTargetAdvance,
+  usingDeadBattery,
+  initialTidSid = initialValues,
+}: Props) => {
+  const fields: Field[] = [
+    { label: "TID", input: <>{initialTidSid.tid}</> },
+    { label: "SID", input: <>{initialTidSid.sid}</> },
+  ];
 
-export const FindTargetAdvance = ({ game, setTargetAdvance }: Props) => {
   const onSubmit: RngToolSubmit<FormState> = async (opts) => {
     const targetAdvance = await findTargetAdvanceForShinyPokemon(
       game,
       opts.tid,
       opts.sid,
+      usingDeadBattery,
     );
     if (targetAdvance !== null) {
       setTargetAdvance(targetAdvance);
@@ -52,7 +49,7 @@ export const FindTargetAdvance = ({ game, setTargetAdvance }: Props) => {
     <RngToolForm<FormState, never[]>
       formContainerId="find-target-advance"
       fields={fields}
-      initialValues={initialValues}
+      initialValues={initialTidSid}
       validationSchema={Validator}
       submitTrackerId="findTarget"
       submitButtonLabel="Calculate Target advance"
