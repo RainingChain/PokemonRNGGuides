@@ -577,7 +577,7 @@ pub fn generate_gen3_wild_old(
     generate_wild3_from_encounter(rng, opts, map_data, cycle_counter, encounter_idx, None)
 }
 
-pub(super) fn generate_wild3_from_encounter(
+pub fn generate_wild3_from_encounter(
     mut rng: Pokerng,
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,

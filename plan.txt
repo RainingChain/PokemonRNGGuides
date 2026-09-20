@@ -1,0 +1,28 @@
+
+cycle counting in generator2.
+
+case 1: debug/method likelihood by printing exact cycle at each moment
+  input: initial cycle count at start of function 
+  input: cycle duration for each vblank 
+  input: lead cycle speed
+
+
+case 2: get percentage of hitting target for giving setup + lead
+  input: lead cycle speed
+
+
+case 3: determine data about the different lead cycle speed: ideal, slowest, fastest, common_lower_lead, common_upper_lead
+  input: none
+
+
+TODO:
+For case 3, propose a solution to handle when the number of vblanks occuring during feebas is random (ex: either 1 with 25% chance, and 2 with 75% chance).
+
+
+
+
+
+
+
+
+

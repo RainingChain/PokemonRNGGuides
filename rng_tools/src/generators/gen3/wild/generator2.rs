@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case)] // To have the same function names as pokeemerald.
 
 use super::generator::{
     INFINITE_CYCLE, VBLANK_FREQ, Wild3GeneratorMonResult, Wild3GeneratorOptions,
