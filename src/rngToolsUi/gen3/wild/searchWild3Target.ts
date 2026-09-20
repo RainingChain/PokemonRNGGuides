@@ -8,7 +8,12 @@ import {
 import { pkmFilterFieldsToRustInput } from "~/components/pkmFilter";
 import { orderBy, intersection } from "lodash-es";
 import { gen3PkmFilterFieldsToRustInput } from "~/components/gen3PkmFilter";
-import { gen3Leads, formatActionName, formatMapName } from "./utils";
+import {
+  gen3Leads,
+  formatActionName,
+  formatMapName,
+  isFishingAction,
+} from "./utils";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
 
 import type { FormState, PidPathResult } from "./wild3TargetSetupSearcher.tsx";
@@ -109,33 +114,47 @@ const getMapSetupsConsideringStateSubsets = (
 ): Wild3MapSetups[] => {
   const mapSetupsWithAllStates =
     emeraldWildGameData.mapSetupsBySpecies.get(values.species) ?? [];
-  if (values.recommendedSetups) {
-    // Filtering will be done in searcher_reverse to improve performance.
-    return mapSetupsWithAllStates;
-  }
 
-  return mapSetupsWithAllStates
-    .filter((mapSetupWithAllStates) => {
-      return values.maps.includes(mapSetupWithAllStates.map_data.map_id);
-    })
-    .map((mapSetupWithAllStates) => {
-      return {
-        map_data: mapSetupWithAllStates.map_data,
-        actions: intersection(mapSetupWithAllStates.actions, values.actions),
-        roamer_states: intersection(
-          mapSetupWithAllStates.roamer_states,
-          values.roamerStates,
-        ),
-        mass_outbreak_states: intersection(
-          mapSetupWithAllStates.mass_outbreak_states,
-          values.massOutbreakStates,
-        ),
-        feebas_states: intersection(
-          mapSetupWithAllStates.feebas_states,
-          values.feebasStates,
-        ),
-      };
-    });
+  const setups = values.recommendedSetups
+    ? mapSetupsWithAllStates
+    : mapSetupsWithAllStates
+        .filter((mapSetupWithAllStates) => {
+          return values.maps.includes(mapSetupWithAllStates.map_data.map_id);
+        })
+        .map((mapSetupWithAllStates) => {
+          return {
+            map_data: mapSetupWithAllStates.map_data,
+            actions: intersection(
+              mapSetupWithAllStates.actions,
+              values.actions,
+            ),
+            roamer_states: intersection(
+              mapSetupWithAllStates.roamer_states,
+              values.roamerStates,
+            ),
+            mass_outbreak_states: intersection(
+              mapSetupWithAllStates.mass_outbreak_states,
+              values.massOutbreakStates,
+            ),
+            feebas_states: intersection(
+              mapSetupWithAllStates.feebas_states,
+              values.feebasStates,
+            ),
+          };
+        });
+
+  return setups.filter((setup) => {
+    // We remove feebas map for fishing non-feebas because it's not supported by the reverse searcher.
+    // Limitation: It prevents Tentacool to be obtained from Sweet Scent on Water.
+    if (
+      values.species !== "Feebas" &&
+      setup.map_data.feebas != null &&
+      setup.actions.some((action) => isFishingAction(action))
+    ) {
+      return false;
+    }
+    return true;
+  });
 };
 
 export const searchWild3Target = async (values: FormState) => {
@@ -186,6 +205,7 @@ export const searchWild3Target = async (values: FormState) => {
     leads: leadsToUse,
     map_setups,
     methods,
+    feebas_cycles: values.feebasCycles.length === 0 ? [0] : values.feebasCycles,
     consider_cycles: true,
     consider_rng_manipulated_lead_pid: values.rngManipulatedLeadPid,
     generate_even_if_impossible: values.generate_even_if_impossible,

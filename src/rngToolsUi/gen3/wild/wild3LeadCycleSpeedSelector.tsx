@@ -119,9 +119,9 @@ export const Wild3LeadCycleSpeedSelector = ({
   }, [leadCycleSpeedProp]);
 
   React.useEffect(() => {
-    setupToDistributions(targetSetup, leadCycleSpeed ?? 0).then(
-      setDistributions,
-    );
+    setupToDistributions(targetSetup, leadCycleSpeed ?? 0).then((val) => {
+      setDistributions(val);
+    });
   }, [leadCycleSpeed, targetSetup]);
 
   const fields: Field[] =

@@ -1,6 +1,7 @@
 import { Wild3Action } from "~/rngTools";
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
 import uniq from "lodash-es/uniq";
+import { FEEBAS_MAP } from "./utils";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -21,7 +22,7 @@ export const getPossibleValuesForMap = (mapId: string, action: Wild3Action) => {
     // fix issue where "Not in Map" is selectable even when in Route 119
     // this is because of Tentacool which is both OldRod and SweetScentOnWater.
     // SweetScentOnWater has the feebas_state NotInMap
-    return mapId !== "MAP_ROUTE119" || state !== "NotInMap";
+    return mapId !== FEEBAS_MAP || state !== "NotInMap";
   });
 
   return {

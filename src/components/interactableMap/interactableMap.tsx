@@ -23,11 +23,13 @@ type SharedMapProps = Omit<BaseMapProps, "capture">;
 export type InteractableMapProps = SharedMapProps & {
   debug?: boolean;
   capture?: MapCaptureConfig;
+  maxViewportHeight?: number;
 };
 
 export const InteractableMap = ({
   debug = false,
   capture,
+  maxViewportHeight,
   ...props
 }: InteractableMapProps) => {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -116,11 +118,15 @@ export const InteractableMap = ({
             minScale={1}
             maxScale={8}
             doubleClick={{ disabled: true }}
-            wheel={{ step: 0.1 }}
+            wheel={{ step: 0.005 }}
           >
             <Controls />
             <TransformComponent
-              wrapperStyle={{ width: "100%", height: "100%" }}
+              wrapperStyle={{
+                width: "100%",
+                height: "100%",
+                maxHeight: maxViewportHeight,
+              }}
               contentStyle={{ width: "100%" }}
             >
               <BaseMap {...props} capture={captureProps} />

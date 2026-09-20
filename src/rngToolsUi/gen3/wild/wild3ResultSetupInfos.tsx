@@ -7,7 +7,12 @@ import { match, P } from "ts-pattern";
 
 import { Tooltip } from "antd";
 
-import { formatLeadName, formatMassOutbreakStateName } from "./utils";
+import {
+  FEEBAS_MAP,
+  formatLeadName,
+  formatMassOutbreakStateName,
+  isFishingAction,
+} from "./utils";
 import { formatDuration } from "~/utils/formatDuration";
 import { formatHex } from "~/utils/formatHex";
 import { PidPathResult, ResultSetupInfo } from "./wild3TargetSetupSearcher";
@@ -16,6 +21,7 @@ import { TargetSetup } from "./wild3TargetSetupInput";
 import { Wild3PokeblockDescription } from "~/components/wild3Pokeblock";
 import { targetAdvanceAfterPaintingTitle } from "../pokemonRng/labels";
 import { getSidResultingInShiny } from "../pokemonRng/targetSetupSearcher";
+import { FeebasTileVisualizerButton } from "./feebasMap";
 
 const getMethodLikelihoodColumValue = (
   cycleData: Wild3SearcherCycleData,
@@ -41,12 +47,14 @@ const getResultSetupInfoColumns = ({
   showRequiredPokeblock,
   showRequiresWhiteFlute,
   usesPainting,
+  isFishingInFeebasMap,
 }: {
   rngManipulatedLeadPid: boolean;
   showMassOutbreak: boolean;
   showRequiredPokeblock: boolean;
   showRequiresWhiteFlute: boolean;
   usesPainting: boolean;
+  isFishingInFeebasMap: boolean;
 }): ResultColumn<ResultSetupInfo>[] => {
   const columns: ResultColumn<ResultSetupInfo>[] = [];
   if (!usesPainting) {
@@ -106,6 +114,16 @@ const getResultSetupInfoColumns = ({
   columns.push(
     { title: "Map", dataIndex: "mapName" },
     { title: "Player action", dataIndex: "actionName" },
+    {
+      title: "Fishing spot",
+      dataIndex: "feebas_cycles",
+      show: isFishingInFeebasMap,
+      render: (feebasCycles, values) => {
+        return isFishingAction(values.action) && values.mapId === FEEBAS_MAP ? (
+          <FeebasTileVisualizerButton selectedTileCycle={feebasCycles} />
+        ) : null;
+      },
+    },
     {
       title: (
         <span>
@@ -379,6 +397,7 @@ const setupInfoToTargetSetup = (
     map: setupInfo.mapId,
     action: setupInfo.action,
     feebasState: setupInfo.feebas_state,
+    feebasCycles: setupInfo.feebas_cycles,
     roamerState: setupInfo.roamer_state,
     massOutbreakState: setupInfo.mass_outbreak_state,
     targetPaintingAdvs: {
@@ -414,12 +433,18 @@ export const Wild3ResultSetupInfos = ({
     selectedPidPathResult.resultSetupInfos.some(
       (res) => res.advs.frame_before_painting !== 0,
     ) ?? false;
+
+  const isFishingInFeebasMap =
+    selectedPidPathResult.resultSetupInfos.some(
+      (setup) => isFishingAction(setup.action) && setup.mapId === FEEBAS_MAP,
+    ) ?? false;
   const resultSetupInfoColumns = getResultSetupInfoColumns({
     rngManipulatedLeadPid,
     showMassOutbreak,
     showRequiredPokeblock,
     showRequiresWhiteFlute,
     usesPainting,
+    isFishingInFeebasMap,
   });
 
   const onClickResultRow = (setupInfo: ResultSetupInfo | null) => {

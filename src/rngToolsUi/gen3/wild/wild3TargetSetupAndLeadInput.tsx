@@ -29,6 +29,10 @@ export const Wild3TargetSetupAndLeadInput = ({
   );
 
   const setTargetSetupBoth = (targetSetup: TargetSetup | null) => {
+    if (targetSetup == null && permitEnablingDebugOptions) {
+      return; // When debugging, it is useful to not reset the target setup and debugging info.
+    }
+
     setTargetSetup?.(targetSetup);
     if (targetSetup != null) {
       setTargetSetupProp?.(targetSetup);

@@ -159,7 +159,6 @@ const searchCaughtMon = async (
   if (opts == null) {
     return [];
   }
-
   const wrappedResultsBySeed = await rngTools.search_wild3(opts);
 
   const resultsBySeed = wrappedResultsBySeed.flatMap(

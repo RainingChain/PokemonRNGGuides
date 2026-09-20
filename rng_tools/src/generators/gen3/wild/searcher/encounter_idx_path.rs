@@ -3,8 +3,9 @@ use itertools::Itertools;
 use crate::{
     EncounterSlot, Gender, GenderRatio, Species,
     gen3::{
-        Gen3Lead, SpeciesData, Wild3Action, Wild3EncounterGameData, Wild3EncounterIndex,
-        Wild3FeebasState, Wild3MassOutbreakState,
+        Gen3Lead, MAX_FEEBAS_VBLANK, SpeciesData, Wild3Action, Wild3EncounterGameData,
+        Wild3EncounterIndex, Wild3FeebasState, Wild3MassOutbreakState,
+        get_feebas_vblank_from_feebas_cycle,
         wild::{
             lcrng_distance,
             searcher::{
@@ -147,10 +148,13 @@ pub enum EncounterIdxToLvlArc {
     SlotMagnetPullSuccess,
     SlotStaticSuccess,
     MassOutbreakSuccess(Wild3MassOutbreakState),
-    FeebasSuccess,
-    // Failure for MagnetPull, Static, MassOutbreak, Feebas are not considered because they add no
-    // additional possibilities because it only shifts the very first random call.
-    // Triggering SweetScent an advance later gives the same result.
+    CheckFeebasSuccess {
+        vblank_count: usize,
+    },
+    // Feebas failure is not considered because fishing non-Feebas in a Feebas map is
+    // unsupported by the reverse searcher.
+    // Failure for MagnetPull, Static, MassOutbreak are not considered because they are
+    // identical to SlotVanilla an advance later.
 }
 
 pub struct EncounterIdxPathGenerator<'a> {
@@ -158,8 +162,9 @@ pub struct EncounterIdxPathGenerator<'a> {
     map_setups: Vec<Wild3MapSetupsForReverse<'a>>,
     mass_outbreak_setups: Vec<(usize, Wild3MassOutbreakState)>,
     actions: Vec<Wild3Action>,
-    species_data: Option<SpeciesData>,
+    species_data: SpeciesData,
     using_white_flute: bool,
+    pub feebas_cycles_by_vblank: [Vec<usize>; MAX_FEEBAS_VBLANK],
 }
 
 struct Wild3MapSetupsForReverse<'a> {
@@ -216,8 +221,9 @@ impl<'a> EncounterIdxPathGenerator<'a> {
     pub fn new(
         leads: &[Gen3Lead],
         map_setups: &'a [Wild3MapSetups],
-        species_data: Option<SpeciesData>,
+        species_data: SpeciesData,
         using_white_flute: bool,
+        feebas_cycles: &[usize],
     ) -> Self {
         let actions: Vec<Wild3Action> = map_setups
             .iter()
@@ -233,7 +239,7 @@ impl<'a> EncounterIdxPathGenerator<'a> {
                 Wild3MassOutbreakState::Inactive, // Mass outbreak state doesn't matter
             ));
         }
-        if permit_vanilla_arc(leads) {
+        if permit_vanilla_arc(leads, &species_data) {
             arcs.push(EncounterIdxToLvlArc::SlotVanilla);
         }
         if permit_magnet_pull_arc(leads, &species_data, &actions) {
@@ -243,8 +249,20 @@ impl<'a> EncounterIdxPathGenerator<'a> {
             arcs.push(EncounterIdxToLvlArc::SlotStaticSuccess);
         }
 
-        if permit_feebas_arc(&species_data) {
-            arcs.push(EncounterIdxToLvlArc::FeebasSuccess);
+        let mut feebas_cycles_by_vblank: [Vec<usize>; MAX_FEEBAS_VBLANK] = Default::default();
+        for cycle in feebas_cycles {
+            feebas_cycles_by_vblank[get_feebas_vblank_from_feebas_cycle(*cycle)].push(*cycle)
+        }
+
+        if permit_feebas_arcs(&species_data) {
+            feebas_cycles_by_vblank
+                .iter()
+                .enumerate()
+                .for_each(|(vblank_count, list)| {
+                    if !list.is_empty() {
+                        arcs.push(EncounterIdxToLvlArc::CheckFeebasSuccess { vblank_count });
+                    }
+                });
         }
 
         let map_setups: Vec<Wild3MapSetupsForReverse<'a>> = map_setups
@@ -261,14 +279,13 @@ impl<'a> EncounterIdxPathGenerator<'a> {
             map_setups,
             mass_outbreak_setups,
             actions,
-            species_data: species_data.clone(),
+            species_data,
             using_white_flute,
+            feebas_cycles_by_vblank,
         }
     }
 
     pub fn extend_path_for_all_arcs(&self, lvl_path: &LvlPath) -> Vec<EncounterIdxPath> {
-        // TODO for caughtMon searcher: filter by wanted_lvl
-
         self.arcs
             .iter()
             .flat_map(|arc| match *arc {
@@ -282,55 +299,52 @@ impl<'a> EncounterIdxPathGenerator<'a> {
                 EncounterIdxToLvlArc::MassOutbreakSuccess(_) => {
                     extend_path_for_mass_outbreak(lvl_path, &self.mass_outbreak_setups)
                 }
-                EncounterIdxToLvlArc::SlotMagnetPullSuccess => extend_path_for_magnet_pull(
-                    lvl_path,
-                    &self.map_setups,
-                    self.species_data.as_ref().unwrap(),
-                ),
+                EncounterIdxToLvlArc::SlotMagnetPullSuccess => {
+                    extend_path_for_magnet_pull(lvl_path, &self.map_setups, &self.species_data)
+                }
                 EncounterIdxToLvlArc::SlotStaticSuccess => extend_path_for_static(
                     lvl_path,
                     &self.map_setups,
-                    self.species_data.as_ref().unwrap(),
+                    &self.species_data,
                     &self.actions,
                 ),
-                EncounterIdxToLvlArc::FeebasSuccess => {
-                    extend_path_for_feebas(lvl_path, &self.map_setups)
+                EncounterIdxToLvlArc::CheckFeebasSuccess { vblank_count } => {
+                    extend_path_for_feebas_success(lvl_path, &self.map_setups, vblank_count)
                 }
             })
             .collect()
     }
 }
 
-fn permit_vanilla_arc(leads: &[Gen3Lead]) -> bool {
+fn permit_vanilla_arc(leads: &[Gen3Lead], species_data: &SpeciesData) -> bool {
+    if species_data.species == Species::Feebas {
+        return false;
+    }
+
     leads
         .iter()
         .any(|lead| *lead != Gen3Lead::Static && *lead != Gen3Lead::MagnetPull)
 }
 
-fn permit_feebas_arc(species_data: &Option<SpeciesData>) -> bool {
-    match species_data {
-        Some(species_data) => species_data.species == Species::Feebas,
-        None => false,
-    }
+fn permit_feebas_arcs(species_data: &SpeciesData) -> bool {
+    species_data.species == Species::Feebas
 }
+
 fn permit_magnet_pull_arc(
     leads: &[Gen3Lead],
-    species_data: &Option<SpeciesData>,
+    species_data: &SpeciesData,
     actions: &[Wild3Action],
 ) -> bool {
     if !actions.contains(&Wild3Action::SweetScentLand) {
         return false;
     }
 
-    match species_data {
-        None => false,
-        Some(species_data) => species_data.is_steel_type() && leads.contains(&Gen3Lead::MagnetPull),
-    }
+    species_data.is_steel_type() && leads.contains(&Gen3Lead::MagnetPull)
 }
 
 fn permit_static_arc(
     leads: &[Gen3Lead],
-    species_data: &Option<SpeciesData>,
+    species_data: &SpeciesData,
     actions: &[Wild3Action],
 ) -> bool {
     if !actions.contains(&Wild3Action::SweetScentLand)
@@ -339,34 +353,27 @@ fn permit_static_arc(
         return false;
     }
 
-    match species_data {
-        None => false,
-        Some(species_data) => species_data.is_electric_type() && leads.contains(&Gen3Lead::Static),
-    }
+    species_data.is_electric_type() && leads.contains(&Gen3Lead::Static)
 }
 
 fn permit_mass_outbreak_warm_arc(
     maps_setups: &[Wild3MapSetups],
-    species_data: &Option<SpeciesData>,
+    species_data: &SpeciesData,
 ) -> bool {
-    if let Some(species_data) = species_data {
-        maps_setups.iter().any(|map_setup| {
-            map_setup
-                .map_data
-                .mass_outbreaks
-                .iter()
-                .any(|mass_outbreak| {
-                    mass_outbreak.encounter_data.species_data.species == species_data.species
-                })
-        })
-    } else {
-        true
-    }
+    maps_setups.iter().any(|map_setup| {
+        map_setup
+            .map_data
+            .mass_outbreaks
+            .iter()
+            .any(|mass_outbreak| {
+                mass_outbreak.encounter_data.species_data.species == species_data.species
+            })
+    })
 }
 
 fn get_mass_outbreak_setups(
     maps_setups_for_rev: &[Wild3MapSetupsForReverse],
-    species_data: &Option<SpeciesData>,
+    species_data: &SpeciesData,
 ) -> Vec<(usize, Wild3MassOutbreakState)> {
     maps_setups_for_rev
         .iter()
@@ -392,9 +399,7 @@ fn get_mass_outbreak_setups(
                     {
                         return None;
                     }
-                    if let Some(species_data) = species_data
-                        && mass_outbreak.encounter_data.species_data.species != species_data.species
-                    {
+                    if mass_outbreak.encounter_data.species_data.species != species_data.species {
                         return None;
                     }
 
@@ -456,10 +461,15 @@ fn filter_paths_with_safari_mismatch(
     true
 }
 
+/*
+Covers the cases:
+ - Ordinary lead
+ - Failure for MagnetPull, Static, MassOutbreak, Feebas, Roamer
+*/
 fn extend_path_for_slot_vanilla(
     lvl_path: &LvlPath,
     maps_setups_for_rev: &[Wild3MapSetupsForReverse],
-    species_data: &Option<SpeciesData>,
+    species_data: &SpeciesData,
     actions: &[Wild3Action],
     using_white_flute: bool,
 ) -> Vec<EncounterIdxPath> {
@@ -496,9 +506,7 @@ fn extend_path_for_slot_vanilla(
 
                     encounter?;
 
-                    if let Some(species_data) = species_data
-                        && encounter.unwrap().species_data.species != species_data.species
-                    {
+                    if encounter.unwrap().species_data.species != species_data.species {
                         return None;
                     }
 
@@ -646,13 +654,18 @@ fn extend_path_for_static(
         .collect()
 }
 
-fn extend_path_for_feebas(
+fn extend_path_for_feebas_success(
     lvl_path: &LvlPath,
     maps_setups_for_rev: &[Wild3MapSetupsForReverse],
+    vblank_count: usize,
 ) -> Vec<EncounterIdxPath> {
     maps_setups_for_rev
         .iter()
         .filter_map(|map_setups_for_rev| {
+            if map_setups_for_rev.map_setups.map_data.feebas.is_none() {
+                return None;
+            }
+
             if !map_setups_for_rev
                 .map_setups
                 .feebas_states
@@ -671,6 +684,7 @@ fn extend_path_for_feebas(
                 .find(|action| action.is_fishing())?;
 
             let mut rng = Pokerng::new(lvl_path.seed);
+            rng.reverse_jump(vblank_count);
             let got_feebas = rng.prev_rand() % 100 <= 49;
             if !got_feebas {
                 return None;
@@ -680,7 +694,7 @@ fn extend_path_for_feebas(
                 rng.seed(),
                 map_setups_for_rev.map_setups_idx,
                 *action,
-                EncounterIdxToLvlArc::FeebasSuccess,
+                EncounterIdxToLvlArc::CheckFeebasSuccess { vblank_count },
                 lvl_path,
             ))
         })

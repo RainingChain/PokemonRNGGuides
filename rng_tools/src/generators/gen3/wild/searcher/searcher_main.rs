@@ -1,16 +1,18 @@
+use std::collections::HashMap;
+
 use itertools::{Itertools, iproduct};
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use super::super::{
-    Wild3FeebasState, Wild3GeneratorOptions, Wild3GeneratorResult, Wild3MassOutbreakState,
+    Wild3FeebasState, Wild3GeneratorMonResult, Wild3GeneratorOptions, Wild3MassOutbreakState,
     Wild3RoamerState, generate_gen3_wild,
 };
 use crate::{
     AbilityType, Gender, HiddenPower, Ivs, Nature, PkmFilter, Species,
     gen3::{
-        Gen3Lead, Gen3Method, Gen3PkmFilter, SpeciesData, search_wild3_reverse,
+        Gen3Lead, Gen3Method, Gen3PkmFilter, SpeciesData, search_wild3_naive, search_wild3_reverse,
         searcher_painter::Wild3PaintingOpts,
         wild::{
             Wild3Action, Wild3EncounterGameData, Wild3EncounterIndex, Wild3MapGameData,
@@ -116,6 +118,7 @@ pub struct Wild3SearcherOptions {
     pub painting_opts: Option<Wild3PaintingOpts>,
     pub using_white_flute: bool,
     pub considered_safari_pokeblocks: Wild3SafariPokeblockSearchOpt,
+    pub feebas_cycles: Vec<usize>,
 }
 
 impl Default for Wild3SearcherOptions {
@@ -139,6 +142,7 @@ impl Default for Wild3SearcherOptions {
             lead_cycle_speed: None,
             using_white_flute: true,
             considered_safari_pokeblocks: Wild3SafariPokeblockSearchOpt::default(),
+            feebas_cycles: vec![0],
         }
     }
 }
@@ -152,6 +156,7 @@ pub struct Wild3SearcherResultMon {
     pub encounter_idx: Wild3EncounterIndex,
     pub lvl: u8,
     pub cycle_data_by_lead: Option<Wild3SearcherCycleDataByLead>,
+    pub cycle_instability: f32,
     pub used_safari_pokeblock: Option<[u8; 5]>,
 
     pub species: Species,
@@ -174,16 +179,18 @@ pub struct Wild3SearcherResultMon {
     pub action: Wild3Action,
     pub roamer_state: Wild3RoamerState,
     pub feebas_state: Wild3FeebasState,
+    pub feebas_cycles: usize,
     pub mass_outbreak_state: Wild3MassOutbreakState,
 }
 
 impl Wild3SearcherResultMon {
     pub fn new(
-        gen_res: &Wild3GeneratorResult,
+        gen_res: &Wild3GeneratorMonResult,
         gen_opts: &Wild3GeneratorOptions,
         seed: u32,
         advance: usize,
         encounter: &Wild3EncounterGameData,
+        cycle_instability: f32,
     ) -> Wild3SearcherResultMon {
         let cycle_data_by_lead = gen_res.cycle_range.map(|cycle_range| {
             let is_egg = matches!(gen_opts.lead, Gen3Lead::Egg);
@@ -219,7 +226,9 @@ impl Wild3SearcherResultMon {
             action: gen_opts.action,
             roamer_state: gen_opts.roamer_state,
             feebas_state: gen_opts.feebas_state,
+            feebas_cycles: gen_opts.feebas_cycles,
             mass_outbreak_state: gen_opts.mass_outbreak_state,
+            cycle_instability,
         }
     }
 }
@@ -237,10 +246,53 @@ pub struct VecWrapperForWasm {
  * */
 #[wasm_bindgen]
 pub fn search_wild3(opts: &Wild3SearcherOptions) -> Vec<VecWrapperForWasm> {
-    search_wild3_reverse(opts)
-        .into_iter()
-        .map(|vec| VecWrapperForWasm { vec })
-        .collect_vec()
+    let res = if does_search_wild3_reverse_support_options(opts) {
+        search_wild3_reverse(opts)
+    } else {
+        search_wild3_naive(opts)
+    };
+
+    split_by_pid_path(res)
+}
+
+pub fn does_search_wild3_reverse_support_options(opts: &Wild3SearcherOptions) -> bool {
+    if opts.methods.contains(&Gen3Method::Wild5) {
+        return false;
+    }
+
+    if opts.gen3_filter.species.is_none() {
+        return false;
+    }
+
+    // Fishing a non-Feebas Pokémon in the feebas map is not supported.
+    if opts.gen3_filter.species != Some(Species::Feebas)
+        && opts.map_setups.iter().any(|map_setup| {
+            map_setup.map_data.feebas.is_some()
+                && map_setup.actions.iter().any(|action| action.is_fishing())
+        })
+    {
+        return false;
+    }
+
+    true
+}
+
+fn split_by_pid_path(results: Vec<Wild3SearcherResultMon>) -> Vec<VecWrapperForWasm> {
+    let mut groups: Vec<VecWrapperForWasm> = Vec::new();
+    let mut group_indices = HashMap::new();
+    for result in results {
+        let ivs = result.ivs;
+        let key = (
+            result.pid,
+            [ivs.hp, ivs.atk, ivs.def, ivs.spa, ivs.spd, ivs.spe],
+        );
+        let index = *group_indices.entry(key).or_insert_with(|| {
+            groups.push(VecWrapperForWasm { vec: vec![] });
+            groups.len() - 1
+        });
+        groups[index].vec.push(result);
+    }
+    groups
 }
 
 /**
@@ -258,9 +310,6 @@ pub fn search_wild3_with_initial_advances_range(
             let mut new_opts = opts.clone();
             new_opts.initial_seed = initial_seed;
             search_wild3_reverse(&new_opts)
-                .into_iter()
-                .flatten()
-                .collect()
         })
         .map(|vec| VecWrapperForWasm { vec })
         .collect_vec()

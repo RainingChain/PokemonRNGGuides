@@ -19,7 +19,7 @@ import {
   formatFeebasStateName,
   leadsLabels,
 } from "./utils";
-import { useWatch_UNSAFE } from "~/hooks/form";
+import { useFormContext, useWatch_UNSAFE } from "~/hooks/form";
 import { FormState } from "./wild3TargetSetupSearcher";
 import { getPossibleValuesForSpecies } from "./wild3TargetMon";
 import { wild3SafariPokeblockSearchOptLabels } from "~/types/pokeblock";
@@ -27,6 +27,7 @@ import {
   getPaintingSetupFilterFields as getPaintingSetupFilterFields,
   getTidSidSetupFilterFields,
 } from "../pokemonRng/targetSetupSearcher";
+import { FormikFeebasTilesSelector } from "./feebasMap";
 
 const supportedGen3Methods = [
   "Wild1",
@@ -44,6 +45,8 @@ const getSetupFields = (obj: {
   letSearcherFindPaintingSeed: boolean;
   showAdvancedPaintingSettings: boolean;
   usingAceForSid: boolean;
+  feebasCycles: number[];
+  setFieldValue: ReturnType<typeof useFormContext<FormState>>["setFieldValue"];
 }): Field[] => {
   const { species, recommendedSetups } = obj;
 
@@ -55,11 +58,11 @@ const getSetupFields = (obj: {
       label: "Target species",
       input: species,
     },
+    ...getTidSidSetupFilterFields({ ...obj, game: "emerald" }),
     {
       label: "Recommended setups?",
       input: <FormikSwitch<FormState> name="recommendedSetups" />,
     },
-    ...getTidSidSetupFilterFields({ ...obj, game: "emerald" }),
     {
       label: "Actions",
       input: (
@@ -161,6 +164,13 @@ const getSetupFields = (obj: {
       indent: 1,
     },
     {
+      label: "Feebas fishing spots",
+      tooltip:
+        "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause unstable results.",
+      input: <FormikFeebasTilesSelector<FormState> name="feebasCycles" />,
+      show: species === "Feebas",
+    },
+    {
       label: "Methods",
       tooltip: (
         <>
@@ -218,6 +228,7 @@ const getSetupFields = (obj: {
 };
 
 export const Wild3SetupFilter = () => {
+  const { setFieldValue } = useFormContext<FormState>();
   const species = useWatch_UNSAFE<FormState, "species">({
     name: "species",
   });
@@ -248,6 +259,9 @@ export const Wild3SetupFilter = () => {
   >({
     name: "showAdvancedPaintingSettings",
   });
+  const feebasCycles = useWatch_UNSAFE<FormState, "feebasCycles">({
+    name: "feebasCycles",
+  });
 
   const fields: Field[] = getSetupFields({
     species,
@@ -257,6 +271,8 @@ export const Wild3SetupFilter = () => {
     letSearcherFindPaintingSeed,
     showAdvancedPaintingSettings,
     usingAceForSid,
+    feebasCycles,
+    setFieldValue,
   });
 
   return (

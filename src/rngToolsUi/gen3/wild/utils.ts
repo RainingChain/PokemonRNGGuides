@@ -11,6 +11,8 @@ import { match, P } from "ts-pattern";
 import { gender, nature } from "~/types";
 import z from "zod";
 
+export const FEEBAS_MAP = "MAP_ROUTE119";
+
 export const formatMapName = (label: string) => {
   return label
     .split("_")
