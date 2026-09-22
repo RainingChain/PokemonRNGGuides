@@ -3,6 +3,7 @@ use crate::{
     gen3::{
         CycleRange, Gen3Lead, Gen3Method, INFINITE_CYCLE, Wild3EncounterIndex,
         Wild3GeneratorMonResult, Wild3GeneratorOptions, Wild3MapGameData, generate_gen3_wild,
+        generate_gen3_wild_old,
     },
     rng::lcrng::Pokerng,
 };
@@ -134,6 +135,14 @@ fn test_generate_wild3_cycle_methods_1_2_4() {
         &Wild3MapGameData::default(),
     )
     .mon_results;
+    let results_old = generate_gen3_wild_old(
+        Pokerng::with_advances(0, 3001),
+        &options,
+        &Wild3MapGameData::default(),
+    )
+    .mon_results;
+    assert_eq!(results_old, result);
+
     let expected_result = vec![
         Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot3),
@@ -160,5 +169,6 @@ fn test_generate_wild3_cycle_methods_1_2_4() {
             ..Default::default()
         },
     ];
+
     assert_eq!(result, expected_result);
 }
