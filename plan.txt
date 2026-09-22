@@ -7,16 +7,50 @@ case 1: debug/method likelihood by printing exact cycle at each moment
   input: lead cycle speed
 
 
-case 2: get percentage of hitting target for giving setup + lead
-  input: lead cycle speed
+case 2: check if possible to hit target for giving setup
+  calculate min/max cycle
+
+case 3: determine data about the different lead cycle speed: ideal, slowest, fastest, common_lower_lead, common_upper_lead, specific
+  data: number of advance 
 
 
-case 3: determine data about the different lead cycle speed: ideal, slowest, fastest, common_lower_lead, common_upper_lead
-  input: none
+
+CycleFrame 
+  cycle
+  frame
+
+CycleCounter:
+  cycle_frame
+  moments: only for case 1.
+  lead_cycle_spd
+
+  constructor_case1(initial_cycle, vblank_cycles, lead_cycle_spd)
+  
+  constructor_case2(lead_cycle_spd?)
+
+
+
+if feebas multiple vblanks, duplicate results for each vblank count.
+
+
 
 
 TODO:
-For case 3, propose a solution to handle when the number of vblanks occuring during feebas is random (ex: either 1 with 25% chance, and 2 with 75% chance).
+
+The pokemon generation logic starts with a certain cycle counter. Each cycle has a known probability.
+ex: Starting with cycle 10_000 is 1%, 10_001 is 0.5%.
+
+During the pokemon generation, each operation increases the cycle by a fixed amount which depends on the lead cycle speed.
+
+Every 280k cycles, a vblank occurs. When it occurs, the frame advances by 1 and cycle resets to a random value. That random value also has a known probability.
+
+Ultimately, the goal is to determine the probability that the cycle is in a certain range at a certain moment for a list of lead cycle speed (lead cycle speed = {0, 100, 200, 300}).
+Ex: Probability to be between 260k-280k when selecting the level.
+
+Propose a data structure to keep track of the cycle/frame counter.
+Propose a function that convert (cycle/frame counter + cycle range + lead cycle speed) into a probability 
+
+
 
 
 
