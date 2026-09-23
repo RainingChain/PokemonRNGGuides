@@ -60,27 +60,38 @@ fn sweet_scent_matches_existing_generation() {
             Gen3Lead::MagnetPull,
             Gen3Lead::HustleVitalSpiritPressure,
         ] {
-            for seed in 0..32 {
+            for (seed, consider_cycles) in (0..32)
+                .flat_map(|seed| [false, true].map(|consider_cycles| (seed, consider_cycles)))
+            {
                 let opts = Wild3GeneratorOptions {
                     action,
                     lead,
                     methods: vec![Gen3Method::Wild1],
                     roamer_state: Wild3RoamerState::ActiveInMapLatios,
                     mass_outbreak_state: Wild3MassOutbreakState::Route102Seedot,
+                    consider_cycles,
+                    generate_even_if_impossible: true,
                     ..Default::default()
                 };
                 let old = generate_gen3_wild_old(Pokerng::new(seed), &opts, &map);
                 let new = generate_wild3(Pokerng::new(seed), &opts, &map);
+                let context = format!("{action:?} {lead:?} {seed} {consider_cycles}");
                 assert_mon_results_eq_unordered(
                     &new.mon_results,
                     &old.mon_results,
-                    &format!("{action:?} {lead:?} {seed}"),
+                    &context,
                 );
-                assert_eq!(new.cycle_counter.cycle, old.cycle_counter.cycle);
-                assert_eq!(
-                    new.cycle_counter.cycle_at_moments[0].moment,
-                    Moment::TrySweetScentEncounter
-                );
+                // The old generator rolls a level for roamers; the new one uses their fixed level.
+                let is_roamer = new.mon_results.iter().any(|result| {
+                    matches!(result.encounter_idx, Wild3EncounterIndex::Roamer(_))
+                });
+                let expected_cycle = if consider_cycles && !is_roamer {
+                    old.cycle_counter.cycle
+                } else {
+                    CycleAndModCount::default()
+                };
+                assert_eq!(new.cycle_counter.cycle, expected_cycle, "{context}");
+                assert!(new.cycle_counter.cycle_at_moments.is_empty(), "{context}");
             }
         }
     }
@@ -101,21 +112,31 @@ fn fishing_and_rock_smash_match_existing_generation() {
             Wild3FeebasState::OnFeebasTile,
             Wild3FeebasState::InMapButNotOnFeebasTile,
         ] {
-            for seed in 0..64 {
+            for (seed, consider_cycles) in (0..64)
+                .flat_map(|seed| [false, true].map(|consider_cycles| (seed, consider_cycles)))
+            {
                 let opts = Wild3GeneratorOptions {
                     action,
                     feebas_state,
                     methods: vec![Gen3Method::Wild1],
+                    consider_cycles,
+                    generate_even_if_impossible: true,
                     ..Default::default()
                 };
                 let old = generate_gen3_wild_old(Pokerng::new(seed), &opts, &map);
                 let new = generate_wild3(Pokerng::new(seed), &opts, &map);
+                let context = format!("{action:?} {feebas_state:?} {seed} {consider_cycles}");
                 assert_mon_results_eq_unordered(
                     &new.mon_results,
                     &old.mon_results,
-                    &format!("{action:?} {feebas_state:?} {seed}"),
+                    &context,
                 );
-                assert_eq!(new.cycle_counter.cycle, old.cycle_counter.cycle);
+                let expected_cycle = if consider_cycles {
+                    old.cycle_counter.cycle
+                } else {
+                    CycleAndModCount::default()
+                };
+                assert_eq!(new.cycle_counter.cycle, expected_cycle, "{context}");
             }
         }
     }
