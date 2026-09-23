@@ -1,6 +1,5 @@
-#![allow(non_snake_case)] // To have the same function names as pokeemerald.
+#![allow(non_snake_case)] // To have the same function names as pokeemerald decompil project.
 
-use arrayvec::ArrayVec;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
@@ -9,9 +8,9 @@ use super::generator::{
     INFINITE_CYCLE, VBLANK_FREQ, Wild3GeneratorMonResult, Wild3GeneratorOptions,
     Wild3GeneratorResults,
 };
-use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned, is_method_possible_to_trigger};
+use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned};
 use crate::gen3::{
-    CycleAndModCount, CycleCounter, FASTEST_MODULO_CYCLE_24, SLOWEST_MODULO_CYCLE_24,
+    BASE_LEAD_PID_MOD_24_CYCLES, CycleCounter, FASTEST_MODULO_CYCLE_24, SLOWEST_MODULO_CYCLE_24,
 };
 use crate::{
     EncounterSlot, Gender, GenderRatio, Ivs, NATURE_COUNT, Nature,
@@ -36,8 +35,6 @@ pub enum CycleFrameCounterMode {
     MinMaxRange,
     DetailedBreakdown,
 }
-
-// NO_PROD: better cycle range for wild5 by using MostlyOneArray and substracting wild3 ranges.
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -164,6 +161,8 @@ impl CycleFrameCounter {
         if self.mode == CycleFrameCounterMode::Inactive {
             return;
         }
+
+        self.base_cycle_count += lead_pid_mod * BASE_LEAD_PID_MOD_24_CYCLES;
         self.lead_pid_mod_count += lead_pid_mod;
         self.min_max_cycles.add_mod(lead_pid_mod);
     }
@@ -204,7 +203,6 @@ impl CycleFrameCounter {
     }
 }
 
-// The field-effect task's visual frames are outside the encounter RNG path.
 pub fn generate_wild3(
     mut rng: Pokerng,
     opts: &Wild3GeneratorOptions,
@@ -223,6 +221,7 @@ pub fn generate_wild3(
             RockSmashWildEncounter(&mut rng, opts, map_data, &mut cycle_counter)
         }
     }
+    .unwrap_or_else(Wild3GeneratorResults::empty)
 }
 
 fn Fishing_StartEncounter(
@@ -230,7 +229,7 @@ fn Fishing_StartEncounter(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
     cycle_counter: &mut CycleFrameCounter,
-) -> Wild3GeneratorResults {
+) -> Option<Wild3GeneratorResults> {
     cycle_counter.on_moment_reached(Moment::Fishing_StartEncounter);
     FishingWildEncounter(rng, opts, map_data, cycle_counter)
 }
@@ -240,34 +239,29 @@ fn FishingWildEncounter(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
     cycle_counter: &mut CycleFrameCounter,
-) -> Wild3GeneratorResults {
+) -> Option<Wild3GeneratorResults> {
     cycle_counter.on_moment_reached(Moment::FishingWildEncounter);
+
     if CheckFeebas(rng, opts, cycle_counter) {
         let Some(encounter) = map_data.feebas.as_ref() else {
-            return Wild3GeneratorResults::empty();
+            return None;
         };
         let level = ChooseWildMonLevel(rng, encounter, opts.lead, cycle_counter);
-        return finish(
+        return CreateWildMon_Wrapper(
             rng,
             opts,
             map_data,
             cycle_counter,
             Wild3EncounterIndex::Feebas,
-            Some(level),
+            level,
         );
     }
+
     let Some((encounter_idx, level)) = GenerateFishingWildMon(rng, opts, map_data, cycle_counter)
     else {
-        return Wild3GeneratorResults::empty();
+        return None;
     };
-    finish(
-        rng,
-        opts,
-        map_data,
-        cycle_counter,
-        encounter_idx,
-        Some(level),
-    )
+    CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, encounter_idx, level)
 }
 
 fn CheckFeebas(
@@ -317,23 +311,16 @@ fn RockSmashWildEncounter(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
     cycle_counter: &mut CycleFrameCounter,
-) -> Wild3GeneratorResults {
+) -> Option<Wild3GeneratorResults> {
     cycle_counter.on_moment_reached(Moment::RockSmashWildEncounter);
     if !WildEncounterCheck(rng, map_data.rock_smash_rate, opts, cycle_counter) {
-        return Wild3GeneratorResults::empty();
+        return None;
     }
     let Some((encounter_idx, level)) = TryGenerateWildMon(rng, opts, map_data, 0, cycle_counter)
     else {
-        return Wild3GeneratorResults::empty();
+        return None;
     };
-    finish(
-        rng,
-        opts,
-        map_data,
-        cycle_counter,
-        encounter_idx,
-        Some(level),
-    )
+    CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, encounter_idx, level)
 }
 
 fn WildEncounterCheck(
@@ -364,7 +351,7 @@ fn TrySweetScentEncounter(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
     cycle_counter: &mut CycleFrameCounter,
-) -> Wild3GeneratorResults {
+) -> Option<Wild3GeneratorResults> {
     cycle_counter.on_moment_reached(Moment::TrySweetScentEncounter);
     SweetScentWildEncounter(rng, opts, map_data, cycle_counter)
 }
@@ -374,71 +361,45 @@ fn SweetScentWildEncounter(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
     cycle_counter: &mut CycleFrameCounter,
-) -> Wild3GeneratorResults {
+) -> Option<Wild3GeneratorResults> {
     cycle_counter.on_moment_reached(Moment::SweetScentWildEncounter);
+
     if let Some(roamer) = TryStartRoamerEncounter(rng, opts, cycle_counter) {
-        return finish(rng, opts, map_data, cycle_counter, roamer, None);
+        return Some(CreateRoamerMonInstance(opts, map_data, cycle_counter, roamer));
     }
+
     if opts.action == Wild3Action::SweetScentLand
         && DoMassOutbreakEncounterTest(rng, opts, cycle_counter)
     {
         let Some((outbreak, level)) =
             SetUpMassOutbreakEncounter(rng, 0, opts, map_data, cycle_counter)
         else {
-            return Wild3GeneratorResults::empty();
+            return None;
         };
-        return finish(rng, opts, map_data, cycle_counter, outbreak, Some(level));
+        return CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, outbreak, level);
     }
+
     let Some((encounter_idx, level)) = TryGenerateWildMon(rng, opts, map_data, 0, cycle_counter)
     else {
-        return Wild3GeneratorResults::empty();
+        return None;
     };
-    finish(
-        rng,
-        opts,
-        map_data,
-        cycle_counter,
-        encounter_idx,
-        Some(level),
-    )
+    CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, encounter_idx, level)
 }
 
-fn finish(
-    rng: &Pokerng,
+fn CreateRoamerMonInstance(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
     cycle_counter: &CycleFrameCounter,
-    encounter_idx: Wild3EncounterIndex,
-    selected_level: Option<u8>,
+    roamer: Wild3EncounterIndex,
 ) -> Wild3GeneratorResults {
-    let mut rng = rng.clone();
-    let mut cycle_counter = cycle_counter.clone();
-    let encounter = map_data.get_encounter(opts.action, encounter_idx);
-    if encounter.is_none() {
-        // impossible to trigger in-game
-        return Wild3GeneratorResults::empty();
-    }
+    let lvl = map_data
+        .get_encounter(opts.action, roamer)
+        .map(|enc| enc.min_level) // roamer min/max level is the same.
+        .unwrap_or(1);
 
-    let encounter = encounter.unwrap();
-    if let Some(species) = opts.gen3_filter.species
-        && species != encounter.species_data.species
-    {
-        return Wild3GeneratorResults::empty();
-    }
-
-    let lvl = selected_level
-        .unwrap_or_else(|| ChooseWildMonLevel(&mut rng, encounter, opts.lead, &mut cycle_counter));
-
-    if let Some(wanted_lvl) = opts.gen3_filter.lvl
-        && lvl != wanted_lvl
-    {
-        return Wild3GeneratorResults::empty();
-    }
-
-    let mut results: Vec<Wild3GeneratorMonResult> = vec![];
-    if matches!(encounter_idx, Wild3EncounterIndex::Roamer(_)) {
-        results.push(Wild3GeneratorMonResult {
-            encounter_idx,
+    Wild3GeneratorResults {
+        mon_results: vec![Wild3GeneratorMonResult {
+            encounter_idx: roamer,
             pid: 0, // Roamers PID and IVs are generated by an in-game event
             ivs: Ivs::default(),
             lvl,
@@ -449,22 +410,56 @@ fn finish(
                 None
             },
             used_safari_pokeblock: None,
-        });
-        return Wild3GeneratorResults {
-            mon_results: results,
-            cycle_counter: cycle_counter.to_cycle_counter(),
-        };
+        }],
+        cycle_counter: cycle_counter.to_cycle_counter(),
+    }
+}
+
+fn get_encounter_if_respects_filter<'a>(
+    opts: &Wild3GeneratorOptions,
+    map_data: &'a Wild3MapGameData,
+    encounter_idx: Wild3EncounterIndex,
+    lvl: u8,
+) -> Option<&'a Wild3EncounterGameData> {
+    let encounter = map_data.get_encounter(opts.action, encounter_idx)?;
+
+    if let Some(species) = opts.gen3_filter.species
+        && species != encounter.species_data.species
+    {
+        return None;
     }
 
-    CreateWildMon(
-        rng,
+    if let Some(wanted_lvl) = opts.gen3_filter.lvl
+        && lvl != wanted_lvl
+    {
+        return None;
+    }
+
+    Some(encounter)
+}
+
+fn CreateWildMon_Wrapper(
+    rng: &Pokerng,
+    opts: &Wild3GeneratorOptions,
+    map_data: &Wild3MapGameData,
+    cycle_counter: &CycleFrameCounter,
+    encounter_idx: Wild3EncounterIndex,
+    lvl: u8,
+) -> Option<Wild3GeneratorResults> {
+    let Some(encounter) = get_encounter_if_respects_filter(opts, map_data, encounter_idx, lvl)
+    else {
+        return None;
+    };
+
+    Some(CreateWildMon(
+        rng.clone(),
         opts,
         map_data,
-        cycle_counter,
+        cycle_counter.clone(),
         encounter_idx,
         lvl,
         encounter,
-    )
+    ))
 }
 
 fn PickWildMonNature(
@@ -674,16 +669,18 @@ fn generate_personality(
                 skip_method5_counter -= 1;
             } else {
                 let opt_pid_ivs: Option<(u32, Ivs)>;
-                (skip_method5_counter, opt_pid_ivs) = get_wild_method5_retry_count(&gen_data, rng);
+                let method5_range;
+                (skip_method5_counter, method5_range, opt_pid_ivs) =
+                    get_wild_method5_retry_count(&gen_data, rng, pid);
 
                 if let Some((pid, ivs)) = opt_pid_ivs {
-                    if cycle_counter.can_vblank_occur_soon(1000) {
+                    if cycle_counter.can_vblank_occur_soon(method5_range) {
                         if let Some(res) = create_if_passes_filter(
                             &gen_data,
                             pid,
                             ivs,
                             Gen3Method::Wild5,
-                            cycle_counter.create_cycle_range(1000),
+                            cycle_counter.create_cycle_range(method5_range),
                         ) {
                             results.push(res);
                         }
@@ -1224,8 +1221,16 @@ fn simulate_wild_method4(
 fn get_wild_method5_retry_count(
     gen_data: &GenTmpData,
     mut rng: Pokerng,
-) -> (usize, Option<(u32, Ivs)>) {
-    rand_next_u16(&mut rng, "vblank_wild5", 1); // Vblank from method5
+    initial_pid: u32,
+) -> (usize, usize, Option<(u32, Ivs)>) {
+    let mut unshifted_pid_low = rand_next_u16(&mut rng, "vblank_wild5", 1) as u32;
+    let mut cycle_increment = calc_modulo_cycle_unsigned(initial_pid, 25)
+        + if Nature::from_pid(initial_pid) == gen_data.required_nature {
+            140
+        } else {
+            158
+        };
+    let mut unshifted_pid_accepted = false;
 
     // Limitation: Only 1 vblank is supported. In theory, multiple vblanks could occur.
 
@@ -1236,14 +1241,37 @@ fn get_wild_method5_retry_count(
         let pid_high = rand_next_u16(&mut rng, "pid_high_wild5", 1) as u32;
         pid = (pid_high << 16) | pid_low;
 
+        // The shifted low half is the high half of the next unshifted PID.
+        let unshifted_pid = (pid_low << 16) | unshifted_pid_low;
+        let unshifted_good_nature = Nature::from_pid(unshifted_pid) == gen_data.required_nature;
+        if !unshifted_pid_accepted {
+            cycle_increment += 80;
+            unshifted_pid_accepted = unshifted_good_nature
+                && gen_data.required_gender.is_none_or(|gender| {
+                    gen_data
+                        .encounter_gender_ratio
+                        .gender_from_pid(unshifted_pid)
+                        == gender
+                });
+        }
+        unshifted_pid_low = pid_high;
+
+        let unshifted_retry_cycles = if unshifted_pid_accepted {
+            0
+        } else {
+            calc_modulo_cycle_unsigned(unshifted_pid, 25)
+                + if unshifted_good_nature { 140 } else { 158 }
+        };
         if Nature::from_pid(pid) != gen_data.required_nature {
             retry_count += 1;
+            cycle_increment += unshifted_retry_cycles;
             continue;
         }
         if let Some(required_gender) = gen_data.required_gender {
             let generated_mon_gender = gen_data.encounter_gender_ratio.gender_from_pid(pid);
             if generated_mon_gender != required_gender {
                 retry_count += 1;
+                cycle_increment += unshifted_retry_cycles;
                 continue;
             }
         }
@@ -1251,7 +1279,7 @@ fn get_wild_method5_retry_count(
     }
 
     if !passes_pid_filter_internal(gen_data, pid) {
-        return (retry_count, None);
+        return (retry_count, cycle_increment, None);
     }
 
     let ivs = Ivs::new_g3(
@@ -1259,7 +1287,7 @@ fn get_wild_method5_retry_count(
         rand_next_u16(&mut rng, "iv2_wild5", 1),
     );
 
-    (retry_count, Some((pid, ivs)))
+    (retry_count, cycle_increment, Some((pid, ivs)))
 }
 
 fn passes_pid_filter_internal(gen_data: &GenTmpData, pid: u32) -> bool {

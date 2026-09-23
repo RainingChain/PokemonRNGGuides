@@ -5,6 +5,21 @@ use crate::{
 };
 
 #[test]
+fn method5_cycle_ranges_match_existing_generation() {
+    let opts = Wild3GeneratorOptions {
+        methods: vec![Gen3Method::Wild5],
+        consider_cycles: true,
+        consider_rng_manipulated_lead_pid: true,
+        ..Default::default()
+    };
+    let map = Wild3MapGameData::default();
+    let rng = Pokerng::with_advances(0, 4894);
+    let old = generate_gen3_wild_old(rng, &opts, &map);
+    let new = generate_wild3(rng, &opts, &map);
+    assert_eq!(new.mon_results, old.mon_results);
+}
+
+#[test]
 fn sweet_scent_matches_existing_generation() {
     let mut map = Wild3MapGameData::default();
     map.slots_by_action[Wild3Action::SweetScentLand as usize][0]

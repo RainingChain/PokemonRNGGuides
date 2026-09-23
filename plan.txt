@@ -1,4 +1,12 @@
 
+// NO_PROD: better cycle range for wild5 by using MostlyOneArray and substracting wild3 ranges.
+
+
+
+
+
+
+
 cycle counting in generator2.
 
 case 1: debug/method likelihood by printing exact cycle at each moment
