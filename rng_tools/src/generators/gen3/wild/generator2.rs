@@ -65,6 +65,15 @@ pub struct MinMaxCycleFrame {
 }
 
 impl MinMaxCycleFrame {
+    pub fn new_inactive() -> Self {
+        Self {
+            min_cycle: CycleFrame { cycle: 0, frame: 0 },
+            max_cycle: CycleFrame { cycle: 0, frame: 0 },
+            min_lead_cycle_spd: 0,
+            max_lead_cycle_spd: 0,
+        }
+    }
+
     pub fn new(is_egg_lead: bool, action: Wild3Action) -> Self {
         let (min_cycle, _, max_cycle) = get_min_mid_max_pre_sweet_scent_cycle(action);
         Self {
@@ -134,6 +143,15 @@ pub struct CycleFrameCounter {
 }
 
 impl CycleFrameCounter {
+    pub fn new_inactive() -> Self {
+        Self {
+            mode: CycleFrameCounterMode::Inactive,
+            min_max_cycles: MinMaxCycleFrame::new_inactive(),
+            cycle_instability: 0.0,
+            base_cycle_count: 0,
+            lead_pid_mod_count: 0,
+        }
+    }
     pub fn new_for_min_max_range(is_egg_lead: bool, action: Wild3Action) -> Self {
         Self {
             mode: CycleFrameCounterMode::MinMaxRange,
@@ -208,8 +226,12 @@ pub fn generate_wild3(
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
 ) -> Wild3GeneratorResults {
-    let mut cycle_counter =
-        CycleFrameCounter::new_for_min_max_range(opts.lead == Gen3Lead::Egg, opts.action);
+    let mut cycle_counter = if opts.consider_cycles {
+        CycleFrameCounter::new_for_min_max_range(opts.lead == Gen3Lead::Egg, opts.action)
+    } else {
+        CycleFrameCounter::new_inactive()
+    };
+
     match opts.action {
         Wild3Action::SweetScentLand | Wild3Action::SweetScentWater => {
             TrySweetScentEncounter(&mut rng, opts, map_data, &mut cycle_counter)
@@ -390,8 +412,7 @@ fn SweetScentWildEncounter(
     if opts.action == Wild3Action::SweetScentLand
         && DoMassOutbreakEncounterTest(rng, opts, cycle_counter)
     {
-        let (outbreak, level) =
-            SetUpMassOutbreakEncounter(rng, 0, opts, map_data, cycle_counter)?;
+        let (outbreak, level) = SetUpMassOutbreakEncounter(rng, 0, opts, map_data, cycle_counter)?;
         let encounter = get_encounter_if_respects_filter(opts, map_data, outbreak, level)?;
         return Some(CreateWildMon(
             rng.clone(),
