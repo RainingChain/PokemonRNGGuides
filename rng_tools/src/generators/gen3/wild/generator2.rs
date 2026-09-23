@@ -243,25 +243,33 @@ fn FishingWildEncounter(
     cycle_counter.on_moment_reached(Moment::FishingWildEncounter);
 
     if CheckFeebas(rng, opts, cycle_counter) {
-        let Some(encounter) = map_data.feebas.as_ref() else {
-            return None;
-        };
+        let encounter = map_data.feebas.as_ref()?;
         let level = ChooseWildMonLevel(rng, encounter, opts.lead, cycle_counter);
-        return CreateWildMon_Wrapper(
-            rng,
+        let encounter_idx = Wild3EncounterIndex::Feebas;
+        let encounter = get_encounter_if_respects_filter(opts, map_data, encounter_idx, level)?;
+        return Some(CreateWildMon(
+            rng.clone(),
             opts,
             map_data,
-            cycle_counter,
-            Wild3EncounterIndex::Feebas,
+            cycle_counter.clone(),
+            encounter_idx,
             level,
-        );
+            encounter,
+        ));
     }
 
-    let Some((encounter_idx, level)) = GenerateFishingWildMon(rng, opts, map_data, cycle_counter)
-    else {
-        return None;
-    };
-    CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, encounter_idx, level)
+    let (encounter_idx, level) = GenerateFishingWildMon(rng, opts, map_data, cycle_counter)?;
+
+    let encounter = get_encounter_if_respects_filter(opts, map_data, encounter_idx, level)?;
+    Some(CreateWildMon(
+        rng.clone(),
+        opts,
+        map_data,
+        cycle_counter.clone(),
+        encounter_idx,
+        level,
+        encounter,
+    ))
 }
 
 fn CheckFeebas(
@@ -316,11 +324,17 @@ fn RockSmashWildEncounter(
     if !WildEncounterCheck(rng, map_data.rock_smash_rate, opts, cycle_counter) {
         return None;
     }
-    let Some((encounter_idx, level)) = TryGenerateWildMon(rng, opts, map_data, 0, cycle_counter)
-    else {
-        return None;
-    };
-    CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, encounter_idx, level)
+    let (encounter_idx, level) = TryGenerateWildMon(rng, opts, map_data, 0, cycle_counter)?;
+    let encounter = get_encounter_if_respects_filter(opts, map_data, encounter_idx, level)?;
+    Some(CreateWildMon(
+        rng.clone(),
+        opts,
+        map_data,
+        cycle_counter.clone(),
+        encounter_idx,
+        level,
+        encounter,
+    ))
 }
 
 fn WildEncounterCheck(
@@ -365,25 +379,42 @@ fn SweetScentWildEncounter(
     cycle_counter.on_moment_reached(Moment::SweetScentWildEncounter);
 
     if let Some(roamer) = TryStartRoamerEncounter(rng, opts, cycle_counter) {
-        return Some(CreateRoamerMonInstance(opts, map_data, cycle_counter, roamer));
+        return Some(CreateRoamerMonInstance(
+            opts,
+            map_data,
+            cycle_counter,
+            roamer,
+        ));
     }
 
     if opts.action == Wild3Action::SweetScentLand
         && DoMassOutbreakEncounterTest(rng, opts, cycle_counter)
     {
-        let Some((outbreak, level)) =
-            SetUpMassOutbreakEncounter(rng, 0, opts, map_data, cycle_counter)
-        else {
-            return None;
-        };
-        return CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, outbreak, level);
+        let (outbreak, level) =
+            SetUpMassOutbreakEncounter(rng, 0, opts, map_data, cycle_counter)?;
+        let encounter = get_encounter_if_respects_filter(opts, map_data, outbreak, level)?;
+        return Some(CreateWildMon(
+            rng.clone(),
+            opts,
+            map_data,
+            cycle_counter.clone(),
+            outbreak,
+            level,
+            encounter,
+        ));
     }
 
-    let Some((encounter_idx, level)) = TryGenerateWildMon(rng, opts, map_data, 0, cycle_counter)
-    else {
-        return None;
-    };
-    CreateWildMon_Wrapper(rng, opts, map_data, cycle_counter, encounter_idx, level)
+    let (encounter_idx, level) = TryGenerateWildMon(rng, opts, map_data, 0, cycle_counter)?;
+    let encounter = get_encounter_if_respects_filter(opts, map_data, encounter_idx, level)?;
+    Some(CreateWildMon(
+        rng.clone(),
+        opts,
+        map_data,
+        cycle_counter.clone(),
+        encounter_idx,
+        level,
+        encounter,
+    ))
 }
 
 fn CreateRoamerMonInstance(
@@ -436,30 +467,6 @@ fn get_encounter_if_respects_filter<'a>(
     }
 
     Some(encounter)
-}
-
-fn CreateWildMon_Wrapper(
-    rng: &Pokerng,
-    opts: &Wild3GeneratorOptions,
-    map_data: &Wild3MapGameData,
-    cycle_counter: &CycleFrameCounter,
-    encounter_idx: Wild3EncounterIndex,
-    lvl: u8,
-) -> Option<Wild3GeneratorResults> {
-    let Some(encounter) = get_encounter_if_respects_filter(opts, map_data, encounter_idx, lvl)
-    else {
-        return None;
-    };
-
-    Some(CreateWildMon(
-        rng.clone(),
-        opts,
-        map_data,
-        cycle_counter.clone(),
-        encounter_idx,
-        lvl,
-        encounter,
-    ))
 }
 
 fn PickWildMonNature(
