@@ -17,7 +17,7 @@ use crate::{
     PERTINENT_CUSTOM_POKEBLOCKS_BY_NATURE, PERTINENT_SOLO_POKEBLOCKS_BY_NATURE,
     POKEBLOCK_NATURE_STAT_FACTORS,
     gen3::{
-        CycleAndModRange, CycleRange, Gen3Lead, Gen3Method, Moment, Wild3Action,
+        CycleAndModCount, CycleAndModRange, CycleRange, Gen3Lead, Gen3Method, Moment, Wild3Action,
         Wild3EncounterGameData, Wild3EncounterIndex, Wild3FeebasState, Wild3MapGameData,
         Wild3MassOutbreakState, Wild3RoamerState, Wild3SafariPokeblockGenOpt,
         get_min_mid_max_pre_sweet_scent_cycle, get_min_mid_max_vblank_cycle_duration,
@@ -217,7 +217,14 @@ impl CycleFrameCounter {
         if self.mode == CycleFrameCounterMode::Inactive {
             return CycleCounter::default();
         }
-        CycleCounter::default()
+        CycleCounter {
+            cycle: CycleAndModCount {
+                cycle: self.base_cycle_count,
+                lead_pid_mod: self.lead_pid_mod_count,
+            },
+            cycle_instability: self.cycle_instability,
+            ..Default::default()
+        }
     }
 }
 
@@ -655,7 +662,8 @@ fn generate_personality(
 
         let method3_range = 80;
         if methods_contains_wild3
-            && cycle_counter.can_vblank_occur_soon(method3_range)
+            && (opts.generate_even_if_impossible
+                || cycle_counter.can_vblank_occur_soon(method3_range))
             && let Some(gen_mon_wild3) = simulate_wild_method3(
                 &gen_data,
                 rng,
@@ -702,7 +710,9 @@ fn generate_personality(
                     get_wild_method5_retry_count(&gen_data, rng, pid);
 
                 if let Some((pid, ivs)) = opt_pid_ivs {
-                    if cycle_counter.can_vblank_occur_soon(method5_range) {
+                    if opts.generate_even_if_impossible
+                        || cycle_counter.can_vblank_occur_soon(method5_range)
+                    {
                         if let Some(res) = create_if_passes_filter(
                             &gen_data,
                             pid,
@@ -746,7 +756,7 @@ fn CreateMon(
         calc_modulo_cycle_unsigned(pid, 25) + 100 * calc_modulo_cycle_unsigned(pid, 24) + 36900;
 
     if opts.methods.contains(&Gen3Method::Wild2)
-        && cycle_counter.can_vblank_occur_soon(method2_range)
+        && (opts.generate_even_if_impossible || cycle_counter.can_vblank_occur_soon(method2_range))
         && let Some(gen_mon_wild2) = simulate_wild_method2(
             &gen_data,
             rng,
@@ -765,7 +775,7 @@ fn CreateMon(
     let method4_range = 36 * calc_modulo_cycle_unsigned(pid, 24) + 11103; // between CreateBoxMon_ivs1 and CreateBoxMon_ivs2
 
     if opts.methods.contains(&Gen3Method::Wild4)
-        && cycle_counter.can_vblank_occur_soon(method4_range)
+        && (opts.generate_even_if_impossible || cycle_counter.can_vblank_occur_soon(method4_range))
         && let Some(gen_mon_wild4) = simulate_wild_method4(
             &gen_data,
             rng,
@@ -779,7 +789,9 @@ fn CreateMon(
     cycle_counter.add_cycle(method4_range);
 
     cycle_counter.on_moment_reached(Moment::CreateBoxMon_RandomIvs2);
-    if opts.methods.contains(&Gen3Method::Wild1) && cycle_counter.is_possible_that_no_vblank_yet() {
+    if opts.methods.contains(&Gen3Method::Wild1)
+        && (opts.generate_even_if_impossible || cycle_counter.is_possible_that_no_vblank_yet())
+    {
         let ivs = Ivs::new_g3(iv1, rand_next_u16(&mut rng, "iv2_wild1", 1));
 
         if let Some(gen_mon_wild1) = create_if_passes_filter(

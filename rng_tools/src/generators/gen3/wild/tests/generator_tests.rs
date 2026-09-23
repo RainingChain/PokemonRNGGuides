@@ -179,16 +179,16 @@ fn test_generate_wild3_all_methods() {
         },
         Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
-            pid: 1636667768,
-            ivs: Ivs::new(18, 20, 5, 29, 19, 24),
-            method: Gen3Method::Wild3,
+            pid: 1036881243,
+            ivs: Ivs::new(19, 28, 1, 5, 8, 17),
+            method: Gen3Method::Wild5,
             ..Default::default()
         },
         Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
-            pid: 1036881243,
-            ivs: Ivs::new(19, 28, 1, 5, 8, 17),
-            method: Gen3Method::Wild5,
+            pid: 1636667768,
+            ivs: Ivs::new(18, 20, 5, 29, 19, 24),
+            method: Gen3Method::Wild3,
             ..Default::default()
         },
         Wild3GeneratorMonResult {

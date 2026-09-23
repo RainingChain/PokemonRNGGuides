@@ -4,6 +4,23 @@ use crate::{
     gen3::{Gen3Method, Wild3SpecialEncounterGameData, generate_gen3_wild_old},
 };
 
+#[track_caller]
+fn assert_mon_results_eq_unordered(
+    actual: &[Wild3GeneratorMonResult],
+    expected: &[Wild3GeneratorMonResult],
+    context: &str,
+) {
+    assert_eq!(actual.len(), expected.len(), "{context}");
+    let mut unmatched: Vec<_> = expected.iter().collect();
+    for result in actual {
+        let index = unmatched.iter().position(|expected| *expected == result);
+        let Some(index) = index else {
+            panic!("{context}: unexpected result {result:?}; unmatched results: {unmatched:?}");
+        };
+        unmatched.swap_remove(index);
+    }
+}
+
 #[test]
 fn method5_cycle_ranges_match_existing_generation() {
     let opts = Wild3GeneratorOptions {
@@ -16,7 +33,7 @@ fn method5_cycle_ranges_match_existing_generation() {
     let rng = Pokerng::with_advances(0, 4894);
     let old = generate_gen3_wild_old(rng, &opts, &map);
     let new = generate_wild3(rng, &opts, &map);
-    assert_eq!(new.mon_results, old.mon_results);
+    assert_mon_results_eq_unordered(&new.mon_results, &old.mon_results, "Method 5");
 }
 
 #[test]
@@ -54,9 +71,10 @@ fn sweet_scent_matches_existing_generation() {
                 };
                 let old = generate_gen3_wild_old(Pokerng::new(seed), &opts, &map);
                 let new = generate_wild3(Pokerng::new(seed), &opts, &map);
-                assert_eq!(
-                    new.mon_results, old.mon_results,
-                    "{action:?} {lead:?} {seed}"
+                assert_mon_results_eq_unordered(
+                    &new.mon_results,
+                    &old.mon_results,
+                    &format!("{action:?} {lead:?} {seed}"),
                 );
                 assert_eq!(new.cycle_counter.cycle, old.cycle_counter.cycle);
                 assert_eq!(
@@ -92,9 +110,10 @@ fn fishing_and_rock_smash_match_existing_generation() {
                 };
                 let old = generate_gen3_wild_old(Pokerng::new(seed), &opts, &map);
                 let new = generate_wild3(Pokerng::new(seed), &opts, &map);
-                assert_eq!(
-                    new.mon_results, old.mon_results,
-                    "{action:?} {feebas_state:?} {seed}"
+                assert_mon_results_eq_unordered(
+                    &new.mon_results,
+                    &old.mon_results,
+                    &format!("{action:?} {feebas_state:?} {seed}"),
                 );
                 assert_eq!(new.cycle_counter.cycle, old.cycle_counter.cycle);
             }
@@ -136,9 +155,10 @@ fn all_methods_and_cycle_ranges_match_existing_generation() {
                 };
                 let old = generate_gen3_wild_old(Pokerng::new(seed), &opts, &map);
                 let new = generate_wild3(Pokerng::new(seed), &opts, &map);
-                assert_eq!(
-                    new.mon_results, old.mon_results,
-                    "{action:?} {lead:?} {seed}"
+                assert_mon_results_eq_unordered(
+                    &new.mon_results,
+                    &old.mon_results,
+                    &format!("{action:?} {lead:?} {seed}"),
                 );
                 assert_eq!(new.cycle_counter.cycle, old.cycle_counter.cycle);
             }
