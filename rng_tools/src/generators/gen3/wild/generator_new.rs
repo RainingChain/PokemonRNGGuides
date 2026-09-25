@@ -8,7 +8,7 @@ use super::generator_main::{
     INFINITE_CYCLE, VBLANK_FREQ, Wild3GeneratorMonResult, Wild3GeneratorOptions,
     Wild3GeneratorResults,
 };
-use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned};
+use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned, is_method_possible_to_trigger};
 use crate::gen3::{
     BASE_LEAD_PID_MOD_24_CYCLES, COMMON_LEAD_RANGE, CycleCounter, FASTEST_MODULO_CYCLE_24,
     SLOWEST_MODULO_CYCLE_24,
@@ -223,6 +223,25 @@ impl CycleFrameCounter {
             return true;
         }
         self.min_max_cycles.min_cycle.frame == 0
+    }
+    fn can_generate_method(&self, opts: &Wild3GeneratorOptions, len: usize) -> bool {
+        if opts.generate_even_if_impossible || self.mode == CycleFrameCounterMode::Inactive {
+            return true;
+        }
+        if !opts.consider_rng_manipulated_lead_pid {
+            return is_method_possible_to_trigger(
+                &self.create_cycle_range(len),
+                opts.action,
+                opts.lead == Gen3Lead::Egg,
+                false,
+                opts.lead_cycle_speed,
+            );
+        }
+        if len == INFINITE_CYCLE {
+            self.is_possible_that_no_vblank_yet()
+        } else {
+            self.can_vblank_occur_soon(len)
+        }
     }
     pub fn create_cycle_range(&self, len: usize) -> CycleAndModRange {
         if self.mode == CycleFrameCounterMode::Inactive {
@@ -683,8 +702,7 @@ fn generate_personality(
 
         let method3_range = 80;
         if methods_contains_wild3
-            && (opts.generate_even_if_impossible
-                || cycle_counter.can_vblank_occur_soon(method3_range))
+            && cycle_counter.can_generate_method(opts, method3_range)
             && let Some(gen_mon_wild3) = simulate_wild_method3(
                 &gen_data,
                 rng,
@@ -731,9 +749,7 @@ fn generate_personality(
                     get_wild_method5_retry_count(&gen_data, rng, pid);
 
                 if let Some((pid, ivs)) = opt_pid_ivs {
-                    if opts.generate_even_if_impossible
-                        || cycle_counter.can_vblank_occur_soon(method5_range)
-                    {
+                    if cycle_counter.can_generate_method(opts, method5_range) {
                         if let Some(res) = create_if_passes_filter(
                             &gen_data,
                             pid,
@@ -777,7 +793,7 @@ fn CreateMon(
         calc_modulo_cycle_unsigned(pid, 25) + 100 * calc_modulo_cycle_unsigned(pid, 24) + 36900;
 
     if opts.methods.contains(&Gen3Method::Wild2)
-        && (opts.generate_even_if_impossible || cycle_counter.can_vblank_occur_soon(method2_range))
+        && cycle_counter.can_generate_method(opts, method2_range)
         && let Some(gen_mon_wild2) = simulate_wild_method2(
             &gen_data,
             rng,
@@ -796,7 +812,7 @@ fn CreateMon(
     let method4_range = 36 * calc_modulo_cycle_unsigned(pid, 24) + 11103; // between CreateBoxMon_ivs1 and CreateBoxMon_ivs2
 
     if opts.methods.contains(&Gen3Method::Wild4)
-        && (opts.generate_even_if_impossible || cycle_counter.can_vblank_occur_soon(method4_range))
+        && cycle_counter.can_generate_method(opts, method4_range)
         && let Some(gen_mon_wild4) = simulate_wild_method4(
             &gen_data,
             rng,
@@ -811,7 +827,7 @@ fn CreateMon(
 
     cycle_counter.on_moment_reached(Moment::CreateBoxMon_RandomIvs2);
     if opts.methods.contains(&Gen3Method::Wild1)
-        && (opts.generate_even_if_impossible || cycle_counter.is_possible_that_no_vblank_yet())
+        && cycle_counter.can_generate_method(opts, INFINITE_CYCLE)
     {
         let ivs = Ivs::new_g3(iv1, rand_next_u16(&mut rng, "iv2_wild1", 1));
 
@@ -903,7 +919,7 @@ fn TryGenerateWildMon(
             )
         })
         .unwrap_or_else(|| ChooseWildMonIndex_Land(rng, opts.lead, cycle_counter))
-    } else {
+    } else if opts.action == Wild3Action::SweetScentWater {
         TryGetAbilityInfluencedWildMonIndex(
             rng,
             slots,
@@ -913,6 +929,8 @@ fn TryGenerateWildMon(
             cycle_counter,
         )
         .unwrap_or_else(|| ChooseWildMonIndex_WaterRock(rng, opts.lead, cycle_counter))
+    } else {
+        ChooseWildMonIndex_WaterRock(rng, opts.lead, cycle_counter)
     };
     let encounter = slots.get(index)?;
     let level = ChooseWildMonLevel(rng, encounter, opts.lead, cycle_counter);

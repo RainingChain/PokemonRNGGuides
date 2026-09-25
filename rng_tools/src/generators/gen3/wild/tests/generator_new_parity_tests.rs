@@ -49,14 +49,12 @@ fn method5_cycle_ranges_match_existing_generation() {
 }
 
 #[test]
-fn sweet_scent_matches_existing_generation() {
+fn all_actions_and_leads_match_existing_generation() {
     let mut map = Wild3MapGameData::default();
-    map.slots_by_action[Wild3Action::SweetScentLand as usize][0]
-        .species_data
-        .species = Species::Magnemite;
-    map.slots_by_action[Wild3Action::SweetScentLand as usize][1]
-        .species_data
-        .species = Species::Aron;
+    for slots in &mut map.slots_by_action {
+        slots[0].species_data.species = Species::Magnemite;
+        slots[1].species_data.species = Species::Aron;
+    }
     map.roamers.push(Wild3SpecialEncounterGameData {
         id: Wild3RoamerState::ActiveInMapLatios,
         ..Default::default()
@@ -65,10 +63,22 @@ fn sweet_scent_matches_existing_generation() {
         id: Wild3MassOutbreakState::Route102Seedot,
         ..Default::default()
     });
+
     for (action, lead, seed, consider_cycles, generate_even_if_impossible) in products!(
-        [Wild3Action::SweetScentLand, Wild3Action::SweetScentWater],
+        [
+            Wild3Action::SweetScentLand,
+            Wild3Action::SweetScentWater,
+            Wild3Action::OldRod,
+            Wild3Action::GoodRod,
+            Wild3Action::SuperRod,
+            Wild3Action::RockSmash,
+        ],
         [
             Gen3Lead::Vanilla,
+            Gen3Lead::Synchronize(Nature::Jolly),
+            Gen3Lead::CuteCharm(Gender::Female),
+            Gen3Lead::CuteCharm(Gender::Male),
+            Gen3Lead::Egg,
             Gen3Lead::Static,
             Gen3Lead::MagnetPull,
             Gen3Lead::HustleVitalSpiritPressure,
@@ -92,7 +102,8 @@ fn sweet_scent_matches_existing_generation() {
         let context =
             format!("{action:?} {lead:?} {seed} {consider_cycles} {generate_even_if_impossible}");
         assert_mon_results_eq_unordered(&new.mon_results, &old.mon_results, &context);
-        // The old generator rolls a level for roamers; the new one uses their fixed level.
+
+        // New generator doesn't support cycle counting for roamer, because it's useless.
         let is_roamer = new
             .mon_results
             .iter()
@@ -144,6 +155,44 @@ fn fishing_and_rock_smash_match_existing_generation() {
             CycleAndModCount::default()
         };
         assert_eq!(new.cycle_counter.cycle, expected_cycle, "{context}");
+    }
+}
+
+#[test]
+fn all_methods_with_common_leads_match_existing_generation() {
+    let map = Wild3MapGameData::default();
+    for (action, seed) in products!(
+        [
+            Wild3Action::SweetScentLand,
+            Wild3Action::SweetScentWater,
+            Wild3Action::OldRod,
+            Wild3Action::GoodRod,
+            Wild3Action::SuperRod,
+            Wild3Action::RockSmash,
+        ],
+        0..64,
+    ) {
+        let opts = Wild3GeneratorOptions {
+            action,
+            methods: vec![
+                Gen3Method::Wild1,
+                Gen3Method::Wild2,
+                Gen3Method::Wild3,
+                Gen3Method::Wild4,
+                Gen3Method::Wild5,
+            ],
+            consider_cycles: true,
+            consider_rng_manipulated_lead_pid: false,
+            generate_even_if_impossible: false,
+            ..Default::default()
+        };
+        let old = generate_wild3_old(Pokerng::new(seed), &opts, &map);
+        let new = generate_wild3_new(Pokerng::new(seed), &opts, &map);
+        assert_mon_results_eq_unordered(
+            &new.mon_results,
+            &old.mon_results,
+            &format!("{action:?} {seed}"),
+        );
     }
 }
 
