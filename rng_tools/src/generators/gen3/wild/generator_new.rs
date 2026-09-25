@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-use super::generator::{
+use super::generator_main::{
     INFINITE_CYCLE, VBLANK_FREQ, Wild3GeneratorMonResult, Wild3GeneratorOptions,
     Wild3GeneratorResults,
 };
@@ -228,7 +228,7 @@ impl CycleFrameCounter {
     }
 }
 
-pub fn generate_wild3(
+pub fn generate_wild3_new(
     mut rng: Pokerng,
     opts: &Wild3GeneratorOptions,
     map_data: &Wild3MapGameData,
@@ -1378,5 +1378,5 @@ fn create_if_passes_filter(
 }
 
 #[cfg(test)]
-#[path = "tests/generator2_parity_tests.rs"]
+#[path = "tests/generator_new_parity_tests.rs"]
 mod tests;

@@ -2,11 +2,12 @@ use crate::{
     EncounterSlot, Ivs, Nature, PkmFilter,
     gen3::{
         CycleRange, Gen3Lead, Gen3Method, INFINITE_CYCLE, Wild3EncounterIndex,
-        Wild3GeneratorMonResult, Wild3GeneratorOptions, Wild3MapGameData, generate_gen3_wild,
-        generate_gen3_wild_old,
+        Wild3GeneratorMonResult, Wild3GeneratorOptions, Wild3MapGameData, generate_wild3,
     },
     rng::lcrng::Pokerng,
 };
+
+fn generate_wild3_for_test() {}
 
 #[test]
 fn test_generate_wild3_cycle_method_3() {
@@ -18,7 +19,7 @@ fn test_generate_wild3_cycle_method_3() {
         ..Default::default()
     };
 
-    let result = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 3012),
         &options,
         &Wild3MapGameData::default(),
@@ -58,7 +59,7 @@ fn test_generate_wild3_cycle_method_3_no_rng_lead_pid() {
         ..Default::default()
     };
 
-    let result = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 3013),
         &options,
         &Wild3MapGameData::default(),
@@ -76,7 +77,7 @@ fn test_generate_wild3_cycle_method_5() {
         ..Default::default()
     };
 
-    let result = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 4894),
         &options,
         &Wild3MapGameData::default(),
@@ -129,13 +130,13 @@ fn test_generate_wild3_cycle_methods_1_2_4() {
         ..Default::default()
     };
 
-    let result = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 3001),
         &options,
         &Wild3MapGameData::default(),
     )
     .mon_results;
-    let results_old = generate_gen3_wild_old(
+    let results_old = generate_wild3(
         Pokerng::with_advances(0, 3001),
         &options,
         &Wild3MapGameData::default(),
