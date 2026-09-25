@@ -10,7 +10,8 @@ use super::generator_main::{
 };
 use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned};
 use crate::gen3::{
-    BASE_LEAD_PID_MOD_24_CYCLES, CycleCounter, FASTEST_MODULO_CYCLE_24, SLOWEST_MODULO_CYCLE_24,
+    BASE_LEAD_PID_MOD_24_CYCLES, COMMON_LEAD_RANGE, CycleCounter, FASTEST_MODULO_CYCLE_24,
+    SLOWEST_MODULO_CYCLE_24,
 };
 use crate::{
     EncounterSlot, Gender, GenderRatio, Ivs, NATURE_COUNT, Nature,
@@ -74,7 +75,11 @@ impl MinMaxCycleFrame {
         }
     }
 
-    pub fn new(is_egg_lead: bool, action: Wild3Action) -> Self {
+    pub fn new(
+        is_egg_lead: bool,
+        action: Wild3Action,
+        consider_rng_manipulated_lead_pid: bool,
+    ) -> Self {
         let (min_cycle, _, max_cycle) = get_min_mid_max_pre_sweet_scent_cycle(action);
         Self {
             min_cycle: CycleFrame {
@@ -87,13 +92,17 @@ impl MinMaxCycleFrame {
             },
             min_lead_cycle_spd: if is_egg_lead {
                 0
-            } else {
+            } else if consider_rng_manipulated_lead_pid {
                 FASTEST_MODULO_CYCLE_24
+            } else {
+                COMMON_LEAD_RANGE.start
             },
             max_lead_cycle_spd: if is_egg_lead {
                 0
-            } else {
+            } else if consider_rng_manipulated_lead_pid {
                 SLOWEST_MODULO_CYCLE_24
+            } else {
+                COMMON_LEAD_RANGE.end
             },
         }
     }
@@ -152,10 +161,18 @@ impl CycleFrameCounter {
             lead_pid_mod_count: 0,
         }
     }
-    pub fn new_for_min_max_range(is_egg_lead: bool, action: Wild3Action) -> Self {
+    pub fn new_for_min_max_range(
+        is_egg_lead: bool,
+        action: Wild3Action,
+        consider_rng_manipulated_lead_pid: bool,
+    ) -> Self {
         Self {
             mode: CycleFrameCounterMode::MinMaxRange,
-            min_max_cycles: MinMaxCycleFrame::new(is_egg_lead, action),
+            min_max_cycles: MinMaxCycleFrame::new(
+                is_egg_lead,
+                action,
+                consider_rng_manipulated_lead_pid,
+            ),
             cycle_instability: 0.0,
             base_cycle_count: 0,
             lead_pid_mod_count: 0,
@@ -234,7 +251,11 @@ pub fn generate_wild3_new(
     map_data: &Wild3MapGameData,
 ) -> Wild3GeneratorResults {
     let mut cycle_counter = if opts.consider_cycles {
-        CycleFrameCounter::new_for_min_max_range(opts.lead == Gen3Lead::Egg, opts.action)
+        CycleFrameCounter::new_for_min_max_range(
+            opts.lead == Gen3Lead::Egg,
+            opts.action,
+            opts.consider_rng_manipulated_lead_pid,
+        )
     } else {
         CycleFrameCounter::new_inactive()
     };

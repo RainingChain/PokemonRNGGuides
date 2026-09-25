@@ -6,7 +6,17 @@ use crate::{
     gen3::{Gen3Method, Wild3SpecialEncounterGameData, generate_wild3_old},
 };
 
-// TODO: Create a generic function generate_wild3_for_test(rng, &opts, &map) that does similar to method5_cycle_ranges_match_existing_generation
+#[track_caller]
+pub fn generate_wild3_for_test(
+    rng: Pokerng,
+    opts: &Wild3GeneratorOptions,
+    map: &Wild3MapGameData,
+) -> Wild3GeneratorResults {
+    let old = generate_wild3_old(rng, opts, map);
+    let new = generate_wild3_new(rng, opts, map);
+    assert_mon_results_eq_unordered(&new.mon_results, &old.mon_results, "Wild 3 generation");
+    new
+}
 
 #[track_caller]
 fn assert_mon_results_eq_unordered(
@@ -35,9 +45,7 @@ fn method5_cycle_ranges_match_existing_generation() {
     };
     let map = Wild3MapGameData::default();
     let rng = Pokerng::with_advances(0, 4894);
-    let old = generate_wild3_old(rng, &opts, &map);
-    let new = generate_wild3_new(rng, &opts, &map);
-    assert_mon_results_eq_unordered(&new.mon_results, &old.mon_results, "Method 5");
+    generate_wild3_for_test(rng, &opts, &map);
 }
 
 #[test]
@@ -81,7 +89,8 @@ fn sweet_scent_matches_existing_generation() {
         };
         let old = generate_wild3_old(Pokerng::new(seed), &opts, &map);
         let new = generate_wild3_new(Pokerng::new(seed), &opts, &map);
-        let context = format!("{action:?} {lead:?} {seed} {consider_cycles}");
+        let context =
+            format!("{action:?} {lead:?} {seed} {consider_cycles} {generate_even_if_impossible}");
         assert_mon_results_eq_unordered(&new.mon_results, &old.mon_results, &context);
         // The old generator rolls a level for roamers; the new one uses their fixed level.
         let is_roamer = new

@@ -7,8 +7,6 @@ use crate::{
     rng::lcrng::Pokerng,
 };
 
-fn generate_wild3_for_test() {}
-
 #[test]
 fn test_generate_wild3_cycle_method_3() {
     let options = Wild3GeneratorOptions {
