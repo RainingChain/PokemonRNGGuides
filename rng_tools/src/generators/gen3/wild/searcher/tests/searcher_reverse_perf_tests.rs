@@ -117,10 +117,7 @@ fn test_search_reverse_perf_vanilla() {
             ..Default::default()
         },
     ];
-    let result = search_wild3_reverse(&options)
-        .into_iter()
-        .flatten()
-        .collect_vec();
+    let result = search_wild3_reverse(&options);
     assert_eq!(result, expected_results);
 }
 
@@ -245,10 +242,7 @@ fn test_search_perf_find_pid_paths_shiny_feebas() {
     ];
     options.map_setups[0].feebas_states = vec![Wild3FeebasState::OnFeebasTile];
 
-    let results = search_wild3_reverse(&options)
-        .into_iter()
-        .flatten()
-        .collect_vec();
+    let results = search_wild3_reverse(&options);
     assert!(!results.is_empty());
 
     let first_result = &results[0];

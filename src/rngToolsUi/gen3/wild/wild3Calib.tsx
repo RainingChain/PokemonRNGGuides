@@ -4,12 +4,19 @@ import { FormFieldTable } from "~/components/formFieldTable";
 import { TargetSetup } from "./wild3TargetSetupInput";
 import { Wild3CalibCaughtMon } from "./wild3CalibCaughtMon.component";
 import { Gen3Console, gen3ConsoleFpsMap } from "~/types/console";
-import { formatActionName, formatLeadName, formatMapName } from "./utils";
+import {
+  FEEBAS_MAP,
+  formatActionName,
+  formatLeadName,
+  formatMapName,
+  isFishingAction,
+} from "./utils";
 import { BattleVideoInfo } from "../battleVideo/battleVideo";
 import { AllOrNone } from "~/types";
 import { BattleVideoInfoInput } from "../battleVideo/calibBattleVideoInfoInput";
 import { calculateTargetSetupResult } from "./calculateTargetSetupResult";
 import { Gen3Method } from "~/rngTools";
+import { FeebasTileVisualizer } from "./feebasMap";
 
 import Instructions_calib_with_battle_video from "./instructions_calib_with_battle_video.mdx";
 import Instructions_calib_without_battle_video from "./instructions_calib_without_battle_video.mdx";
@@ -272,6 +279,18 @@ export const Wild3Calib = ({
       {
         label: "Target Pokémon",
         input: targetSetupResult,
+      },
+      {
+        label: "Fishing spot",
+        input: (
+          <FeebasTileVisualizer
+            selectedTileCycle={targetSetupProp.feebasCycles}
+          />
+        ),
+        show:
+          targetSetupProp.map === FEEBAS_MAP &&
+          isFishingAction(targetSetupProp.action) &&
+          targetSetupProp.feebasCycles !== 0,
       },
     ];
 

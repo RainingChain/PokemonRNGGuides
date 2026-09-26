@@ -93,6 +93,7 @@ export const createWild3SearcherOptions = async (
     ),
     leads: [targetSetup.lead],
     map_setups: [map_setup],
+    feebas_cycles: [targetSetup.feebasCycles],
     methods: gen3Methods,
     consider_cycles: true,
     consider_rng_manipulated_lead_pid: false,

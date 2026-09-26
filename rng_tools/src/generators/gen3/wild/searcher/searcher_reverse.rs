@@ -1,9 +1,11 @@
+use std::hint::black_box;
+
 use arrayvec::ArrayVec;
 use itertools::Itertools;
 
 use super::*;
 use crate::{
-    GenderRatio,
+    GenderRatio, Species,
     gen3::{
         SpeciesData, Wild3InSafariMapStatus, create_pokeblock_gen_opt,
         find_pid_paths_reverse_pid_cycle_speed_low_high,
@@ -98,7 +100,7 @@ pub const fn is_considered_method(opts_methods: u8, methods_to_check: u8) -> boo
 fn extend_pid_paths_to_results(
     opts: &Wild3SearcherOptions,
     iter: impl Iterator<Item = PidPath>,
-) -> Vec<Vec<Wild3SearcherResultMon>> {
+) -> Vec<Wild3SearcherResultMon> {
     let encounter_species_data = get_encounter_species_data(opts);
     let encounter_gender_ratio = encounter_species_data
         .as_ref()
@@ -126,30 +128,39 @@ fn extend_pid_paths_to_results(
     let encounter_idx_gen = EncounterIdxPathGenerator::new(
         &opts.leads,
         &opts.map_setups,
-        encounter_species_data,
+        encounter_species_data.unwrap_or(SpeciesData {
+            species: Species::Bulbasaur,
+        }),
         opts.using_white_flute,
+        &opts.feebas_cycles,
     );
 
     iter.filter_map(|pid_path| {
-        let nat_gender_paths = nature_gender_gen.extend_path_for_all_arcs(&pid_path);
+        // black_box is useful for debugging.
+        let nat_gender_paths = black_box(nature_gender_gen.extend_path_for_all_arcs(&pid_path));
 
-        let lvl_paths = nat_gender_paths
-            .iter()
-            .flat_map(|nature_gender_path| lvl_gen.extend_path_for_all_arcs(nature_gender_path))
-            .collect_vec();
+        let lvl_paths = black_box(
+            nat_gender_paths
+                .iter()
+                .flat_map(|nature_gender_path| lvl_gen.extend_path_for_all_arcs(nature_gender_path))
+                .collect_vec(),
+        );
 
-        let encounter_paths = lvl_paths
-            .iter()
-            .flat_map(|lvl_path| {
-                #[allow(clippy::let_and_return)] // Intermediate value is useful for debugging.
-                let encounter_paths = encounter_idx_gen.extend_path_for_all_arcs(lvl_path);
-                encounter_paths
-            })
-            .filter(|encounter_path| {
-                lcrng_distance(opts.initial_seed, encounter_path.seed)
-                    >= opts.initial_advances as u32
-            })
-            .collect_vec();
+        let encounter_paths = black_box(
+            lvl_paths
+                .iter()
+                .flat_map(|lvl_path| {
+                    #[allow(clippy::let_and_return)] // Intermediate value is useful for debugging.
+                    let encounter_paths =
+                        black_box(encounter_idx_gen.extend_path_for_all_arcs(lvl_path));
+                    encounter_paths
+                })
+                .filter(|encounter_path| {
+                    lcrng_distance(opts.initial_seed, encounter_path.seed)
+                        >= opts.initial_advances as u32
+                })
+                .collect_vec(),
+        );
 
         if encounter_paths.is_empty() {
             None
@@ -168,6 +179,7 @@ fn extend_pid_paths_to_results(
                     map_setups,
                     encounter_idx_path.map_setups_idx,
                     encounter_gender_ratio,
+                    &encounter_idx_gen.feebas_cycles_by_vblank,
                 )
             })
             .collect_vec();
@@ -179,6 +191,7 @@ fn extend_pid_paths_to_results(
         }
     })
     .take(opts.max_result_count)
+    .flatten()
     .collect_vec()
 }
 
@@ -223,7 +236,7 @@ fn new_find_pid_paths_options(opts: &Wild3SearcherOptions) -> FindPidPathsOption
     }
 }
 
-pub fn search_wild3_reverse(opts: &Wild3SearcherOptions) -> Vec<Vec<Wild3SearcherResultMon>> {
+pub fn search_wild3_reverse(opts: &Wild3SearcherOptions) -> Vec<Wild3SearcherResultMon> {
     let find_opts = new_find_pid_paths_options(opts);
 
     match find_opts.method_bitset {
@@ -248,7 +261,7 @@ pub fn search_wild3_reverse(opts: &Wild3SearcherOptions) -> Vec<Vec<Wild3Searche
 
 pub fn search_wild3_reverse_with_methods<const METHODS: u8>(
     opts: &Wild3SearcherOptions,
-) -> Vec<Vec<Wild3SearcherResultMon>> {
+) -> Vec<Wild3SearcherResultMon> {
     let find_opts = new_find_pid_paths_options(opts);
 
     let strategy = determine_best_pid_path_strategy(&find_opts);
@@ -301,26 +314,27 @@ fn get_leads(seed_lead: Gen3Lead, opts: &Wild3SearcherOptions) -> ArrayVec<Gen3L
     leads
 }
 
+const FEEBAS_CYCLE_ZERO: [usize; 1] = [0];
+
 fn create_result(
     path: &EncounterIdxPath,
     opts: &Wild3SearcherOptions,
     map_setups: &Wild3MapSetups,
     map_idx: usize,
     encounter_gender_ratio: GenderRatio,
+    feebas_cycles_by_vblank: &[Vec<usize>],
 ) -> Vec<Wild3SearcherResultMon> {
     let mass_outbreak_state = match path.encounter_idx_to_lvl_arc {
         EncounterIdxToLvlArc::MassOutbreakSuccess(mass_outbreak_state) => mass_outbreak_state,
         _ => Wild3MassOutbreakState::Inactive,
     };
 
-    let feebas_state = if opts.gen3_filter.species == Some(Species::Feebas)
-        && map_setups
-            .feebas_states
-            .contains(&Wild3FeebasState::OnFeebasTile)
-    {
-        Wild3FeebasState::OnFeebasTile
-    } else {
-        Wild3FeebasState::NotInMap
+    let (feebas_state, feebas_cycles_list) = match path.encounter_idx_to_lvl_arc {
+        EncounterIdxToLvlArc::CheckFeebasSuccess { vblank_count } => (
+            Wild3FeebasState::OnFeebasTile,
+            feebas_cycles_by_vblank[vblank_count].as_slice(),
+        ),
+        _ => (Wild3FeebasState::NotInMap, FEEBAS_CYCLE_ZERO.as_slice()),
     };
 
     let safari_pokeblock = if path.nature_gender_to_pid_arc.uses_safari_pokeblock() {
@@ -332,42 +346,75 @@ fn create_result(
         None
     };
 
-    get_leads(path.lead(encounter_gender_ratio), opts)
-        .into_iter()
-        .flat_map(|lead| {
-            let gen_opts = Wild3GeneratorOptions {
-                tid: opts.tid,
-                sid: opts.sid,
-                map_idx,
-                action: path.action,
-                methods: vec![path.pid_path.method()],
-                lead,
-                filter: opts.filter.clone(),
-                consider_cycles: opts.consider_cycles,
-                consider_rng_manipulated_lead_pid: opts.consider_rng_manipulated_lead_pid,
-                generate_even_if_impossible: opts.generate_even_if_impossible,
-                gen3_filter: opts.gen3_filter.clone(),
-                roamer_state: Wild3RoamerState::Inactive,
-                mass_outbreak_state,
-                feebas_state,
-                safari_pokeblock: safari_pokeblock.clone(),
-                lead_cycle_speed: opts.lead_cycle_speed,
-                using_white_flute: opts.using_white_flute,
-            };
+    let mut gen_opts = Wild3GeneratorOptions {
+        tid: opts.tid,
+        sid: opts.sid,
+        map_idx,
+        action: path.action,
+        methods: vec![path.pid_path.method()],
+        filter: opts.filter.clone(),
+        consider_cycles: opts.consider_cycles,
+        consider_rng_manipulated_lead_pid: opts.consider_rng_manipulated_lead_pid,
+        generate_even_if_impossible: opts.generate_even_if_impossible,
+        gen3_filter: opts.gen3_filter.clone(),
+        roamer_state: Wild3RoamerState::Inactive,
+        mass_outbreak_state,
+        feebas_state,
+        safari_pokeblock: safari_pokeblock.clone(),
+        lead_cycle_speed: opts.lead_cycle_speed,
+        using_white_flute: opts.using_white_flute,
 
-            generate_gen3_wild(Pokerng::new(path.seed), &gen_opts, &map_setups.map_data)
-                .0
-                .iter()
-                .map(|gen_res| {
-                    let encounter = map_setups
-                        .map_data
-                        .get_encounter(gen_opts.action, gen_res.encounter_idx)
-                        .unwrap();
-                    let advance = lcrng_distance(opts.initial_seed, path.seed) as usize;
-                    Wild3SearcherResultMon::new(gen_res, &gen_opts, path.seed, advance, encounter)
-                })
-                .collect_vec()
-        })
+        // overwritten below
+        lead: Gen3Lead::Egg,
+        feebas_cycles: 0,
+    };
+
+    let mut results = Vec::new();
+    let advance = lcrng_distance(opts.initial_seed, path.seed) as usize;
+
+    for lead in get_leads(path.lead(encounter_gender_ratio), opts) {
+        gen_opts.lead = lead;
+
+        for &feebas_cycles in feebas_cycles_list {
+            gen_opts.feebas_cycles = feebas_cycles;
+
+            let gen_results =
+                generate_gen3_wild(Pokerng::new(path.seed), &gen_opts, &map_setups.map_data);
+
+            for gen_res in &gen_results.mon_results {
+                let encounter = map_setups
+                    .map_data
+                    .get_encounter(gen_opts.action, gen_res.encounter_idx)
+                    .unwrap();
+                results.push(Wild3SearcherResultMon::new(
+                    gen_res,
+                    &gen_opts,
+                    path.seed,
+                    advance,
+                    encounter,
+                    gen_results.cycle_counter.cycle_instability,
+                ));
+            }
+        }
+    }
+
+    results
+}
+
+// Generated with test: cargo test test_search_reverse_wild3_vblank_group_feebas
+// Hardcoded in feebasMapData.ts
+pub const FEEBAS_CYCLE_COUNT_BY_VBLANK: [std::ops::RangeInclusive<usize>; 4] = [
+    0..=235895,
+    205896..=471791,
+    421792..=707687,
+    637688..=800000,
+];
+
+pub fn get_feebas_possible_vblank_count(feebas_cycles: usize) -> Vec<usize> {
+    FEEBAS_CYCLE_COUNT_BY_VBLANK
+        .iter()
+        .enumerate()
+        .filter_map(|(count, range)| range.contains(&feebas_cycles).then_some(count))
         .collect()
 }
 

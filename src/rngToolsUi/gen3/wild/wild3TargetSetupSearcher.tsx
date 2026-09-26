@@ -6,6 +6,7 @@ import {
   ResultColumn,
   RngToolForm,
   RngToolSubmit,
+  TooltipWithIcon,
 } from "~/components";
 import { formatProbability } from "~/utils/formatProbability";
 import React from "react";
@@ -35,12 +36,6 @@ import {
   getTargetResultColumns,
 } from "../pokemonRng/targetSetupSearcher";
 
-/*
-Possible UI improvements:
- - Display filter restrictiveness
- - Min/Max IVs should have a tooltip displaying the stat name.
-*/
-
 const Validator = z
   .object({
     maps: z.array(z.string()).min(1),
@@ -59,6 +54,7 @@ const Validator = z
     roamerStates: z.array(z.enum(wild3RoamerStates)).min(1),
     massOutbreakStates: z.array(z.enum(wild3MassOutbreakStates)).min(1),
     feebasStates: z.array(z.enum(wild3FeebasStates)).min(1),
+    feebasCycles: z.array(z.int().min(0).max(0xffffffff)),
     methods: z.array(z.enum(gen3Methods)).min(1),
     rngManipulatedLeadPid: z.boolean(),
     mergeSimilarResults: z.boolean(),
@@ -66,7 +62,15 @@ const Validator = z
     using_white_flute: z.boolean(),
     considered_safari_pokeblocks: z.enum(wild3SafariPokeblockSearchOpt),
   })
-  .extend(targetSetupSearcherSchema.shape);
+  .extend(targetSetupSearcherSchema.shape)
+  .refine(
+    ({ species, feebasCycles }) =>
+      species !== "Feebas" || feebasCycles.length > 0,
+    {
+      message: "Select at least one Feebas fishing spot.",
+      path: ["feebasCycles"],
+    },
+  );
 
 export type FormState = z.infer<typeof Validator>;
 
@@ -98,10 +102,11 @@ const getInitialValues = (): FormState => {
     maps: [],
     leadIdxs: gen3Leads.map((_, i) => i),
     recommendedSetups: true,
-    methods: ["Wild1", "Wild2", "Wild4"],
+    methods: ["Wild1", "Wild2", "Wild4"], // Wild5 is not supported by the reverse searcher. Wild3 has too low probability.
     actions: [...wild3Actions],
     roamerStates: [...wild3RoamerStates],
-    feebasStates: [...wild3FeebasStates],
+    feebasStates: ["NotInMap", "OnFeebasTile"], // InMapButNotOnFeebasTile is not supported by the reverse searcher
+    feebasCycles: [],
     massOutbreakStates: [...wild3MassOutbreakStates],
     rngManipulatedLeadPid: false,
     mergeSimilarResults: true,
@@ -137,6 +142,18 @@ const getPidPathColumns = (
       dataIndex: "resultSetupInfos",
       key: "best_likelihood",
       render: (resultSetupInfos) => {
+        const isUnstable = resultSetupInfos.every(
+          (setup) => setup.cycle_instability === 1,
+        );
+        if (isUnstable) {
+          return (
+            <TooltipWithIcon title="On these fishing tiles, vblanks can cause extra RNG advances before the Pokemon is generated. These variations are not  supported, so hitting the target advance may produce a different Pokemon and the likelihood cannot be reliably predicted.">
+              Unstable
+            </TooltipWithIcon>
+          );
+        }
+
+        // results are sorted by primaryLikelihood
         const text = formatProbability(
           resultSetupInfos[0]?.primaryLikelihood ?? 0,
         );
@@ -144,7 +161,8 @@ const getPidPathColumns = (
           (res) =>
             res.lead === "Egg" &&
             res.method === "Wild1" &&
-            res.primaryLikelihood === 1,
+            res.primaryLikelihood === 1 &&
+            res.cycle_instability === 0,
         );
 
         if (!isVeryReliableSetup) {

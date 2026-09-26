@@ -155,9 +155,9 @@ fn find_seeds_at_pickup_for_seed_at_pokerus(
 
     StateIterator::new(seed_at_pokerus)
         .take(max - min + 1)
-        .filter_map(|rng| {
-            let res = gen3_pokerus_generate::<false>(rng, gen_opts);
-            if res.gives_pokerus { Some(rng) } else { None }
+        .filter(|rng| {
+            let res = gen3_pokerus_generate::<false>(*rng, gen_opts);
+            res.gives_pokerus
         })
         .collect()
 }

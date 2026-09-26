@@ -112,6 +112,7 @@ const targetSetupAtomSchema = z.object({
     .object({
       map: z.string(),
       feebasState: z.enum(wild3FeebasStates),
+      feebasCycles: z.number().int().min(0).max(0xffffffff).default(0),
       roamerState: z.enum(wild3RoamerStates),
       massOutbreakState: z.enum(wild3MassOutbreakStates),
       action: z.enum(wild3Actions),

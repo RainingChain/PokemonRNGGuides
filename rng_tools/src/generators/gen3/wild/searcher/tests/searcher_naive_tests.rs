@@ -2,8 +2,9 @@ use crate::{
     AbilityType, EncounterSlot, Gender, HiddenPower, HiddenPowerFilter, Ivs, Nature, PkmFilter,
     PokemonType, Species, assert_list_eq,
     gen3::{
-        Gen3Lead, Gen3Method, Gen3PkmFilter, Wild3Action, Wild3EncounterIndex,
-        Wild3SearcherOptions, Wild3SearcherResultMon, search_wild3_naive,
+        Gen3Lead, Gen3Method, Gen3PkmFilter, SpeciesData, Wild3Action, Wild3EncounterGameData,
+        Wild3EncounterIndex, Wild3FeebasState, Wild3MapGameData, Wild3MapSetups,
+        Wild3SearcherOptions, Wild3SearcherResultMon, calculate_pid_speed, search_wild3_naive,
     },
     rng::lcrng::Pokerng,
 };
@@ -452,3 +453,65 @@ fn test_search_wild3_naive_debug() {
     assert!(false);
 }
 */
+
+#[test]
+fn test_search_wild3_naive_magikarp_in_feebas_map() {
+    for feebas_state in [
+        Wild3FeebasState::OnFeebasTile,
+        Wild3FeebasState::InMapButNotOnFeebasTile,
+    ] {
+        let encounter = |min_level, max_level, species| Wild3EncounterGameData {
+            min_level,
+            max_level,
+            species_data: SpeciesData { species },
+        };
+        let options = Wild3SearcherOptions {
+            initial_advances: 59890,
+            max_advances: 0,
+            max_result_count: 10,
+            filter: PkmFilter {
+                nature: PkmFilter::new_nature_filter(&[Nature::Docile]),
+                gender: Some(Gender::Male),
+                min_ivs: Ivs::new(20, 3, 15, 25, 10, 26),
+                max_ivs: Ivs::new(20, 3, 15, 25, 10, 26),
+                ..Default::default()
+            },
+            gen3_filter: Gen3PkmFilter {
+                lvl: Some(8),
+                species: Some(Species::Magikarp),
+                ..Default::default()
+            },
+            leads: vec![Gen3Lead::Vanilla],
+            map_setups: vec![Wild3MapSetups {
+                map_data: Wild3MapGameData {
+                    map_id: "MAP_ROUTE119".to_string(),
+                    slots_by_action: vec![
+                        vec![],
+                        vec![],
+                        vec![
+                            encounter(5, 10, Species::Magikarp),
+                            encounter(5, 10, Species::Tentacool),
+                        ],
+                        vec![],
+                        vec![],
+                        vec![],
+                    ],
+                    feebas: Some(encounter(20, 25, Species::Feebas)),
+                    ..Default::default()
+                },
+                actions: vec![Wild3Action::OldRod],
+                feebas_states: vec![feebas_state],
+                ..Default::default()
+            }],
+            feebas_cycles: vec![350_226],
+            methods: vec![Gen3Method::Wild4],
+            consider_cycles: true,
+            using_white_flute: false,
+            lead_cycle_speed: Some(calculate_pid_speed(0x7933A9CB)),
+            ..Default::default()
+        };
+
+        let results: Vec<Wild3SearcherResultMon> = search_wild3_naive(&options);
+        assert!(!results.is_empty());
+    }
+}

@@ -98,23 +98,20 @@ export const Wild3LeadCycleSpeedInput = ({
     },
     {
       label: "Cycle count for operation (PID modulo 25):",
-      input: (
-        <NumberInput
-          name="leadCycleSpeedCustom"
-          onChange={(val) => {
-            const val2 = val == null ? null : clamp(val, 0, 900);
-            setLeadCycleSpeedCustom(val2);
-          }}
-          numType="decimal"
-          value={leadCycleSpeedCustom}
-        />
-      ),
-      show: leadSpeedType === "Custom",
-    },
-    {
-      label: "Cycle count for operation (PID modulo 25):",
-      input: `${computedLeadCycleSpeed} cycles`,
-      show: leadSpeedType !== "Custom",
+      input:
+        leadSpeedType === "Custom" ? (
+          <NumberInput
+            name="leadCycleSpeedCustom"
+            onChange={(val) => {
+              const val2 = val == null ? null : clamp(val, 0, 900);
+              setLeadCycleSpeedCustom(val2);
+            }}
+            numType="decimal"
+            value={leadCycleSpeedCustom}
+          />
+        ) : (
+          `${computedLeadCycleSpeed} cycles`
+        ),
     },
   ];
 

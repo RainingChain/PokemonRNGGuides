@@ -7,11 +7,13 @@ pub fn search_wild3_naive(opts: &Wild3SearcherOptions) -> Vec<Wild3SearcherResul
     StateIterator::new(base_rng)
         .enumerate()
         .take(opts.max_advances.saturating_add(1))
-        .flat_map(|(adv, rng)| {
-            search_wild3_naive_at_given_advance(rng, adv + opts.initial_advances, opts)
+        .filter_map(|(adv, rng)| {
+            let res = search_wild3_naive_at_given_advance(rng, adv + opts.initial_advances, opts);
+            if res.is_empty() { None } else { Some(res) }
         })
-        .take(opts.max_result_count)
-        .collect::<Vec<Wild3SearcherResultMon>>()
+        .take(opts.max_result_count) // max_result_count doesn't regroup by pid_path but that's ok.
+        .flatten()
+        .collect()
 }
 
 fn search_wild3_naive_at_given_advance(
@@ -66,7 +68,16 @@ fn search_wild3_naive_at_given_advance(
                 vec![None]
             };
 
-            for safari_pokeblock in pokeblock_states {
+            let feebas_cycles =
+                if action.is_fishing() && *feebas_state != Wild3FeebasState::NotInMap {
+                    opts.feebas_cycles.clone()
+                } else {
+                    vec![0]
+                };
+
+            let pokeblock_feebas_products = iproduct!(&pokeblock_states, &feebas_cycles);
+
+            for (safari_pokeblock, feebas_cycles) in pokeblock_feebas_products {
                 let gen_opts = Wild3GeneratorOptions {
                     tid: opts.tid,
                     sid: opts.sid,
@@ -82,27 +93,27 @@ fn search_wild3_naive_at_given_advance(
                     roamer_state: *roamer_state,
                     mass_outbreak_state: *mass_outbreak_state,
                     feebas_state: *feebas_state,
-                    safari_pokeblock,
+                    feebas_cycles: *feebas_cycles,
+                    safari_pokeblock: safari_pokeblock.clone(),
                     lead_cycle_speed: opts.lead_cycle_speed,
                     using_white_flute: opts.using_white_flute,
                 };
 
-                generate_gen3_wild(rng, &gen_opts, &map_setups.map_data)
-                    .0
-                    .iter()
-                    .for_each(|gen_res| {
-                        let encounter = map_setups
-                            .map_data
-                            .get_encounter(gen_opts.action, gen_res.encounter_idx)
-                            .unwrap();
-                        results.push(Wild3SearcherResultMon::new(
-                            gen_res,
-                            &gen_opts,
-                            rng.seed(),
-                            advance,
-                            encounter,
-                        ));
-                    });
+                let generated = generate_gen3_wild(rng, &gen_opts, &map_setups.map_data);
+                generated.mon_results.iter().for_each(|gen_res| {
+                    let encounter = map_setups
+                        .map_data
+                        .get_encounter(gen_opts.action, gen_res.encounter_idx)
+                        .unwrap();
+                    results.push(Wild3SearcherResultMon::new(
+                        gen_res,
+                        &gen_opts,
+                        rng.seed(),
+                        advance,
+                        encounter,
+                        generated.cycle_counter.cycle_instability,
+                    ));
+                });
             }
         }
     }

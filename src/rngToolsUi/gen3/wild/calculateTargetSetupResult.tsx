@@ -3,8 +3,8 @@ import {
   rngTools,
   Species,
   Wild3Action,
+  Wild3GeneratorMonResult,
   Wild3GeneratorOptions,
-  Wild3GeneratorResult,
 } from "~/rngTools";
 import { AVERAGE_LEAD_CYCLE_SPEED } from "./wild3LeadCycleSpeedInput";
 import { TargetSetup } from "./wild3TargetSetupInput";
@@ -23,7 +23,7 @@ import { formatHex } from "~/utils/formatHex";
 import { Flex } from "~/components";
 
 const getProbabilityInfo = async (
-  res: Wild3GeneratorResult,
+  res: Wild3GeneratorMonResult,
   action: Wild3Action,
   lead_cycle_speed: number | null,
 ) => {
@@ -128,6 +128,7 @@ export const calculateTargetSetupResult = async (
     roamer_state: targetSetup.roamerState,
     mass_outbreak_state: targetSetup.massOutbreakState,
     feebas_state: targetSetup.feebasState,
+    feebas_cycles: targetSetup.feebasCycles,
     lead_cycle_speed,
     safari_pokeblock:
       targetSetup.safariPokeblock != null
@@ -144,14 +145,14 @@ export const calculateTargetSetupResult = async (
     return { content: null, hasEncounter: false };
   }
 
-  const results = await rngTools.generate_gen3_wild_wasm(
+  const genRes = await rngTools.generate_gen3_wild_wasm(
     targetSetup.targetPaintingAdvs.before,
     targetSetup.targetPaintingAdvs.after,
     opts,
     map_data,
   );
 
-  if (results.length === 0) {
+  if (genRes.mon_results.length === 0) {
     if (targetSetup.action === "RockSmash") {
       return {
         content: (
@@ -163,7 +164,7 @@ export const calculateTargetSetupResult = async (
     return { content: null, hasEncounter: false };
   }
 
-  const res = results[0];
+  const res = genRes.mon_results[0];
   const encounter = await rngTools.get_encounter_for_wild3_map_game_data(
     map_data,
     targetSetup.action,
@@ -211,5 +212,6 @@ export const calculateTargetSetupResult = async (
       </Flex>
     ),
     hasEncounter: true,
+    species,
   };
 };

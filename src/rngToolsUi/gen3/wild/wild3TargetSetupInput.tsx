@@ -39,6 +39,7 @@ import { calculateTargetSetupResult } from "./calculateTargetSetupResult";
 import { Pokeblock, pokeblockSchema } from "~/types/pokeblock";
 import { getPaintingReseedingFields } from "../pokemonRng/targetSetupInput";
 import { lcrng_distance } from "~/utils/lcrng";
+import { FormikFeebasTilesSelector } from "./feebasMap";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -46,25 +47,35 @@ const emeraldWildGameData = getWild3EmeraldGameData();
 // Wild3 is currently bugged.
 const supportedGen3Methods = ["Wild1", "Wild2", "Wild4"] as Gen3Method[];
 
-const Validator = z.object({
-  map: z.string(),
-  feebasState: z.enum(wild3FeebasStates),
-  roamerState: z.enum(wild3RoamerStates),
-  massOutbreakState: z.enum(wild3MassOutbreakStates),
-  action: z.enum(wild3Actions),
-  // Limitation: value in Select must be a primitive, so we use the index instead of Gen3Lead.
-  leadIdx: z
-    .number()
-    .min(0)
-    .max(gen3Leads.length - 1),
-  usingRngManipulatedLead: z.boolean(),
-  usingPaintingReseeding: z.boolean(),
-  targetFrameBeforePainting: z.number().min(1).max(0xffff),
-  targetMethod: z.enum(supportedGen3Methods),
-  targetAdvance: z.number().int().min(0).max(0xffffffff),
-  requiresWhiteFlute: z.boolean(),
-  safariPokeblock: pokeblockSchema,
-});
+const Validator = z
+  .object({
+    map: z.string(),
+    feebasState: z.enum(wild3FeebasStates),
+    roamerState: z.enum(wild3RoamerStates),
+    massOutbreakState: z.enum(wild3MassOutbreakStates),
+    action: z.enum(wild3Actions),
+    // Limitation: value in Select must be a primitive, so we use the index instead of Gen3Lead.
+    leadIdx: z
+      .number()
+      .min(0)
+      .max(gen3Leads.length - 1),
+    usingRngManipulatedLead: z.boolean(),
+    usingPaintingReseeding: z.boolean(),
+    targetFrameBeforePainting: z.number().min(1).max(0xffff),
+    targetMethod: z.enum(supportedGen3Methods),
+    targetAdvance: z.number().int().min(0).max(0xffffffff),
+    requiresWhiteFlute: z.boolean(),
+    safariPokeblock: pokeblockSchema,
+    feebasCycles: z.array(z.number().int().min(0).max(0xffffffff)),
+  })
+  .refine(
+    ({ feebasState, feebasCycles }) =>
+      feebasState !== "OnFeebasTile" || feebasCycles.length > 0,
+    {
+      message: "A feebas fishing spot must be defined.",
+      path: ["feebasCycles"],
+    },
+  );
 
 type Props = {
   setTargetSetup: (targetSetup: TargetSetup | null) => void;
@@ -74,6 +85,7 @@ export type TargetSetup = {
   map: string;
   action: Wild3Action;
   feebasState: Wild3FeebasState;
+  feebasCycles: number;
   roamerState: Wild3RoamerState;
   massOutbreakState: Wild3MassOutbreakState;
   lead: Gen3Lead;
@@ -101,6 +113,7 @@ const getInitialValues = (): FormState => {
     targetMethod: "Wild1",
     requiresWhiteFlute: false,
     safariPokeblock: null,
+    feebasCycles: [],
   };
 };
 
@@ -111,6 +124,7 @@ const convertFormStateValuesToTargetSetup = (
     map: values.map,
     action: values.action,
     feebasState: values.feebasState,
+    feebasCycles: values.feebasCycles[0] ?? 0,
     roamerState: values.roamerState,
     massOutbreakState: values.massOutbreakState,
     lead: gen3Leads[values.leadIdx],
@@ -138,6 +152,7 @@ const getFields = ({
   action: Wild3Action;
   usingPaintingReseeding: boolean;
   equivalentInitialAdvs: number;
+  setFieldValue: ReturnType<typeof useFormContext<FormState>>["setFieldValue"];
 }): Field[] => {
   const {
     actions,
@@ -217,6 +232,17 @@ const getFields = ({
       show: feebas_states.length > 1,
     },
     {
+      label: "Feebas fishing spot",
+      input: (
+        <FormikFeebasTilesSelector<FormState>
+          name="feebasCycles"
+          canOnlySelectOne
+        />
+      ),
+      show: feebas_states.length > 1,
+    },
+
+    {
       label: "Roamer state",
       input: (
         <FormikSelect<FormState, "roamerState">
@@ -255,6 +281,9 @@ export const Wild3TargetSetupInputFields = ({
   const feebasState = useWatch_UNSAFE<FormState, "feebasState">({
     name: "feebasState",
   });
+  const feebasCycles = useWatch_UNSAFE<FormState, "feebasCycles">({
+    name: "feebasCycles",
+  });
   const massOutbreakState = useWatch_UNSAFE<FormState, "massOutbreakState">({
     name: "massOutbreakState",
   });
@@ -285,6 +314,7 @@ export const Wild3TargetSetupInputFields = ({
     action,
     usingPaintingReseeding,
     equivalentInitialAdvs,
+    setFieldValue,
   });
 
   React.useEffect(() => {
@@ -302,6 +332,7 @@ export const Wild3TargetSetupInputFields = ({
     targetAdvance,
     targetFrameBeforePainting,
     usingPaintingReseeding,
+    feebasCycles,
   ]);
 
   return <FormFieldTable fields={fields} />;
