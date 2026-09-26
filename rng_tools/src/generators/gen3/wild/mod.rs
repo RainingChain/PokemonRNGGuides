@@ -1,4 +1,5 @@
 mod calc_modulo_cycle_count;
+mod cycle_counter;
 mod cycle_data_calculator;
 mod cycle_range;
 mod distribution_generator;
@@ -13,6 +14,7 @@ mod searcher;
 mod types;
 
 pub use calc_modulo_cycle_count::*;
+pub use cycle_counter::*;
 pub use cycle_data_calculator::*;
 pub use cycle_range::*;
 pub use filter::*;
