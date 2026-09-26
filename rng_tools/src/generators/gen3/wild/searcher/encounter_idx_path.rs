@@ -662,9 +662,7 @@ fn extend_path_for_feebas_success(
     maps_setups_for_rev
         .iter()
         .filter_map(|map_setups_for_rev| {
-            if map_setups_for_rev.map_setups.map_data.feebas.is_none() {
-                return None;
-            }
+            map_setups_for_rev.map_setups.map_data.feebas.as_ref()?;
 
             if !map_setups_for_rev
                 .map_setups

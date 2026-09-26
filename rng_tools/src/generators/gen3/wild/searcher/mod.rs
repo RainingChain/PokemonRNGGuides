@@ -1,7 +1,6 @@
 mod encounter_idx_path;
 mod iv_path;
 mod lvl_path;
-mod min_max_struct;
 mod nature_gender_path;
 mod pid_low_path;
 mod pid_path;

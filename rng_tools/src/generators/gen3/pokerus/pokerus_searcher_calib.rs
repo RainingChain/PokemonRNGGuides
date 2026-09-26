@@ -43,16 +43,16 @@ pub fn gen3_pokerus_search_for_calib(
         .filter_map(|rng| {
             let res = gen3_pokerus_generate::<true>(rng, &opts.gen_opts);
 
-            if let Some(filter_gives_pokerus) = opts.filter_gives_pokerus {
-                if filter_gives_pokerus != res.gives_pokerus {
-                    return None;
-                }
+            if let Some(filter_gives_pokerus) = opts.filter_gives_pokerus
+                && filter_gives_pokerus != res.gives_pokerus
+            {
+                return None;
             }
 
-            if let Some(filter_pickup_items) = &opts.filter_pickup_items {
-                if *filter_pickup_items != *res.pickup_items.as_ref().unwrap() {
-                    return None;
-                }
+            if let Some(filter_pickup_items) = &opts.filter_pickup_items
+                && *filter_pickup_items != *res.pickup_items.as_ref().unwrap()
+            {
+                return None;
             }
 
             Some(res)

@@ -758,12 +758,21 @@ fn test_search_reverse_wild2_synchronize_multiple_natures() {
 // Validate that FEEBAS_CYCLE_COUNT_BY_VBLANK has the correct value.
 #[test]
 fn test_search_reverse_wild3_vblank_group_feebas() {
-    let mut groups: [MinMax; 4] = [
-        MinMax::empty(),
-        MinMax::empty(),
-        MinMax::empty(),
-        MinMax::empty(),
-    ];
+    fn update_bounds(
+        range: &Option<std::ops::RangeInclusive<usize>>,
+        new_val: usize,
+    ) -> Option<std::ops::RangeInclusive<usize>> {
+        match range {
+            None => Some(new_val..=new_val),
+            Some(range) => {
+                let min = new_val.min(range.clone().min()?);
+                let max = new_val.max(range.clone().max()?);
+                Some(min..=max)
+            }
+        }
+    }
+
+    let mut groups: [Option<std::ops::RangeInclusive<usize>>; 4] = [None, None, None, None];
 
     for feebas_cycles in 0..=800_000 {
         let (min_presweet, _, max_presweet) =
@@ -781,11 +790,14 @@ fn test_search_reverse_wild3_vblank_group_feebas() {
             max_vblank_dur,
         );
 
-        groups[min_vblank_count].update_bounds(feebas_cycles);
-        groups[max_vblank_count].update_bounds(feebas_cycles);
+        groups[min_vblank_count] = update_bounds(&groups[min_vblank_count], feebas_cycles);
+        groups[max_vblank_count] = update_bounds(&groups[max_vblank_count], feebas_cycles);
     }
 
-    assert_eq!(groups, FEEBAS_CYCLE_COUNT_BY_VBLANK);
+    assert_eq!(
+        groups.map(|x| x.unwrap_or(0..=0)),
+        FEEBAS_CYCLE_COUNT_BY_VBLANK
+    );
 }
 
 #[test]
