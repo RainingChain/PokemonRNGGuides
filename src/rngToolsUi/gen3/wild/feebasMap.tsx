@@ -11,6 +11,7 @@ import styled from "@emotion/styled";
 import { type FeebasTile, getFeebasTiles } from "./feebasMapData";
 import { useField } from "~/hooks/form";
 import { GenericForm, GuaranteeFormNameType } from "~/types";
+import FeebasMap from "~/assets/Emerald/Wild/FeebasMap.png";
 
 const tiles = getFeebasTiles();
 const selectableTiles = tiles.filter((tile) => tile.canContainFeebas);
@@ -173,7 +174,7 @@ export const FeebasTilesSelector = ({
         maxViewportHeight={400}
         alt="Route 119 Feebas fishing tiles"
         features={[gridFeature, ...features]}
-        src="/images/Emerald/Wild/FeebasMap.png"
+        src={FeebasMap}
       />
     </FeebasMapContainer>
   );
@@ -223,7 +224,7 @@ export const FeebasTileVisualizer = ({
       aria-label={`Route 119 Feebas map around tile cycle ${selectedTileCycle}`}
     >
       <image
-        href="/images/Emerald/Wild/FeebasMap.png"
+        href={FeebasMap}
         width={mapWidth}
         height={mapHeight}
         preserveAspectRatio="none"

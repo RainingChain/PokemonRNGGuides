@@ -18,7 +18,6 @@ use crate::{
                 FindPidPathsOptions, LvlPathGenerator, NatureGenderSeedGenerator, PidPath,
                 PidPathStrategy, determine_best_pid_path_strategy, find_pid_paths_by_step_iv1,
                 find_pid_paths_by_step_iv2, find_pid_paths_by_step_pid, find_pid_paths_reverse_iv,
-                min_max_struct::MinMax,
             },
         },
     },
@@ -131,7 +130,6 @@ fn extend_pid_paths_to_results(
         &opts.map_setups,
         encounter_species_data.unwrap_or(SpeciesData {
             species: Species::Bulbasaur,
-            ..Default::default()
         }),
         opts.using_white_flute,
         &opts.feebas_cycles,
@@ -405,11 +403,11 @@ fn create_result(
 
 // Generated with test: cargo test test_search_reverse_wild3_vblank_group_feebas
 // Hardcoded in feebasMapData.ts
-pub const FEEBAS_CYCLE_COUNT_BY_VBLANK: [MinMax; 4] = [
-    MinMax::new(0, 235895),
-    MinMax::new(205896, 471791),
-    MinMax::new(421792, 707687),
-    MinMax::new(637688, 800000),
+pub const FEEBAS_CYCLE_COUNT_BY_VBLANK: [std::ops::RangeInclusive<usize>; 4] = [
+    0..=235895,
+    205896..=471791,
+    421792..=707687,
+    637688..=800000,
 ];
 
 pub fn get_feebas_possible_vblank_count(feebas_cycles: usize) -> Vec<usize> {

@@ -281,6 +281,9 @@ export const Wild3TargetSetupInputFields = ({
   const feebasState = useWatch_UNSAFE<FormState, "feebasState">({
     name: "feebasState",
   });
+  const feebasCycles = useWatch_UNSAFE<FormState, "feebasCycles">({
+    name: "feebasCycles",
+  });
   const massOutbreakState = useWatch_UNSAFE<FormState, "massOutbreakState">({
     name: "massOutbreakState",
   });
@@ -329,6 +332,7 @@ export const Wild3TargetSetupInputFields = ({
     targetAdvance,
     targetFrameBeforePainting,
     usingPaintingReseeding,
+    feebasCycles,
   ]);
 
   return <FormFieldTable fields={fields} />;

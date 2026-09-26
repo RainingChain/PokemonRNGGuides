@@ -55,7 +55,7 @@ pub fn gen3_pokerus_generate<const WITH_ITEM_IDS: bool>(
     mut rng: Pokerng,
     gen_opts: &Pokerus3GeneratorOptions,
 ) -> Pokerus3GeneratorResult {
-    let initial_rng = rng.clone();
+    let initial_rng = rng;
 
     let pickup_item_table = if gen_opts.is_emerald_game {
         &PICKUP_ITEM_CHANCE_EMERALD

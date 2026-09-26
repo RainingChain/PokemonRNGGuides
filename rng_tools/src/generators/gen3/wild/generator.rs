@@ -310,13 +310,14 @@ fn select_encounter_idx(
     }
 
     // In CheckFeebas()
-    if opts.action.is_fishing() && opts.feebas_state != Wild3FeebasState::NotInMap {
-        if rand_next_u16(rng, "select_encounter_idx.OnFeebasTile", 100) % 100 <= 49 {
-            handle_feebas_cycle_counter(rng, cycle_counter, opts.feebas_cycles);
+    if opts.action.is_fishing()
+        && opts.feebas_state != Wild3FeebasState::NotInMap
+        && rand_next_u16(rng, "select_encounter_idx.OnFeebasTile", 100) % 100 <= 49
+    {
+        handle_feebas_cycle_counter(rng, cycle_counter, opts.feebas_cycles);
 
-            if opts.feebas_state == Wild3FeebasState::OnFeebasTile {
-                return Some(Wild3EncounterIndex::Feebas);
-            }
+        if opts.feebas_state == Wild3FeebasState::OnFeebasTile {
+            return Some(Wild3EncounterIndex::Feebas);
         }
     }
 
