@@ -6,7 +6,8 @@ use crate::gen3::{
     BASE_LEAD_PID_MOD_24_CYCLES, COMMON_LEAD_RANGE, CycleAndModCount, CycleAndModRange,
     CycleCounter, FASTEST_MODULO_CYCLE_24, Gen3Lead, INFINITE_CYCLE, Moment,
     SLOWEST_MODULO_CYCLE_24, VBLANK_FREQ, Wild3Action, Wild3GeneratorOptions,
-    get_min_mid_max_pre_sweet_scent_cycle, is_method_possible_to_trigger,
+    get_min_mid_max_pre_sweet_scent_cycle, get_min_mid_max_vblank_cycle_duration,
+    is_method_possible_to_trigger,
 };
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Tsify, Serialize, Deserialize)]
@@ -140,9 +141,27 @@ pub enum CycleFrameCounter {
         base_cycle_count: usize,
         lead_pid_mod_count: usize,
     },
+    DetailedBreakdown {
+        lead_cycle_spd: usize,
+        current_cycle: CycleFrame,
+        vblank_cycles: Vec<usize>,
+        cycle_at_moments: Vec<CycleFrameMoment>,
+    },
 }
 
 impl CycleFrameCounter {
+    pub fn new_for_detailed_breakdown(
+        lead_cycle_spd: usize,
+        start_cycle_frame: CycleFrame,
+        vblank_cycles: Vec<usize>,
+    ) -> Self {
+        Self::DetailedBreakdown {
+            lead_cycle_spd,
+            current_cycle: start_cycle_frame,
+            vblank_cycles,
+            cycle_at_moments: vec![],
+        }
+    }
     pub fn new_inactive() -> Self {
         CycleFrameCounter::Inactive
     }
@@ -165,6 +184,10 @@ impl CycleFrameCounter {
     pub fn add(&mut self, cycle: usize, lead_pid_mod: usize) {
         match self {
             CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::DetailedBreakdown { lead_cycle_spd, .. } => {
+                let total = cycle + lead_pid_mod * *lead_cycle_spd;
+                self.add_cycle(total);
+            }
             CycleFrameCounter::MinMaxRange { .. } => {
                 self.add_cycle(cycle);
                 self.add_mod(lead_pid_mod);
@@ -174,6 +197,22 @@ impl CycleFrameCounter {
     pub fn add_cycle(&mut self, cycle: usize) {
         match self {
             CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::DetailedBreakdown {
+                current_cycle,
+                vblank_cycles,
+                ..
+            } => {
+                current_cycle.cycle += cycle;
+                while current_cycle.cycle > VBLANK_FREQ {
+                    current_cycle.cycle -= VBLANK_FREQ;
+                    // Each entry is the duration of the next VBlank.
+                    current_cycle.cycle += vblank_cycles
+                        .get(current_cycle.frame)
+                        .copied()
+                        .unwrap_or_else(|| get_min_mid_max_vblank_cycle_duration().1);
+                    current_cycle.frame += 1;
+                }
+            }
             CycleFrameCounter::MinMaxRange {
                 base_cycle_count,
                 min_max_cycles,
@@ -187,6 +226,10 @@ impl CycleFrameCounter {
     pub fn add_mod(&mut self, lead_pid_mod: usize) {
         match self {
             CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::DetailedBreakdown { lead_cycle_spd, .. } => {
+                let cycle = lead_pid_mod * *lead_cycle_spd;
+                self.add_cycle(cycle);
+            }
             CycleFrameCounter::MinMaxRange {
                 base_cycle_count,
                 lead_pid_mod_count,
@@ -199,20 +242,27 @@ impl CycleFrameCounter {
             }
         }
     }
-    pub fn on_moment_reached(&mut self, _moment: Moment) {
-        /*if self.mode != CycleFrameCounterMode::DetailedBreakdown {
-            return;
+    pub fn on_moment_reached(&mut self, moment: Moment) {
+        if let Self::DetailedBreakdown {
+            current_cycle,
+            cycle_at_moments,
+            ..
+        } = self
+        {
+            cycle_at_moments.push(CycleFrameMoment {
+                cycle: current_cycle.cycle,
+                frame: current_cycle.frame,
+                moment,
+            });
         }
-        self.cycle_at_moments.push(CycleAndModAtMoment {
-            cycle: self.cycle.cycle,
-            lead_pid_mod: self.cycle.lead_pid_mod,
-            moment,
-        });*/
     }
     /** can a vblank occurs between now and in cycle_range */
     pub fn can_vblank_occur_soon(&self, cycle_range: usize) -> bool {
         match self {
             CycleFrameCounter::Inactive => true,
+            CycleFrameCounter::DetailedBreakdown { current_cycle, .. } => {
+                cycle_range > VBLANK_FREQ.saturating_sub(current_cycle.cycle)
+            }
             CycleFrameCounter::MinMaxRange { min_max_cycles, .. } => {
                 min_max_cycles.can_vblank_occur_soon(cycle_range)
             }
@@ -221,6 +271,9 @@ impl CycleFrameCounter {
     pub fn is_possible_that_no_vblank_yet(&self) -> bool {
         match self {
             CycleFrameCounter::Inactive => true,
+            CycleFrameCounter::DetailedBreakdown { current_cycle, .. } => {
+                current_cycle.frame == 0
+            }
             CycleFrameCounter::MinMaxRange { min_max_cycles, .. } => {
                 min_max_cycles.min_cycle.frame == 0
             }
@@ -233,6 +286,13 @@ impl CycleFrameCounter {
 
         match self {
             CycleFrameCounter::Inactive => true,
+            CycleFrameCounter::DetailedBreakdown { .. } => {
+                if len == INFINITE_CYCLE {
+                    self.is_possible_that_no_vblank_yet()
+                } else {
+                    self.can_vblank_occur_soon(len)
+                }
+            }
             CycleFrameCounter::MinMaxRange { .. } => {
                 if !opts.consider_rng_manipulated_lead_pid {
                     return is_method_possible_to_trigger(
@@ -254,6 +314,9 @@ impl CycleFrameCounter {
     pub fn create_cycle_range(&self, len: usize) -> CycleAndModRange {
         match self {
             CycleFrameCounter::Inactive => CycleAndModRange::new(0, 0, 0),
+            CycleFrameCounter::DetailedBreakdown { .. } => {
+                CycleAndModRange::new(self.get_current_cycle_count(), 0, len)
+            }
             CycleFrameCounter::MinMaxRange {
                 lead_pid_mod_count,
                 base_cycle_count,
@@ -264,6 +327,13 @@ impl CycleFrameCounter {
     pub fn to_cycle_counter(&self) -> CycleCounter {
         match self {
             CycleFrameCounter::Inactive => CycleCounter::default(),
+            CycleFrameCounter::DetailedBreakdown { .. } => CycleCounter {
+                cycle: CycleAndModCount {
+                    cycle: self.get_current_cycle_count(),
+                    lead_pid_mod: 0,
+                },
+                ..Default::default()
+            },
             CycleFrameCounter::MinMaxRange {
                 base_cycle_count,
                 lead_pid_mod_count,
@@ -283,6 +353,9 @@ impl CycleFrameCounter {
     pub fn get_current_cycle_count(&self) -> usize {
         match self {
             CycleFrameCounter::Inactive => 0,
+            CycleFrameCounter::DetailedBreakdown { current_cycle, .. } => {
+                current_cycle.frame * VBLANK_FREQ + current_cycle.cycle
+            }
             CycleFrameCounter::MinMaxRange {
                 base_cycle_count, ..
             } => *base_cycle_count,
@@ -290,7 +363,7 @@ impl CycleFrameCounter {
     }
     pub fn set_cycle_instability(&mut self, instability: f32) {
         match self {
-            CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::Inactive | CycleFrameCounter::DetailedBreakdown { .. } => {}
             CycleFrameCounter::MinMaxRange {
                 cycle_instability, ..
             } => *cycle_instability = instability,
