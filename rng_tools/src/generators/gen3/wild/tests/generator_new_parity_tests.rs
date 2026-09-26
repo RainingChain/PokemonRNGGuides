@@ -83,7 +83,7 @@ fn all_actions_and_leads_match_existing_generation() {
             Gen3Lead::MagnetPull,
             Gen3Lead::HustleVitalSpiritPressure,
         ],
-        0..32,
+        0..255,
         [false, true],
         [false, true],
     ) {

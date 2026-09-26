@@ -11,7 +11,7 @@ use super::generator_main::{
 use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned, is_method_possible_to_trigger};
 use crate::gen3::{
     BASE_LEAD_PID_MOD_24_CYCLES, COMMON_LEAD_RANGE, CycleCounter, FASTEST_MODULO_CYCLE_24,
-    SLOWEST_MODULO_CYCLE_24,
+    MOMENT_COUNT, SLOWEST_MODULO_CYCLE_24,
 };
 use crate::{
     EncounterSlot, Gender, GenderRatio, Ivs, NATURE_COUNT, Nature,
@@ -143,31 +143,26 @@ impl Default for MinMaxCycleFrame {
 
 #[derive(Debug, Clone, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct CycleFrameCounter {
-    pub mode: CycleFrameCounterMode,
-    pub min_max_cycles: MinMaxCycleFrame,
-    pub cycle_instability: f32,
-    pub base_cycle_count: usize,
-    pub lead_pid_mod_count: usize,
+pub enum CycleFrameCounter {
+    Inactive,
+    MinMaxRange {
+        min_max_cycles: MinMaxCycleFrame,
+        cycle_instability: f32,
+        base_cycle_count: usize,
+        lead_pid_mod_count: usize,
+    },
 }
 
 impl CycleFrameCounter {
     pub fn new_inactive() -> Self {
-        Self {
-            mode: CycleFrameCounterMode::Inactive,
-            min_max_cycles: MinMaxCycleFrame::new_inactive(),
-            cycle_instability: 0.0,
-            base_cycle_count: 0,
-            lead_pid_mod_count: 0,
-        }
+        CycleFrameCounter::Inactive
     }
     pub fn new_for_min_max_range(
         is_egg_lead: bool,
         action: Wild3Action,
         consider_rng_manipulated_lead_pid: bool,
     ) -> Self {
-        Self {
-            mode: CycleFrameCounterMode::MinMaxRange,
+        CycleFrameCounter::MinMaxRange {
             min_max_cycles: MinMaxCycleFrame::new(
                 is_egg_lead,
                 action,
@@ -179,33 +174,47 @@ impl CycleFrameCounter {
         }
     }
     pub fn add(&mut self, cycle: usize, lead_pid_mod: usize) {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return;
+        match self {
+            CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::MinMaxRange { .. } => {
+                self.add_cycle(cycle);
+                self.add_mod(lead_pid_mod);
+            }
         }
-        self.add_cycle(cycle);
-        self.add_mod(lead_pid_mod);
     }
     pub fn add_cycle(&mut self, cycle: usize) {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return;
+        match self {
+            CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::MinMaxRange {
+                base_cycle_count,
+                min_max_cycles,
+                ..
+            } => {
+                *base_cycle_count += cycle;
+                min_max_cycles.add_cycle(cycle);
+            }
         }
-        self.base_cycle_count += cycle;
-        self.min_max_cycles.add_cycle(cycle);
     }
     pub fn add_mod(&mut self, lead_pid_mod: usize) {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return;
+        match self {
+            CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::MinMaxRange {
+                base_cycle_count,
+                lead_pid_mod_count,
+                min_max_cycles,
+                ..
+            } => {
+                *base_cycle_count += lead_pid_mod * BASE_LEAD_PID_MOD_24_CYCLES;
+                *lead_pid_mod_count += lead_pid_mod;
+                min_max_cycles.add_mod(lead_pid_mod);
+            }
         }
-
-        self.base_cycle_count += lead_pid_mod * BASE_LEAD_PID_MOD_24_CYCLES;
-        self.lead_pid_mod_count += lead_pid_mod;
-        self.min_max_cycles.add_mod(lead_pid_mod);
     }
     pub fn on_moment_reached(&mut self, _moment: Moment) {
-        if self.mode == CycleFrameCounterMode::Inactive {
+        /*if self.mode != CycleFrameCounterMode::DetailedBreakdown {
             return;
         }
-        /*self.cycle_at_moments.push(CycleAndModAtMoment {
+        self.cycle_at_moments.push(CycleAndModAtMoment {
             cycle: self.cycle.cycle,
             lead_pid_mod: self.cycle.lead_pid_mod,
             moment,
@@ -213,53 +222,89 @@ impl CycleFrameCounter {
     }
     /** can a vblank occurs between now and in cycle_range */
     pub fn can_vblank_occur_soon(&self, cycle_range: usize) -> bool {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return true;
+        match self {
+            CycleFrameCounter::Inactive => true,
+            CycleFrameCounter::MinMaxRange { min_max_cycles, .. } => {
+                min_max_cycles.can_vblank_occur_soon(cycle_range)
+            }
         }
-        self.min_max_cycles.can_vblank_occur_soon(cycle_range)
     }
     pub fn is_possible_that_no_vblank_yet(&self) -> bool {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return true;
+        match self {
+            CycleFrameCounter::Inactive => true,
+            CycleFrameCounter::MinMaxRange { min_max_cycles, .. } => {
+                min_max_cycles.min_cycle.frame == 0
+            }
         }
-        self.min_max_cycles.min_cycle.frame == 0
     }
     fn can_generate_method(&self, opts: &Wild3GeneratorOptions, len: usize) -> bool {
-        if opts.generate_even_if_impossible || self.mode == CycleFrameCounterMode::Inactive {
+        if opts.generate_even_if_impossible {
             return true;
         }
-        if !opts.consider_rng_manipulated_lead_pid {
-            return is_method_possible_to_trigger(
-                &self.create_cycle_range(len),
-                opts.action,
-                opts.lead == Gen3Lead::Egg,
-                false,
-                opts.lead_cycle_speed,
-            );
-        }
-        if len == INFINITE_CYCLE {
-            self.is_possible_that_no_vblank_yet()
-        } else {
-            self.can_vblank_occur_soon(len)
+
+        match self {
+            CycleFrameCounter::Inactive => true,
+            CycleFrameCounter::MinMaxRange { .. } => {
+                if !opts.consider_rng_manipulated_lead_pid {
+                    return is_method_possible_to_trigger(
+                        &self.create_cycle_range(len),
+                        opts.action,
+                        opts.lead == Gen3Lead::Egg,
+                        false,
+                        opts.lead_cycle_speed,
+                    );
+                }
+                if len == INFINITE_CYCLE {
+                    self.is_possible_that_no_vblank_yet()
+                } else {
+                    self.can_vblank_occur_soon(len)
+                }
+            }
         }
     }
     pub fn create_cycle_range(&self, len: usize) -> CycleAndModRange {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return CycleAndModRange::new(0, 0, 0);
+        match self {
+            CycleFrameCounter::Inactive => CycleAndModRange::new(0, 0, 0),
+            CycleFrameCounter::MinMaxRange {
+                lead_pid_mod_count,
+                base_cycle_count,
+                ..
+            } => CycleAndModRange::new(*base_cycle_count, *lead_pid_mod_count, len),
         }
-        CycleAndModRange::new(self.base_cycle_count, self.lead_pid_mod_count, len)
     }
     pub fn to_cycle_counter(&self) -> CycleCounter {
-        if self.mode == CycleFrameCounterMode::Inactive {
-            return CycleCounter::default();
-        }
-        CycleCounter {
-            cycle: CycleAndModCount {
-                cycle: self.base_cycle_count,
-                lead_pid_mod: self.lead_pid_mod_count,
+        match self {
+            CycleFrameCounter::Inactive => CycleCounter::default(),
+            CycleFrameCounter::MinMaxRange {
+                base_cycle_count,
+                lead_pid_mod_count,
+                cycle_instability,
+                ..
+            } => CycleCounter {
+                cycle: CycleAndModCount {
+                    cycle: *base_cycle_count,
+                    lead_pid_mod: *lead_pid_mod_count,
+                },
+                cycle_instability: *cycle_instability,
+                ..Default::default()
             },
-            cycle_instability: self.cycle_instability,
-            ..Default::default()
+        }
+    }
+
+    pub fn get_current_cycle_count(&self) -> usize {
+        match self {
+            CycleFrameCounter::Inactive => 0,
+            CycleFrameCounter::MinMaxRange {
+                base_cycle_count, ..
+            } => *base_cycle_count,
+        }
+    }
+    pub fn set_cycle_instability(&mut self, instability: f32) {
+        match self {
+            CycleFrameCounter::Inactive => {}
+            CycleFrameCounter::MinMaxRange {
+                cycle_instability, ..
+            } => *cycle_instability = instability,
         }
     }
 }
@@ -1106,19 +1151,19 @@ fn handle_feebas_cycle_counter(
     // The generator always calculates for the mid case (most probable case).
     rng.jump(mid_case_vblank);
 
-    let abs_cycle_from_cycle_counter = cycle_counter.base_cycle_count + mid; // At this points, lead_pid_mod is 0.
+    let abs_cycle_from_cycle_counter = cycle_counter.get_current_cycle_count() + mid; // At this points, lead_pid_mod is 0.
     // Limitation: We can only add cycles. In most cases, mid_case_cycle should be > abs_cycle_from_cycle_counter, because abs_cycle_from_cycle_counter is small.
     if mid_case_cycle > abs_cycle_from_cycle_counter {
         cycle_counter.add_cycle(mid_case_cycle - abs_cycle_from_cycle_counter);
     }
 
     let vblank_diff = max_case_vblank - min_case_vblank;
-    cycle_counter.cycle_instability = if vblank_diff != 0 {
+    cycle_counter.set_cycle_instability(if vblank_diff != 0 {
         1.0
     } else {
         // Each vblank adds instability because vblank duration is variable.
         mid_case_vblank as f32 / MAX_FEEBAS_VBLANK as f32
-    }
+    });
 }
 
 fn pick_wild_mon_nature_safari(
