@@ -11,7 +11,7 @@ use super::generator_main::{
 use super::{calc_modulo_cycle_signed, calc_modulo_cycle_unsigned, is_method_possible_to_trigger};
 use crate::gen3::{
     BASE_LEAD_PID_MOD_24_CYCLES, COMMON_LEAD_RANGE, CycleCounter, FASTEST_MODULO_CYCLE_24,
-    MOMENT_COUNT, SLOWEST_MODULO_CYCLE_24,
+    SLOWEST_MODULO_CYCLE_24,
 };
 use crate::{
     EncounterSlot, Gender, GenderRatio, Ivs, NATURE_COUNT, Nature,

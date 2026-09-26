@@ -140,10 +140,11 @@ pub fn get_feebas_vblank_from_feebas_cycle(feebas_cycles: usize) -> usize {
     mid_case_vblank
 }
 
-pub(super) fn handle_feebas_cycle_counter(
+pub fn handle_feebas_cycle_counter(
     rng: &mut Pokerng,
     cycle_counter: &mut CycleCounter,
     feebas_cycles: usize,
+    consider_cycles: bool,
 ) {
     cycle_counter.on_moment_reached(Moment::CheckFeebas);
 
@@ -169,6 +170,10 @@ pub(super) fn handle_feebas_cycle_counter(
 
     // The generator always calculates for the mid case (most probable case).
     rng.jump(mid_case_vblank);
+
+    if !consider_cycles {
+        return;
+    }
 
     let abs_cycle_from_cycle_counter = cycle_counter.cycle.cycle + mid; // At this points, lead_pid_mod is 0.
     // Limitation: We can only add cycles. In most cases, mid_case_cycle should be > abs_cycle_from_cycle_counter, because abs_cycle_from_cycle_counter is small.
@@ -236,7 +241,12 @@ fn select_encounter_idx(
     // In CheckFeebas()
     if opts.action.is_fishing() && opts.feebas_state != Wild3FeebasState::NotInMap {
         if rand_next_u16(rng, "select_encounter_idx.OnFeebasTile", 100) % 100 <= 49 {
-            handle_feebas_cycle_counter(rng, cycle_counter, opts.feebas_cycles);
+            handle_feebas_cycle_counter(
+                rng,
+                cycle_counter,
+                opts.feebas_cycles,
+                opts.consider_cycles,
+            );
 
             if opts.feebas_state == Wild3FeebasState::OnFeebasTile {
                 return Some(Wild3EncounterIndex::Feebas);
