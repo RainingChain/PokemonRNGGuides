@@ -1,13 +1,13 @@
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-use super::{Wild3GeneratorOptions, generate_gen3_wild};
+use super::Wild3GeneratorOptions;
 use crate::{
     gen3::{
         CycleAtMoment, CycleRange, Gen3Method, Wild3MapGameData, Wild3SearcherResultMon,
-        calculate_cycle_data,
+        calculate_cycle_data, generate_wild3_old,
     },
     rng::lcrng::Pokerng,
 };
@@ -50,22 +50,31 @@ pub fn generate_gen3_wild_distribution(
         ..opts.clone()
     };
 
-    let rng = Pokerng::with_advances(initial_seed, advances);
-    let (gen_results, cycle_counter) = generate_gen3_wild(rng, &opts, game_data);
+    let rng = Pokerng::with_jump(initial_seed, advances);
+    let generated = generate_wild3_old(rng, &opts, game_data);
+    let gen_results = generated.mon_results;
+    let cycle_counter = generated.cycle_counter;
     let search_results = gen_results
         .iter()
         .map(|gen_res| {
             let encounter = game_data
                 .get_encounter(opts.action, gen_res.encounter_idx)
                 .unwrap();
-            let searcher_res =
-                Wild3SearcherResultMon::new(gen_res, &opts, rng.seed(), advances, encounter);
+            let searcher_res = Wild3SearcherResultMon::new(
+                gen_res,
+                &opts,
+                rng.seed(),
+                advances,
+                encounter,
+                cycle_counter.cycle_instability,
+            );
             let cycle_data = calculate_cycle_data(
                 &searcher_res
                     .cycle_data_by_lead
                     .as_ref()
                     .unwrap()
                     .post_sweet_scent_range,
+                opts.action,
                 lead_cycle_speed,
             );
             (searcher_res, cycle_data)

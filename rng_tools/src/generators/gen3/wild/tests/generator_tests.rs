@@ -2,12 +2,14 @@ use crate::{
     AbilityType, EncounterSlot, Gender, Ivs, Nature, PkmFilter, Species,
     gen3::{
         Gen3Lead, Gen3Method, Gen3PkmFilter, Wild3Action, Wild3EncounterGameData,
-        Wild3EncounterIndex, Wild3FeebasState, Wild3GeneratorOptions, Wild3GeneratorResult,
-        Wild3MapGameData, Wild3MassOutbreakState, Wild3RoamerState, Wild3SpecialEncounterGameData,
-        generate_gen3_wild,
+        Wild3EncounterIndex, Wild3FeebasState, Wild3GeneratorMonResult, Wild3GeneratorOptions,
+        Wild3MapGameData, Wild3MassOutbreakState, Wild3RoamerState, Wild3SafariPokeblockGenOpt,
+        Wild3SpecialEncounterGameData, generate_wild3,
     },
     rng::lcrng::Pokerng,
 };
+
+use super::super::generator_new::tests::assert_mon_results_eq_unordered;
 
 #[test]
 fn test_generate_wild3_no_filter() {
@@ -16,19 +18,20 @@ fn test_generate_wild3_no_filter() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 9),
         &options,
         &Wild3MapGameData::default(),
-    );
-    let expected_result = vec![Wild3GeneratorResult {
+    )
+    .mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot1),
         pid: 0x6E031C49,
         ivs: Ivs::new(10, 13, 12, 20, 10, 9),
         method: Gen3Method::Wild1,
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -36,7 +39,7 @@ fn test_generate_wild3_with_filter() {
     let options = Wild3GeneratorOptions {
         methods: vec![Gen3Method::Wild1],
         filter: PkmFilter {
-            nature: Some(Nature::Adamant),
+            nature: PkmFilter::new_nature_filter(&[Nature::Adamant]),
             gender: Some(Gender::Female),
             min_ivs: Ivs::new(10, 10, 10, 10, 10, 10),
             ability: Some(AbilityType::Second),
@@ -63,15 +66,15 @@ fn test_generate_wild3_with_filter() {
         .species_data
         .species = Species::Shuckle;
 
-    let (result, _) = generate_gen3_wild(Pokerng::new(0xA4893D21), &options, &game_data);
-    let expected_result = vec![Wild3GeneratorResult {
+    let result = generate_wild3(Pokerng::new(0xA4893D21), &options, &game_data).mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
         pid: 0x02FA9E49,
         ivs: Ivs::new(12, 29, 23, 10, 14, 13),
         method: Gen3Method::Wild1,
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 #[test]
 fn test_generate_wild3_shiny() {
@@ -81,7 +84,7 @@ fn test_generate_wild3_shiny() {
         methods: vec![Gen3Method::Wild1],
         filter: PkmFilter {
             shiny: true,
-            nature: Some(Nature::Naive),
+            nature: PkmFilter::new_nature_filter(&[Nature::Naive]),
             gender: Some(Gender::Male),
             ability: Some(AbilityType::Second),
             ..Default::default()
@@ -90,15 +93,15 @@ fn test_generate_wild3_shiny() {
     };
 
     let rng = Pokerng::new(0x14a22065);
-    let (result, _) = generate_gen3_wild(rng, &options, &Wild3MapGameData::default());
-    let expected_result = vec![Wild3GeneratorResult {
+    let result = generate_wild3(rng, &options, &Wild3MapGameData::default()).mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot4),
         pid: 0x692A57E1,
         ivs: Ivs::new(0, 0, 0, 8, 13, 25),
         method: Gen3Method::Wild1,
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -109,19 +112,20 @@ fn test_generate_wild3_synch() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::new(0x14a22065),
         &options,
         &Wild3MapGameData::default(),
-    );
-    let expected_result = vec![Wild3GeneratorResult {
+    )
+    .mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         pid: 0x3A5DEC53,
         method: Gen3Method::Wild1,
         ivs: Ivs::new(0, 4, 15, 8, 25, 13),
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot4),
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -132,19 +136,20 @@ fn test_generate_wild3_cute_charm_activated() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 2),
         &options,
         &Wild3MapGameData::default(),
-    );
-    let expected_result = vec![Wild3GeneratorResult {
+    )
+    .mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
         pid: 0x722DEBE7,
         ivs: Ivs::new(28, 1, 26, 0, 14, 16),
         method: Gen3Method::Wild1,
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -160,48 +165,49 @@ fn test_generate_wild3_all_methods() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 2),
         &options,
         &Wild3MapGameData::default(),
-    );
+    )
+    .mon_results;
     let expected_result = vec![
-        Wild3GeneratorResult {
+        Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 2570972118,
             ivs: Ivs::new(28, 21, 30, 29, 18, 7),
             method: Gen3Method::Wild5,
             ..Default::default()
         },
-        Wild3GeneratorResult {
+        Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 1636667768,
             ivs: Ivs::new(18, 20, 5, 29, 19, 24),
             method: Gen3Method::Wild3,
             ..Default::default()
         },
-        Wild3GeneratorResult {
+        Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 1036881243,
             ivs: Ivs::new(19, 28, 1, 5, 8, 17),
             method: Gen3Method::Wild5,
             ..Default::default()
         },
-        Wild3GeneratorResult {
+        Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 1671314793,
             ivs: Ivs::new(13, 20, 26, 20, 24, 22),
             method: Gen3Method::Wild2,
             ..Default::default()
         },
-        Wild3GeneratorResult {
+        Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 1671314793,
             ivs: Ivs::new(9, 9, 7, 20, 24, 22),
             method: Gen3Method::Wild4,
             ..Default::default()
         },
-        Wild3GeneratorResult {
+        Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 1671314793,
             ivs: Ivs::new(9, 9, 7, 20, 26, 13),
@@ -209,7 +215,7 @@ fn test_generate_wild3_all_methods() {
             ..Default::default()
         },
     ];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -220,19 +226,20 @@ fn test_generate_wild3_egg_lead() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 1234),
         &options,
         &Wild3MapGameData::default(),
-    );
-    let expected_result = vec![Wild3GeneratorResult {
+    )
+    .mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot1),
         pid: 1996552928,
         ivs: Ivs::new(23, 27, 7, 20, 15, 31),
         method: Gen3Method::Wild4,
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -243,19 +250,20 @@ fn test_generate_wild3_fishing() {
         ..Default::default()
     };
 
-    let (result, _) = generate_gen3_wild(
+    let result = generate_wild3(
         Pokerng::with_advances(0, 234),
         &options,
         &Wild3MapGameData::default(),
-    );
-    let expected_result = vec![Wild3GeneratorResult {
+    )
+    .mon_results;
+    let expected_result = vec![Wild3GeneratorMonResult {
         encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot1),
         pid: 4072166945,
         ivs: Ivs::new(15, 0, 10, 2, 28, 7),
         method: Gen3Method::Wild1,
         ..Default::default()
     }];
-    assert_eq!(result, expected_result);
+    assert_mon_results_eq_unordered(&result, &expected_result, "");
 }
 
 #[test]
@@ -271,21 +279,22 @@ fn test_generate_wild3_feebas() {
     game_data.feebas = Some(Wild3EncounterGameData::default());
 
     // if fishing on Feebas tile, gets feebas
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
+    assert_mon_results_eq_unordered(
+        &result,
+        &vec![Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Feebas,
             pid: 4231227355,
             ivs: Ivs::new(12, 25, 27, 2, 31, 30),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     //if not on Feebas tile, doesn't get feebas
     options.feebas_state = Wild3FeebasState::InMapButNotOnFeebasTile;
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     assert!(!matches!(
         result[0].encounter_idx,
@@ -295,7 +304,7 @@ fn test_generate_wild3_feebas() {
     //if not fishing, doesn't get feebas
     options.action = Wild3Action::SweetScentLand;
     options.feebas_state = Wild3FeebasState::InMapButNotOnFeebasTile;
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     assert!(!matches!(
         result[0].encounter_idx,
@@ -305,7 +314,7 @@ fn test_generate_wild3_feebas() {
     //if advance is 1, doesn't get feebas
     options.action = Wild3Action::OldRod;
     options.feebas_state = Wild3FeebasState::OnFeebasTile;
-    let (result, _) = generate_gen3_wild(Pokerng::with_advances(0, 1), &options, &game_data);
+    let result = generate_wild3(Pokerng::with_advances(0, 1), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     assert!(!matches!(
         result[0].encounter_idx,
@@ -329,7 +338,7 @@ fn test_generate_wild3_roamer() {
     });
 
     // if roamer is active, gets roamer
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     // the roamer PID/IVs aren't tested, because they are generated when the Pokémon starts roaming
     assert!(matches!(
@@ -339,7 +348,7 @@ fn test_generate_wild3_roamer() {
 
     //if no roamer, doesn't get roamer
     options.roamer_state = Wild3RoamerState::Inactive;
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     assert!(!matches!(
         result[0].encounter_idx,
@@ -349,7 +358,7 @@ fn test_generate_wild3_roamer() {
     // if roamer is active but fishing, doesn't get roamer
     options.action = Wild3Action::GoodRod;
     options.roamer_state = Wild3RoamerState::ActiveInMapLatios;
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     assert!(!matches!(
         result[0].encounter_idx,
@@ -368,18 +377,19 @@ fn test_generate_wild3_magnet_pull() {
     };
     let mut game_data = Wild3MapGameData::default();
 
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
 
     // magnet pull has no effect if there's no steel type
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    assert_mon_results_eq_unordered(
+        &result,
+        &vec![Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot5),
             pid: 1621222420,
             ivs: Ivs::new(11, 25, 10, 25, 3, 24),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     game_data.slots_by_action[Wild3Action::SweetScentLand as usize]
@@ -388,30 +398,32 @@ fn test_generate_wild3_magnet_pull() {
         .species = Species::Steelix; // Steel type
 
     //magnet pull changed the slot for the steel type
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
+    assert_mon_results_eq_unordered(
+        &result,
+        &vec![Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot11),
             pid: 1621222420,
             ivs: Ivs::new(11, 25, 10, 25, 3, 24),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     // magnet pull has no effect for water encounters even with steel type
     options.action = Wild3Action::SweetScentWater;
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
+    assert_mon_results_eq_unordered(
+        &result,
+        &vec![Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 4231227355,
             ivs: Ivs::new(12, 25, 27, 2, 31, 30),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 }
 
@@ -426,18 +438,19 @@ fn test_generate_wild3_static() {
     };
     let mut game_data = Wild3MapGameData::default();
 
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
 
     // Static has no effect if no electric type
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot5),
             pid: 1621222420,
             ivs: Ivs::new(11, 25, 10, 25, 3, 24),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     game_data.slots_by_action[Wild3Action::SweetScentLand as usize]
@@ -446,30 +459,32 @@ fn test_generate_wild3_static() {
         .species = Species::Electabuzz; // Electric
 
     //magnet pull changed the slot for the electric type
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot11),
             pid: 1621222420,
             ivs: Ivs::new(11, 25, 10, 25, 3, 24),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     // Static has no effect for fishing encounters
     options.action = Wild3Action::OldRod;
-    let (result, _) = generate_gen3_wild(Pokerng::new(0), &options, &game_data);
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 4231227355,
             ivs: Ivs::new(12, 25, 27, 2, 31, 30),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 }
 
@@ -488,36 +503,87 @@ fn test_generate_wild3_hustle() {
         slot.max_level = 100;
     }
 
-    let (result, _) = generate_gen3_wild(Pokerng::with_advances(0, 2), &options, &game_data);
+    let result = generate_wild3(Pokerng::with_advances(0, 2), &options, &game_data).mon_results;
 
     // Normal behaviour
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
             pid: 1671314793,
             ivs: Ivs::new(9, 9, 7, 20, 26, 13),
             method: Gen3Method::Wild1,
-            lvl: 77,
+            lvl: 21,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     // With Hustle, level changes
     options.lead = Gen3Lead::HustleVitalSpiritPressure;
-    let (result, _) = generate_gen3_wild(Pokerng::with_advances(0, 1), &options, &game_data);
+    let result = generate_wild3(Pokerng::with_advances(0, 1), &options, &game_data).mon_results;
 
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot5),
             pid: 1671314793,
             ivs: Ivs::new(9, 9, 7, 20, 26, 13),
             method: Gen3Method::Wild1,
             lvl: 100,
             ..Default::default()
-        }]
+        }],
+        "",
     );
+}
+
+#[test]
+fn test_generate_wild3_rock_smash() {
+    let options = Wild3GeneratorOptions {
+        action: Wild3Action::RockSmash,
+        methods: vec![Gen3Method::Wild1],
+        generate_even_if_impossible: true,
+        ..Default::default()
+    };
+
+    let game_data = Wild3MapGameData::default();
+
+    let result = generate_wild3(Pokerng::with_advances(0, 2), &options, &game_data).mon_results;
+    assert!(result.is_empty());
+
+    let result = generate_wild3(Pokerng::new(0), &options, &game_data).mon_results;
+
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
+            encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot1),
+            pid: 1621222420,
+            ivs: Ivs::new(11, 25, 10, 25, 3, 24),
+            method: Gen3Method::Wild1,
+            ..Default::default()
+        }],
+        "",
+    );
+}
+
+#[test]
+fn test_generate_wild3_rock_smash_white_flute() {
+    let mut options = Wild3GeneratorOptions {
+        action: Wild3Action::RockSmash,
+        methods: vec![Gen3Method::Wild1],
+        generate_even_if_impossible: true,
+        using_white_flute: true,
+        ..Default::default()
+    };
+
+    let game_data = Wild3MapGameData::default();
+
+    let result = generate_wild3(Pokerng::new(20), &options, &game_data).mon_results;
+    assert!(!result.is_empty());
+
+    options.using_white_flute = false;
+    let result = generate_wild3(Pokerng::new(20), &options, &game_data).mon_results;
+    assert!(result.is_empty());
 }
 
 #[test]
@@ -537,29 +603,99 @@ fn test_generate_wild3_mass_outbreak() {
             ..Default::default()
         });
 
-    let (result, _) = generate_gen3_wild(Pokerng::with_advances(0, 2), &options, &game_data);
+    let result = generate_wild3(Pokerng::with_advances(0, 2), &options, &game_data).mon_results;
 
-    assert_eq!(
-        result,
-        vec![Wild3GeneratorResult {
+    assert_mon_results_eq_unordered(
+        &result,
+        &[Wild3GeneratorMonResult {
             encounter_idx: Wild3EncounterIndex::MassOutbreak(
-                Wild3MassOutbreakState::Route102Seedot
+                Wild3MassOutbreakState::Route102Seedot,
             ),
             pid: 1671314793,
             ivs: Ivs::new(9, 9, 7, 20, 26, 13),
             method: Gen3Method::Wild1,
             ..Default::default()
-        }]
+        }],
+        "",
     );
 
     // if fishing, doesn't get mass outbreak
     options.action = Wild3Action::GoodRod;
-    let (result, _) = generate_gen3_wild(Pokerng::with_advances(0, 2), &options, &game_data);
+    let result = generate_wild3(Pokerng::with_advances(0, 2), &options, &game_data).mon_results;
     assert!(!result.is_empty());
     assert!(!matches!(
         result[0].encounter_idx,
         Wild3EncounterIndex::MassOutbreak(Wild3MassOutbreakState::Route102Seedot)
     ));
+}
+
+#[test]
+fn test_generate_wild3_safari_pokeblock_from_flavor() {
+    let mut game_data = Wild3MapGameData::default();
+    game_data.is_safari = true;
+    game_data.actions_with_safari_pokeblock = vec![Wild3Action::SweetScentLand];
+
+    let mut options = Wild3GeneratorOptions {
+        methods: vec![Gen3Method::Wild1],
+        ..Default::default()
+    };
+    let rng = Pokerng::with_advances(0, 3003);
+
+    let result_without_pokeblock = generate_wild3(rng, &options, &game_data).mon_results;
+
+    options.safari_pokeblock = Some(Wild3SafariPokeblockGenOpt::Specific([1, 0, 0, 2, 0]));
+
+    let result_with_pokeblock = generate_wild3(rng, &options, &game_data).mon_results;
+
+    let expected_result_with_pokeblock = vec![Wild3GeneratorMonResult {
+        encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot9),
+        pid: 0x30B8_861B,
+        ivs: Ivs::new(28, 9, 19, 2, 17, 28),
+        method: Gen3Method::Wild1,
+        used_safari_pokeblock: Some([1, 0, 0, 2, 0]),
+        ..Default::default()
+    }];
+    assert_ne!(result_with_pokeblock, result_without_pokeblock);
+    assert_mon_results_eq_unordered(&result_with_pokeblock, &expected_result_with_pokeblock, "");
+}
+
+#[test]
+fn test_generate_wild3_safari_pokeblock_from_nature() {
+    let mut game_data = Wild3MapGameData::default();
+    game_data.is_safari = true;
+    game_data.actions_with_safari_pokeblock = vec![Wild3Action::SweetScentLand];
+
+    let wanted_nature = Nature::Impish;
+    let mut options = Wild3GeneratorOptions {
+        methods: vec![Gen3Method::Wild1],
+        filter: PkmFilter {
+            nature: PkmFilter::new_nature_filter(&[wanted_nature]),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let rng = Pokerng::with_advances(0, 2);
+
+    let result_without_pokeblock = generate_wild3(rng, &options, &game_data).mon_results;
+
+    options.safari_pokeblock = Some(Wild3SafariPokeblockGenOpt::ForSearching {
+        wanted_nature,
+        consider_all_safari_pokeblocks: false,
+    });
+
+    let result_with_pokeblock = generate_wild3(rng, &options, &game_data).mon_results;
+
+    let expected_result_with_pokeblock = vec![Wild3GeneratorMonResult {
+        encounter_idx: Wild3EncounterIndex::Slot(EncounterSlot::Slot0),
+        pid: 0xF38C_114E,
+        ivs: Ivs::new(11, 19, 1, 26, 17, 24),
+        method: Gen3Method::Wild1,
+        used_safari_pokeblock: Some([0, 0, 0, 0, 1]),
+        ..Default::default()
+    }];
+    assert_ne!(result_with_pokeblock, result_without_pokeblock);
+    assert_mon_results_eq_unordered(&result_with_pokeblock, &expected_result_with_pokeblock, "");
 }
 
 /*
@@ -581,7 +717,7 @@ fn test_generate_wild3_debug() {
 
     let mut rng = Pokerng::new(0);
     rng.advance(options.advance);
-    let (result,_) = generate_gen3_wild(rng, &options);
+    let (result,_) = generate_wild3(rng, &options);
 
     println!("{:?}", result);
     assert!(false);

@@ -1,117 +1,130 @@
 import React from "react";
-import {
-  Typography,
-  Flex,
-  Header,
-  DesktopDrawer,
-  List,
-  ListItem,
-  Icon,
-  IconName,
-} from "~/components";
-import styled from "@emotion/styled";
+import { Typography, Flex, Header, DesktopDrawer } from "~/components";
 import { useScreenViewed } from "~/hooks/useScreenViewed";
 import { useActiveRoute } from "~/hooks/useActiveRoute";
 import { settings } from "~/settings";
-import { match } from "ts-pattern";
-import { Color } from "@emotion/react";
-
-type SupporterType = (typeof settings)["hallOfFameSupporters"][number]["type"];
-
-type IconProps = { name: IconName; color: Color };
-
-const DISCORD_SUPPORTER_PROPS: IconProps = {
-  name: "Discord",
-  color: "Primary",
-};
-const PATREON_SUPPORTER_PROPS: IconProps = { name: "Patreon", color: "Error" };
-
-const getSupporterIconProps = (type: SupporterType): IconProps => {
-  return match(type)
-    .with("discord", () => DISCORD_SUPPORTER_PROPS)
-    .with("patreon", () => PATREON_SUPPORTER_PROPS)
-    .exhaustive();
-};
+import { useMaxWidthEnabled } from "~/state/contentMaxWidth";
+import styled from "@emotion/styled";
+import { styledPropGuard } from "~/utils/styled";
 
 type Props = {
   children: React.ReactNode;
   trackerName?: string;
+  fullWidth?: boolean;
 };
 
 export const SIDE_MARGIN = 24;
 
+const CONTENT_MAX_WIDTH = 800;
+const CONTENT_PADDING_X = 32;
+
 const ContentLayout = styled.div(({ theme }) => ({
+  ...theme.pageContainer,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  height: `calc(100% - ${theme.components?.Layout?.headerHeight})`,
+  // The document scrolls instead of this container so mobile browsers can hide their toolbars
+  minHeight: `calc(100dvh - ${theme.token.layoutHeaderHeight})`,
   width: "100%",
+  minWidth: 0,
+  overflowX: "auto",
   gap: 24,
   boxSizing: "border-box",
-  paddingLeft: SIDE_MARGIN,
-  paddingRight: SIDE_MARGIN,
-  overflowY: "scroll",
-  marginTop: theme.components?.Layout?.headerHeight,
+  marginTop: theme.token.layoutHeaderHeight,
+
+  backgroundColor: theme.token.colorBgContainer,
+  [theme.mediaQueries.up("desktop")]: {
+    borderTopLeftRadius: 16,
+  },
 }));
 
-const Main = styled.main({
+const Main = styled.main(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   width: "100%",
   gap: 24,
-});
+  backgroundColor: theme.token.colorBgContainer,
+}));
 
 const DesktopNavDrawerContainer = styled.div(({ theme }) => ({
   display: "none",
   flexDirection: "column",
-  height: `calc(100% - ${theme.components?.Layout?.headerHeight})`,
+  position: "sticky",
+  top: theme.token.layoutHeaderHeight,
+  alignSelf: "flex-start",
+  height: `calc(100dvh - ${theme.token.layoutHeaderHeight})`,
   width: "100%",
-  marginTop: theme.components?.Layout?.headerHeight,
-  maxWidth: 300,
-  backgroundColor: theme.token.colorBgContainer,
-  borderRight: `1px solid ${theme.token.colorBorder}`,
+  marginTop: theme.token.layoutHeaderHeight,
+  maxWidth: 286,
+  backgroundColor: theme.token.colorBgLayout,
   [theme.mediaQueries.up("desktop")]: {
     display: "flex",
   },
 }));
 
-const BodyContainer = styled.div({
-  height: "100%",
+const BodyContainer = styled.div(({ theme }) => ({
+  flex: 1,
   width: "100%",
   display: "flex",
-});
-
-const ContentContainer = styled.div(({ theme }) => ({
-  height: "100%",
-  width: "100%",
-  maxWidth: 750,
-  display: "flex",
-  flexDirection: "column",
-  gap: 32,
-  paddingTop: 24,
-  [theme.mediaQueries.up("tablet")]: {
-    width: "90%",
-  },
-  [theme.mediaQueries.up("desktop")]: {
-    width: "80%",
-  },
+  backgroundColor: theme.token.colorBgLayout,
 }));
+
+const ContentContainer = styled(
+  "div",
+  styledPropGuard,
+)<{ $useMaxWidth: boolean; $fullWidth: boolean }>(({
+  theme,
+  $useMaxWidth,
+  $fullWidth,
+}) => {
+  const useMaxWidth = $useMaxWidth && !$fullWidth;
+  return {
+    height: "100%",
+    width: "100%",
+    // Includes the padding so the content itself gets the full max width
+    maxWidth: useMaxWidth ? CONTENT_MAX_WIDTH + CONTENT_PADDING_X * 2 : "none",
+    display: "flex",
+    flexDirection: "column",
+    gap: 32,
+    boxSizing: "border-box",
+    padding: $fullWidth ? 0 : `28px ${CONTENT_PADDING_X}px 0`,
+    [theme.containerQueries.mobile]: {
+      padding: $fullWidth ? 0 : "8px 16px 0",
+    },
+  };
+});
 
 const BottomSpace = styled.div({
   paddingBottom: 32,
 });
 
-const Footer = styled.footer(({ theme }) => ({
+const Footer = styled(
+  "footer",
+  styledPropGuard,
+)<{ $fullWidth: boolean }>(({ theme, $fullWidth }) => ({
   width: "100%",
+  boxSizing: "border-box",
+  marginTop: 100,
   paddingTop: 24,
   paddingBottom: 36,
-  backgroundColor: theme.token.colorBgContainer,
+  paddingLeft: $fullWidth ? SIDE_MARGIN : 0,
+  paddingRight: $fullWidth ? SIDE_MARGIN : 0,
+  backgroundColor: "unset",
   borderTop: `1px solid ${theme.token.colorBorder}`,
 }));
 
-export const MainLayout = ({ children, trackerName }: Props) => {
+export const MainLayout = ({
+  children,
+  trackerName,
+  fullWidth = false,
+}: Props) => {
   const route = useActiveRoute();
+  const [maxWidthEnabled, setMaxWidthEnabled] = useMaxWidthEnabled();
   useScreenViewed(trackerName ?? route);
+
+  React.useEffect(() => {
+    setMaxWidthEnabled(true);
+  }, [route, setMaxWidthEnabled]);
 
   return (
     <>
@@ -119,29 +132,27 @@ export const MainLayout = ({ children, trackerName }: Props) => {
 
       <BodyContainer>
         <DesktopNavDrawerContainer>
-          <Flex flex={1} vertical p={16} overflowY="scroll">
+          <Flex flex={1} vertical p={8} overflowY="auto">
             <DesktopDrawer />
           </Flex>
         </DesktopNavDrawerContainer>
         <ContentLayout>
-          <ContentContainer>
+          <ContentContainer
+            $useMaxWidth={maxWidthEnabled}
+            $fullWidth={fullWidth}
+          >
             <Main>{children}</Main>
             {settings.hallOfFameSupporters.length === 0 && <BottomSpace />}
             {settings.hallOfFameSupporters.length > 0 && (
-              <Footer>
-                <Typography.Text strong fontSize={20}>
-                  Special thanks to our Hall of Fame supporters!
+              <Footer $fullWidth={fullWidth}>
+                <Typography.Text color="TextSecondary">
+                  <Typography.Text strong>
+                    Special thanks to our Hall of Fame supporters:{" "}
+                  </Typography.Text>
+                  {settings.hallOfFameSupporters
+                    .map((supporter) => supporter.name)
+                    .join(", ")}
                 </Typography.Text>
-                <List ml={24} pv={12}>
-                  {settings.hallOfFameSupporters.map((supporter) => (
-                    <ListItem fontSize={18} key={supporter.name}>
-                      <Flex gap={8} align="center">
-                        <Icon {...getSupporterIconProps(supporter.type)} />
-                        {supporter.name}
-                      </Flex>
-                    </ListItem>
-                  ))}
-                </List>
               </Footer>
             )}
           </ContentContainer>

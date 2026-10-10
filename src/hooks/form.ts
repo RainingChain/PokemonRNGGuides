@@ -2,13 +2,13 @@ import { RadioChangeEvent, InputProps as AntdInputProps } from "antd";
 import {
   useController,
   useFormContext as useRHFormContext,
+  // eslint-disable-next-line no-restricted-imports -- We need to import this to build our own wrapper.
   useWatch as useRHWatch,
 } from "react-hook-form";
 import { match, P } from "ts-pattern";
 import { GenericForm } from "~/types";
 import * as tst from "ts-toolbelt";
 import { z } from "zod";
-import { Mask } from "node_modules/zod/v4/core/util";
 import { zipObject } from "lodash-es";
 import { NullableSchema } from "~/utils/nullableSchema";
 
@@ -52,7 +52,7 @@ export const useFormContext = <FormState extends GenericForm>() => {
 
 export const useWatch = <
   Shape extends z.core.$ZodLooseShape,
-  Names extends Mask<keyof Shape>,
+  Names extends Partial<Record<keyof Shape, true>>,
 >({
   names,
   validationSchema,
@@ -75,3 +75,11 @@ export const useWatch = <
   const empty: Partial<z.infer<typeof Schema>> = {};
   return empty;
 };
+
+/**
+ * @deprecated
+ * Re-exports useWatch from react-hook-form.
+ * This has type errors and does not do validation.
+ * Prefer using `useWatch` from `~/hooks/form` instead.
+ */
+export const useWatch_UNSAFE = useRHWatch;

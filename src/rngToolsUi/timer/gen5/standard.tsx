@@ -1,42 +1,42 @@
-import { Skeleton } from "antd";
+import { ZodSerializedDecimal, ZodSerializedOptional } from "~/utils/number";
 import {
-  FormikNumberInput,
-  RngToolForm,
-  RngToolSubmit,
-  Field,
-  FormikSelect,
-  Flex,
-  MultiTimer,
-} from "~/components";
-import {
-  capPrecision,
-  ZodSerializedDecimal,
-  ZodSerializedOptional,
-} from "~/utils/number";
-import { rngTools, ZodConsole } from "~/rngTools";
+  ZodConsole,
+  calibrateGen5StandardTimer,
+  createGen5StandardTimer,
+  type Gen5StandardTimerSettings,
+} from "~/rngTools";
 import { atomWithPersistence, useAtom } from "~/state/localStorage";
 import { useTimerSettings } from "~/state/timerSettings";
 import { z } from "zod";
-import { useHydrate } from "~/hooks/useHydrate";
-import { hydrationLock, HydrationLock } from "~/utils/hydration";
-
-const TimerStateSchema = z.object({
-  milliseconds: z.array(z.number()),
-  minutesBeforeTarget: z.number(),
-});
-
-type TimerState = z.infer<typeof TimerStateSchema>;
+import { TimerStateSchema, initialTimerState } from "./timerState";
+import { Gen5VariantTimer, type Gen5VariantConfigSingle } from "./variantTimer";
 
 const timerStateAtom = atomWithPersistence(
   "gen5StandardTimer",
   TimerStateSchema,
-  {
-    milliseconds: [],
-    minutesBeforeTarget: 0,
-  },
+  initialTimerState,
 );
 
-const FormStateSchema = z.object({
+const V0FormStateSchema = z
+  .object({
+    version: z.literal(0).optional(),
+    console: ZodConsole,
+    min_time_ms: ZodSerializedDecimal,
+    target_second: ZodSerializedDecimal,
+    calibration: ZodSerializedDecimal,
+    second_hit: ZodSerializedOptional(ZodSerializedDecimal),
+  })
+  .transform((data) => ({
+    version: 1 as const,
+    console: data.console,
+    minTimeMs: data.min_time_ms,
+    targetSecond: data.target_second,
+    calibration: data.calibration,
+    secondHit: data.second_hit,
+  }));
+
+const V1FormStateSchema = z.object({
+  version: z.literal(1),
   console: ZodConsole,
   minTimeMs: ZodSerializedDecimal,
   targetSecond: ZodSerializedDecimal,
@@ -44,9 +44,15 @@ const FormStateSchema = z.object({
   secondHit: ZodSerializedOptional(ZodSerializedDecimal),
 });
 
+const FormStateSchema = z.discriminatedUnion("version", [
+  V0FormStateSchema,
+  V1FormStateSchema,
+]);
+
 export type FormState = z.infer<typeof FormStateSchema>;
 
 const initialValues: FormState = {
+  version: 1,
   console: "NdsSlot1",
   minTimeMs: 14000,
   targetSecond: 50,
@@ -60,131 +66,34 @@ const timerSettingsAtom = atomWithPersistence(
   initialValues,
 );
 
-const fields: Field[] = [
-  {
-    label: "Console",
-    input: (
-      <FormikSelect<FormState, "console">
-        name="console"
-        options={[
-          { label: "NDS - Slot 1", value: "NdsSlot1" },
-          { label: "DSI", value: "Dsi" },
-          { label: "3DS", value: "ThreeDs" },
-        ]}
-      />
-    ),
-  },
-  {
-    label: "Min Time (ms)",
-    input: <FormikNumberInput<FormState> name="minTimeMs" numType="float" />,
-  },
-  {
-    label: "Target Second",
-    input: <FormikNumberInput<FormState> name="targetSecond" numType="float" />,
-  },
-  {
-    label: "Calibration",
-    input: <FormikNumberInput<FormState> name="calibration" numType="float" />,
-  },
-  {
-    label: "Second Hit",
-    input: <FormikNumberInput<FormState> name="secondHit" numType="float" />,
-  },
-];
-
-type InnerProps = {
-  timer: TimerState;
-  setTimer: (timer: HydrationLock<TimerState>) => void;
-  initialSettings: FormState;
-  onUpdate: (opts: HydrationLock<FormState>) => void;
-};
-
-export const InnerGen5StandardTimer = ({
-  timer,
-  setTimer,
-  initialSettings,
-  onUpdate,
-}: InnerProps) => {
-  const onSubmit: RngToolSubmit<FormState> = async (opts, { setValue }) => {
-    let updatedOpts = opts;
-    let settings = {
-      console: opts.console,
-      min_time_ms: opts.minTimeMs,
-      target_second: opts.targetSecond,
-      calibration: opts.calibration,
-    };
-
-    if (opts.secondHit != null) {
-      settings = await rngTools.calibrate_gen5_standard_timer(
-        settings,
-        opts.secondHit,
-      );
-      settings = {
-        console: opts.console,
-        min_time_ms: capPrecision(settings.min_time_ms),
-        target_second: capPrecision(settings.target_second),
-        calibration: capPrecision(settings.calibration),
-      };
-      updatedOpts = {
-        console: settings.console,
-        minTimeMs: settings.min_time_ms,
-        targetSecond: settings.target_second,
-        calibration: settings.calibration,
-        secondHit: null,
-      };
-
-      setValue("console", updatedOpts.console);
-      setValue("minTimeMs", updatedOpts.minTimeMs);
-      setValue("targetSecond", updatedOpts.targetSecond);
-      setValue("calibration", updatedOpts.calibration);
-      setValue("secondHit", updatedOpts.secondHit);
-    }
-
-    const milliseconds = await rngTools.create_gen5_standard_timer(settings);
-    setTimer(
-      hydrationLock({
-        milliseconds: [...milliseconds],
-        minutesBeforeTarget: await rngTools.minutes_before(milliseconds),
-      }),
-    );
-    onUpdate(hydrationLock(updatedOpts));
-  };
-
-  return (
-    <Flex vertical gap={12}>
-      <MultiTimer
-        startButtonTrackerId="start_gen5_standard_timer"
-        stopButtonTrackerId="stop_gen5_standard_timer"
-        milliseconds={timer.milliseconds}
-        minutesBeforeTarget={timer.minutesBeforeTarget}
-      />
-
-      <RngToolForm<FormState, number[]>
-        fields={fields}
-        initialValues={initialSettings}
-        onSubmit={onSubmit}
-        submitTrackerId="set_gen5_standard_timer"
-        submitButtonLabel="Set Timer"
-      />
-    </Flex>
-  );
+const config: Gen5VariantConfigSingle<Gen5StandardTimerSettings, FormState> = {
+  type: "single",
+  trackerPrefix: "gen5_standard",
+  listTitle: "Timers",
+  rowLabels: ["Seconds"],
+  hitLabel: "Second Hit",
+  hitNumType: "float",
+  targetFields: [
+    { key: "targetSecond", label: "Target Second" },
+    { key: "minTimeMs", label: "Min Time (ms)" },
+  ],
+  calibrationFields: [{ key: "calibration", label: "Calibration" }],
+  create: createGen5StandardTimer,
+  calibrate: calibrateGen5StandardTimer,
+  toPersisted: (settings) => ({ ...settings, version: 1, secondHit: null }),
 };
 
 export const Gen5StandardTimer = () => {
   const { initialSettings, onUpdate } = useTimerSettings(timerSettingsAtom);
-  const [timerState, setTimer] = useAtom(timerStateAtom);
-  const { hydrated, client } = useHydrate({ initialSettings, timerState });
-
-  if (!hydrated) {
-    return <Skeleton />;
-  }
+  const [timer, setTimer] = useAtom(timerStateAtom);
 
   return (
-    <InnerGen5StandardTimer
-      timer={client.timerState}
-      setTimer={setTimer}
-      initialSettings={client.initialSettings}
+    <Gen5VariantTimer
+      config={config}
+      initialSettings={initialSettings}
       onUpdate={onUpdate}
+      timer={timer}
+      setTimer={setTimer}
     />
   );
 };

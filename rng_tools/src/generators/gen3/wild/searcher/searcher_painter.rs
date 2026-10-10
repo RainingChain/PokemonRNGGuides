@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{gen3::wild::lcrng_distance, rng::lcrng::Pokerng};
@@ -245,7 +245,7 @@ pub fn create_lookup_painting_table(opts: &Wild3PaintingOpts) -> Vec<Wild3Painti
         })
         .collect_vec();
 
-    min_max_advs.sort_by(|a, b| a.min_adv_after_painting.cmp(&b.min_adv_after_painting));
+    min_max_advs.sort_by_key(|a| a.min_adv_after_painting);
 
     /*
     min_max_advs = {

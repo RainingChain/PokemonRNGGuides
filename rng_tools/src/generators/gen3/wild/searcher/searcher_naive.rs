@@ -1,15 +1,19 @@
+use crate::gen3::Wild3SafariPokeblockGenOpt;
+
 use super::*;
 
 pub fn search_wild3_naive(opts: &Wild3SearcherOptions) -> Vec<Wild3SearcherResultMon> {
     let base_rng = Pokerng::with_jump(opts.initial_seed, opts.initial_advances);
     StateIterator::new(base_rng)
         .enumerate()
-        .take(opts.max_advances.wrapping_add(1))
-        .flat_map(|(adv, rng)| {
-            search_wild3_naive_at_given_advance(rng, adv + opts.initial_advances, opts)
+        .take(opts.max_advances.saturating_add(1))
+        .filter_map(|(adv, rng)| {
+            let res = search_wild3_naive_at_given_advance(rng, adv + opts.initial_advances, opts);
+            if res.is_empty() { None } else { Some(res) }
         })
-        .take(opts.max_result_count)
-        .collect::<Vec<Wild3SearcherResultMon>>()
+        .take(opts.max_result_count) // max_result_count doesn't regroup by pid_path but that's ok.
+        .flatten()
+        .collect()
 }
 
 fn search_wild3_naive_at_given_advance(
@@ -18,6 +22,30 @@ fn search_wild3_naive_at_given_advance(
     opts: &Wild3SearcherOptions,
 ) -> Vec<Wild3SearcherResultMon> {
     let mut results: Vec<Wild3SearcherResultMon> = vec![];
+
+    let safari_pokeblock_gen_opts_if_map_has_feeder = {
+        match opts.considered_safari_pokeblocks {
+            Wild3SafariPokeblockSearchOpt::Specific(pokeblock) => {
+                vec![Some(Wild3SafariPokeblockGenOpt::Specific(pokeblock))]
+            }
+            Wild3SafariPokeblockSearchOpt::None => {
+                vec![None]
+            }
+            _ => {
+                let to_pokeblock = |nature: Nature| {
+                    Some(Wild3SafariPokeblockGenOpt::ForSearching {
+                        wanted_nature: nature,
+                        consider_all_safari_pokeblocks: opts.considered_safari_pokeblocks
+                            == Wild3SafariPokeblockSearchOpt::All,
+                    })
+                };
+
+                std::iter::once(None)
+                    .chain(opts.filter.permitted_natures_iter().map(to_pokeblock))
+                    .collect_vec()
+            }
+        }
+    };
 
     let lead_encounter_products = iproduct!(opts.leads.iter(), opts.map_setups.iter().enumerate());
 
@@ -29,28 +57,50 @@ fn search_wild3_naive_at_given_advance(
             &map_setups.feebas_states
         );
         for (action, roamer_state, mass_outbreak_state, feebas_state) in map_state_products {
-            let gen_opts = Wild3GeneratorOptions {
-                tid: opts.tid,
-                sid: opts.sid,
-                map_idx,
-                action: *action,
-                methods: opts.methods.clone(),
-                lead: *lead,
-                filter: opts.filter.clone(),
-                consider_cycles: opts.consider_cycles,
-                consider_rng_manipulated_lead_pid: opts.consider_rng_manipulated_lead_pid,
-                generate_even_if_impossible: opts.generate_even_if_impossible,
-                gen3_filter: opts.gen3_filter.clone(),
-                roamer_state: *roamer_state,
-                mass_outbreak_state: *mass_outbreak_state,
-                feebas_state: *feebas_state,
-                lead_cycle_speed: opts.lead_cycle_speed,
+            let pokeblock_states = if map_setups.map_data.is_safari
+                && map_setups
+                    .map_data
+                    .actions_with_safari_pokeblock
+                    .contains(action)
+            {
+                safari_pokeblock_gen_opts_if_map_has_feeder.clone()
+            } else {
+                vec![None]
             };
 
-            generate_gen3_wild(rng, &gen_opts, &map_setups.map_data)
-                .0
-                .iter()
-                .for_each(|gen_res| {
+            let feebas_cycles =
+                if action.is_fishing() && *feebas_state != Wild3FeebasState::NotInMap {
+                    opts.feebas_cycles.clone()
+                } else {
+                    vec![0]
+                };
+
+            let pokeblock_feebas_products = iproduct!(&pokeblock_states, &feebas_cycles);
+
+            for (safari_pokeblock, feebas_cycles) in pokeblock_feebas_products {
+                let gen_opts = Wild3GeneratorOptions {
+                    tid: opts.tid,
+                    sid: opts.sid,
+                    map_idx,
+                    action: *action,
+                    methods: opts.methods.clone(),
+                    lead: *lead,
+                    filter: opts.filter.clone(),
+                    consider_cycles: opts.consider_cycles,
+                    consider_rng_manipulated_lead_pid: opts.consider_rng_manipulated_lead_pid,
+                    generate_even_if_impossible: opts.generate_even_if_impossible,
+                    gen3_filter: opts.gen3_filter.clone(),
+                    roamer_state: *roamer_state,
+                    mass_outbreak_state: *mass_outbreak_state,
+                    feebas_state: *feebas_state,
+                    feebas_cycles: *feebas_cycles,
+                    safari_pokeblock: safari_pokeblock.clone(),
+                    lead_cycle_speed: opts.lead_cycle_speed,
+                    using_white_flute: opts.using_white_flute,
+                };
+
+                let generated = generate_wild3(rng, &gen_opts, &map_setups.map_data);
+                generated.mon_results.iter().for_each(|gen_res| {
                     let encounter = map_setups
                         .map_data
                         .get_encounter(gen_opts.action, gen_res.encounter_idx)
@@ -61,8 +111,10 @@ fn search_wild3_naive_at_given_advance(
                         rng.seed(),
                         advance,
                         encounter,
+                        generated.cycle_counter.cycle_instability,
                     ));
                 });
+            }
         }
     }
 

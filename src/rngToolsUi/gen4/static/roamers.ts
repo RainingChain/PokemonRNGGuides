@@ -1,5 +1,5 @@
-import { Species } from "rng_tools/pkg/rng_tools";
-import { Gen4GameVersion } from "../gen4types";
+import { Species } from "~/rngTools";
+import { Gen4GameVersion } from "~/types/games";
 
 const RoamersByGame = {
   Diamond: ["Cresselia", "Mesprit"],

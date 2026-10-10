@@ -1,0 +1,455 @@
+import {
+  Flex,
+  Field,
+  RngToolForm,
+  FormikSwitch,
+  ResultColumn,
+  RngToolSubmit,
+  FormikSelect,
+  Button,
+  Icon,
+  FormFieldTable,
+  FormikNumberInput,
+} from "~/components";
+import { EmbeddedRunTimer } from "~/rngToolsUi/timer/embeddedRunTimer";
+import {
+  rngTools,
+  Pokerus3GeneratorResult,
+  Pokerus3SearcherForCalibOptions,
+} from "~/rngTools";
+import { FormikRadio } from "~/components/radio";
+import React from "react";
+import { z } from "zod";
+import { toOptions } from "~/utils/options";
+import { range } from "lodash-es";
+import { useFormContext, useWatch_UNSAFE } from "~/hooks/form";
+import { match, P } from "ts-pattern";
+import { pickupItems_rs } from "~/types/pickupItems";
+import { MS_PER_GBA_FRAME } from "~/utils/consts";
+import { lcrng_distance } from "~/utils/lcrng";
+
+const HAS_EMPTY_TV_NEWS_SLOT = true; // The tool assumes the player always has a empty TV News slot.
+const LEVEL_UP = false; // The tool assumes the player's Pokémon won't level-up after the battle.
+const POKERUS_TARGETS = [26923, 101199, 101236];
+
+type Column = Pokerus3GeneratorResult & {
+  target_advance_before_pickup: number;
+  advance_before_pickup: number;
+};
+
+const pickupItemSchema = z.enum(["None", ...pickupItems_rs]);
+
+const Validator = z.object({
+  entered_hall_of_fame: z.boolean(),
+  had_mass_outbreak: z.boolean(),
+  pickup_pokemon_count: z.number().int().min(0).max(5),
+  filter_active: z.boolean(),
+  filter_pickup_items_0: pickupItemSchema,
+  filter_pickup_items_1: pickupItemSchema,
+  filter_pickup_items_2: pickupItemSchema,
+  filter_pickup_items_3: pickupItemSchema,
+  filter_pickup_items_4: pickupItemSchema,
+  initial_advance_before_pickup: z.number().int().min(0),
+  calibration: z.number().int(),
+  targetAdv: z.number().int(),
+});
+
+export type FormState = z.infer<typeof Validator>;
+
+const initialValues: FormState = {
+  entered_hall_of_fame: false,
+  had_mass_outbreak: false,
+  pickup_pokemon_count: 5,
+  filter_active: true,
+  filter_pickup_items_0: "None",
+  filter_pickup_items_1: "None",
+  filter_pickup_items_2: "None",
+  filter_pickup_items_3: "None",
+  filter_pickup_items_4: "None",
+  initial_advance_before_pickup: 26800,
+  calibration: 0,
+  targetAdv: 26838,
+};
+
+const getTargetAdvanceBeforePickup = async (values: {
+  entered_hall_of_fame: boolean;
+  had_mass_outbreak: boolean;
+  pickup_pokemon_count: number;
+}) => {
+  const opts: Pokerus3SearcherForCalibOptions = {
+    initial_advance_before_pickup: 0,
+    max_advances: 110_000,
+    gen_opts: {
+      is_emerald_game: false,
+      entered_hall_of_fame: values.entered_hall_of_fame,
+      can_have_new_mass_outbreak: !values.had_mass_outbreak,
+      has_empty_pokenews_slot: HAS_EMPTY_TV_NEWS_SLOT,
+      pickup_pokemon_count: values.pickup_pokemon_count,
+      level_up: LEVEL_UP,
+    },
+    max_result_count: 10_000,
+    filter_pickup_items: undefined,
+    filter_gives_pokerus: true,
+  };
+
+  const res = await rngTools.gen3_pokerus_search_for_calib(opts);
+
+  if (res.length === 0) {
+    return 0;
+  }
+  return lcrng_distance(0x5a0, res[0].seed_at_pickup);
+};
+
+const generateResults = async (values: FormState): Promise<Column[]> => {
+  const target_advance_before_pickup =
+    await getTargetAdvanceBeforePickup(values);
+
+  const opts: Pokerus3SearcherForCalibOptions = {
+    initial_advance_before_pickup: values.filter_active
+      ? 0
+      : values.initial_advance_before_pickup,
+    max_advances: 110_000,
+    gen_opts: {
+      is_emerald_game: false,
+      entered_hall_of_fame: values.entered_hall_of_fame,
+      can_have_new_mass_outbreak: !values.had_mass_outbreak,
+      has_empty_pokenews_slot: HAS_EMPTY_TV_NEWS_SLOT,
+      pickup_pokemon_count: values.pickup_pokemon_count,
+      level_up: LEVEL_UP,
+    },
+    max_result_count: 110_000,
+    filter_pickup_items: values.filter_active
+      ? [
+          pickupItems_rs.indexOf(values.filter_pickup_items_0),
+          pickupItems_rs.indexOf(values.filter_pickup_items_1),
+          pickupItems_rs.indexOf(values.filter_pickup_items_2),
+          pickupItems_rs.indexOf(values.filter_pickup_items_3),
+          pickupItems_rs.indexOf(values.filter_pickup_items_4),
+        ].slice(0, values.pickup_pokemon_count)
+      : null,
+    filter_gives_pokerus: undefined,
+  };
+
+  const results = await rngTools.gen3_pokerus_search_for_calib(opts);
+
+  const cols: Column[] = results.map((res) => ({
+    ...res,
+    target_advance_before_pickup,
+    advance_before_pickup: lcrng_distance(0x5a0, res.seed_at_pickup),
+  }));
+
+  if (!values.filter_active) {
+    return cols;
+  }
+
+  // Put in first the columns with smallest difference between target and hit advance
+  cols.sort((r1, r2) => {
+    const diff1 = Math.abs(
+      r1.advance_before_pickup - r1.target_advance_before_pickup,
+    );
+    const diff2 = Math.abs(
+      r2.advance_before_pickup - r2.target_advance_before_pickup,
+    );
+    if (diff1 !== diff2) {
+      return diff1 - diff2;
+    }
+    return r1.advance_before_pickup - r2.advance_before_pickup;
+  });
+
+  return cols.slice(0, 1000);
+};
+
+export const UpdateCalibrationBtn = ({
+  colValues,
+  onClick,
+}: {
+  colValues: Column;
+  onClick: () => void;
+}) => {
+  const { setFieldValue } = useFormContext<FormState>();
+  const calibration = useWatch_UNSAFE<FormState, "calibration">({
+    name: "calibration",
+  });
+  return (
+    <Button
+      type="text"
+      color="PrimaryText"
+      trackerId="pokerus_advance"
+      onClick={() => {
+        const diffAdvWithTarget =
+          colValues.advance_before_pickup -
+          colValues.target_advance_before_pickup;
+        const diffMsWithTarget = (diffAdvWithTarget / 2) * MS_PER_GBA_FRAME; // divide by 2 because 2 advances per frame during battle
+        setFieldValue(
+          "calibration",
+          calibration - Math.round(diffMsWithTarget),
+        );
+        onClick();
+      }}
+    >
+      <Icon name="Update" size={20} /> Update Calibration
+    </Button>
+  );
+};
+
+export const Fields = () => {
+  const { setFieldValue } = useFormContext<FormState>();
+  const enteredHallOfFame = useWatch_UNSAFE<FormState, "entered_hall_of_fame">({
+    name: "entered_hall_of_fame",
+  });
+  const hadMassOutbreak = useWatch_UNSAFE<FormState, "had_mass_outbreak">({
+    name: "had_mass_outbreak",
+  });
+  const pickupPokemonCount = useWatch_UNSAFE<FormState, "pickup_pokemon_count">(
+    {
+      name: "pickup_pokemon_count",
+    },
+  );
+  const targetAdv = useWatch_UNSAFE<FormState, "targetAdv">({
+    name: "targetAdv",
+  });
+  const calibration = useWatch_UNSAFE<FormState, "calibration">({
+    name: "calibration",
+  });
+  const filterActive = useWatch_UNSAFE<FormState, "filter_active">({
+    name: "filter_active",
+  });
+
+  const timerMilliseconds = React.useMemo(() => {
+    const FRAME_START_TO_SWEET_SCENT = 800;
+    const FRAME_SWEET_SCENT_TO_BATTLE_END =
+      targetAdv / 2 + 506 - FRAME_START_TO_SWEET_SCENT;
+    return [
+      5000,
+      Math.round(MS_PER_GBA_FRAME * FRAME_START_TO_SWEET_SCENT),
+      Math.round(MS_PER_GBA_FRAME * FRAME_SWEET_SCENT_TO_BATTLE_END) +
+        calibration,
+    ];
+  }, [targetAdv, calibration]);
+
+  React.useEffect(() => {
+    getTargetAdvanceBeforePickup({
+      entered_hall_of_fame: enteredHallOfFame,
+      had_mass_outbreak: hadMassOutbreak,
+      pickup_pokemon_count: pickupPokemonCount,
+    }).then((adv) => {
+      setFieldValue("targetAdv", adv);
+    });
+  }, [setFieldValue, enteredHallOfFame, hadMassOutbreak, pickupPokemonCount]);
+
+  const fields = React.useMemo((): Field[] => {
+    const fields: Field[] = [
+      {
+        label: "Entered Hall of Fame",
+        input: <FormikSwitch<FormState> name="entered_hall_of_fame" />,
+      },
+    ];
+
+    if (enteredHallOfFame) {
+      fields.push({
+        label: "Had Mass Outbreak",
+        input: <FormikSwitch<FormState> name="had_mass_outbreak" />,
+      });
+    }
+
+    fields.push(
+      {
+        label: "Number of Pickup Pokémon",
+        input: (
+          <FormikRadio<FormState>
+            name="pickup_pokemon_count"
+            options={toOptions(range(0, 5 + 1)).toReversed()}
+          />
+        ),
+      },
+      {
+        label: "Target Advance",
+        input:
+          targetAdv > POKERUS_TARGETS[0]
+            ? `${targetAdv} ${"(Not recommended)"}`
+            : `${targetAdv}`,
+      },
+      {
+        label: "",
+        direction: "column",
+        input: (
+          <EmbeddedRunTimer
+            milliseconds={timerMilliseconds}
+            startTrackerId="pokerus_timer_start"
+            stopTrackerId="pokerus_timer_stop"
+          />
+        ),
+      },
+      {
+        label: "Calibration (ms)",
+        input: (
+          <FormikNumberInput<FormState> name="calibration" numType="decimal" />
+        ),
+      },
+      {
+        label: "Filter?",
+        input: <FormikSwitch<FormState> name="filter_active" />,
+      },
+    );
+
+    if (!filterActive) {
+      fields.push({
+        label: "Initial Advance",
+        input: (
+          <FormikNumberInput<FormState>
+            name="initial_advance_before_pickup"
+            numType="decimal"
+          />
+        ),
+      });
+    }
+
+    if (filterActive) {
+      const itemOptions = [
+        { label: "None", value: "None" },
+        ...toOptions(pickupItems_rs),
+      ];
+
+      const info = [
+        [
+          "Filter: Pickup item obtained on 1st Pokémon",
+          "filter_pickup_items_0",
+        ],
+        [
+          "Filter: Pickup item obtained on 2nd Pokémon",
+          "filter_pickup_items_1",
+        ],
+        [
+          "Filter: Pickup item obtained on 3rd Pokémon",
+          "filter_pickup_items_2",
+        ],
+        [
+          "Filter: Pickup item obtained on 4th Pokémon",
+          "filter_pickup_items_3",
+        ],
+        [
+          "Filter: Pickup item obtained on 5th Pokémon",
+          "filter_pickup_items_4",
+        ],
+      ] as const;
+
+      const count = Math.min(info.length, pickupPokemonCount);
+      for (let i = 0; i < count; i++) {
+        const [label, name] = info[i];
+        fields.push({
+          label,
+          input: (
+            <FormikSelect<FormState, typeof name>
+              name={name}
+              options={itemOptions}
+            />
+          ),
+        });
+      }
+    }
+    return fields;
+  }, [
+    enteredHallOfFame,
+    filterActive,
+    pickupPokemonCount,
+    timerMilliseconds,
+    targetAdv,
+  ]);
+
+  return <FormFieldTable fields={fields} />;
+};
+
+const formatAdvDiff = (hit: number, target: number) => {
+  const diff = hit - target;
+  return match(diff)
+    .with(0, () => `${hit}`)
+    .with(
+      P.when((num) => num > 0),
+      () => `${hit} (+${diff})`,
+    )
+    .otherwise(() => `${hit} (${diff})`);
+};
+
+export const Gen3PokerusRs = () => {
+  const [results, setResults] = React.useState<Column[]>([]);
+
+  const onSubmit: RngToolSubmit<FormState> = async (values) => {
+    setResults(await generateResults(values));
+  };
+
+  const onClickUpdateCalibrationBtn = () => setResults([]);
+
+  const columns: ResultColumn<Column>[] = [
+    {
+      title: "Target",
+      dataIndex: "target_advance_before_pickup",
+      render: (
+        target_advance_before_pickup: Column["target_advance_before_pickup"],
+      ) => {
+        return `${target_advance_before_pickup}`;
+      },
+    },
+    {
+      title: "Hit",
+      dataIndex: "advance_before_pickup",
+      render: (
+        advance_before_pickup: Column["advance_before_pickup"],
+        values: Column,
+      ) => {
+        if (advance_before_pickup === values.target_advance_before_pickup) {
+          return "Pokérus";
+        }
+
+        const pickupAdv = formatAdvDiff(
+          advance_before_pickup,
+          values.target_advance_before_pickup,
+        );
+
+        return `${pickupAdv}`;
+      },
+    },
+    {
+      title: "",
+      dataIndex: "advance_before_pickup",
+      render: (_val: Column["advance_before_pickup"], values: Column) => {
+        return (
+          <UpdateCalibrationBtn
+            colValues={values}
+            onClick={onClickUpdateCalibrationBtn}
+          />
+        );
+      },
+    },
+    {
+      title: "Pickup Items",
+      dataIndex: "pickup_items",
+      render: (val: Column["pickup_items"]) => {
+        const items = val
+          .map((itemId: number, pokemonSlot: number) => {
+            if (itemId === -1) {
+              return null;
+            }
+            return `${pokemonSlot + 1}: ${pickupItems_rs[itemId]}`;
+          })
+          .filter((txt: string | null) => txt != null);
+        return items.length === 0 ? "No items" : items.join(", ");
+      },
+    },
+  ];
+
+  return (
+    <Flex vertical>
+      <RngToolForm<FormState, Column>
+        columns={columns}
+        results={results}
+        initialValues={initialValues}
+        validationSchema={Validator}
+        onSubmit={onSubmit}
+        rowKey="advance_before_pickup"
+        submitTrackerId="Pokerus3"
+      >
+        <Fields />
+      </RngToolForm>
+    </Flex>
+  );
+};

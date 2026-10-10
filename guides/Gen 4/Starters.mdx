@@ -19,6 +19,8 @@
   orderPriority: 1
 ---
 
+<Gen4Reset />
+
 ## Video guide
 
 <YouTubeTable
@@ -54,15 +56,7 @@ Choose the game and console you're playing below then continue to the next step.
 
 </Starter4ShowIf>
 
-<Starter4Setup />
-
-<Starter4ShowIf is3dsNormalSettings>
-  [Learn how to use the 3DS Helper here](/3ds-helper).
-</Starter4ShowIf>
-
-<Starter4ShowIf is3dsAltSettings>
-  [Download the 3DS Alt Settings app here](/3ds-alt-settings).
-</Starter4ShowIf>
+<Gen4ConfigSetup />
 
 </Step>
 
@@ -83,17 +77,41 @@ Shiny starters with high IV are unlikely to get in a reasonable amount of time. 
 
 ## Prepare the save
 
-1. If you're on Platinum, set your console date to **12/31/2099** on NDS or **12/31/2050** on 3DS.
-1. Save at the location in the screenshots below depending on your game.
+<Starter4ShowIf game="Platinum">
+
+> [!WARNING]
+> Don't skip this, even though you'll change the date later. Saving on the max date prevents extra RNG advances when your save loads.
+
+1. Set your console date to **<Starter4ShowIf isNdsDsi>12/31/2099</Starter4ShowIf><Starter4ShowIf is3dsNormalSettings is3dsAltSettings>12/31/2050</Starter4ShowIf>**.
+2. Save at the location in the screenshots below.
+
+</Starter4ShowIf>
+
+<Starter4ShowIf game="Diamond">
+  Save at the location in the screenshots below.
+</Starter4ShowIf>
+<Starter4ShowIf game="Pearl">
+  Save at the location in the screenshots below.
+</Starter4ShowIf>
+<Starter4ShowIf game="HeartGold">
+  Save at the location in the screenshots below.
+</Starter4ShowIf>
+<Starter4ShowIf game="SoulSilver">
+  Save at the location in the screenshots below.
+</Starter4ShowIf>
+
+<EqualColumnTable>
 
 | Diamond and Pearl                                                                                      | Platinum                                                                                                | HeartGold and SoulSilver                                                                          |
 | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | ![Diamond, Pearl, and Platinum save location](/images/Diamond-Pearl-Platinum/Starter/dpp-starter.webp) | ![Diamond, Pearl, and Platinum save location](/images/Diamond-Pearl-Platinum/Starter/plat-starter.webp) | ![HeartGold and SoulSilver save location](/images/HeartGold-SoulSilver/Starter/hgss-starter.webp) |
 
+</EqualColumnTable>
+
 ## Prepare the console
 
-1. Set your console date to **<Starter4ConsoleSetDateString format="date" />**.
-2. Start setting your console time to **<Starter4ConsoleSetDateString format="time" />**, but don't confirm it just yet.
+1. Set your console date to **<Gen4ConsoleSetDateString format="date" />**.
+2. Start setting your console time to **<Gen4ConsoleSetDateString format="time" />**, but don't confirm it just yet.
 
 | Confirm time screen                                                    |
 | ---------------------------------------------------------------------- |
@@ -125,7 +143,7 @@ Shiny starters with high IV are unlikely to get in a reasonable amount of time. 
 > [!TIP]
 > If you don't have enough time to hit your seed, go back to the previous step and search for a Pokemon with a higher "Max Delay".
 
-<GetStarter4 />
+<Gen4EmbeddedTimer />
 
 </Step>
 

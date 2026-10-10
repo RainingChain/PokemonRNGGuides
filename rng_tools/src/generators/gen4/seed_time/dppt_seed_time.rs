@@ -1,11 +1,10 @@
 use super::coin_flips::{CoinFlip, coin_flips};
-use super::seed_time4::SeedTime4;
+use super::{SeedTime4, calc_seed};
 use crate::RngDateTime;
-use crate::gen4::calc_seed;
 use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::ops::RangeInclusive;
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Tsify, Serialize, Deserialize)]
@@ -18,25 +17,26 @@ pub struct DpptSeedTime4 {
 }
 
 impl DpptSeedTime4 {
-    pub fn new(seed: u32, datetime: RngDateTime, delay: u32) -> Self {
+    pub fn new(seed: u32, datetime: RngDateTime, delay: u32, coin_flip_count: usize) -> Self {
         Self {
             seed,
             datetime,
             delay,
-            coin_flips: coin_flips(seed),
+            coin_flips: coin_flips(seed, coin_flip_count),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct DpptSeedTimeSearchOpts {
+pub struct RelativeDpptSeedtimeOpts {
     pub seedtime: SeedTime4,
     pub delay_offset: i32,
     pub second_offset: i32,
+    pub coin_flip_count: usize,
 }
 
-impl DpptSeedTimeSearchOpts {
+impl RelativeDpptSeedtimeOpts {
     fn second_range(&self) -> RangeInclusive<i32> {
         -self.second_offset..=self.second_offset
     }
@@ -46,8 +46,10 @@ impl DpptSeedTimeSearchOpts {
     }
 }
 
+/// Generates a list of seed times relative to a given seed time, with specified offsets for delay and seconds.
+/// Useful for finding seeds that are close to a known seed time, such as when calibrating a DPPT RNG.
 #[wasm_bindgen]
-pub fn calc_dppt_seedtimes(opts: DpptSeedTimeSearchOpts) -> Vec<DpptSeedTime4> {
+pub fn get_relative_dppt_seedtimes(opts: RelativeDpptSeedtimeOpts) -> Vec<DpptSeedTime4> {
     let datetime = opts.seedtime.datetime.to_naive_datetime();
     let datetime = match datetime {
         Some(dt) => dt,
@@ -62,7 +64,12 @@ pub fn calc_dppt_seedtimes(opts: DpptSeedTimeSearchOpts) -> Vec<DpptSeedTime4> {
             let datetime = RngDateTime::from(offset_datetime);
             let delay = opts.seedtime.delay.wrapping_add(delay_offset as u32);
             let seed = calc_seed(&datetime, delay);
-            results.push(DpptSeedTime4::new(seed, datetime, delay));
+            results.push(DpptSeedTime4::new(
+                seed,
+                datetime,
+                delay,
+                opts.coin_flip_count,
+            ));
         }
     }
 
@@ -73,7 +80,7 @@ pub fn calc_dppt_seedtimes(opts: DpptSeedTimeSearchOpts) -> Vec<DpptSeedTime4> {
 mod test {
     use super::*;
 
-    mod calc_dppt_seedtimes {
+    mod get_relative_dppt_seedtimes {
         use super::*;
         use crate::{assert_list_eq, datetime};
 
@@ -110,7 +117,7 @@ mod test {
 
         #[test]
         fn matches_pokefinder() {
-            let opts = DpptSeedTimeSearchOpts {
+            let opts = RelativeDpptSeedtimeOpts {
                 seedtime: SeedTime4 {
                     seed: 0x00001234,
                     datetime: datetime!(2026-05-28 00:57:59).unwrap(),
@@ -118,8 +125,9 @@ mod test {
                 },
                 delay_offset: 5,
                 second_offset: 5,
+                coin_flip_count: 20,
             };
-            let results = calc_dppt_seedtimes(opts);
+            let results = get_relative_dppt_seedtimes(opts);
             let expected = pokefinder!("test_data/calc_dppt_seedtimes/matches_pokefinder.txt");
 
             assert_list_eq!(results, expected);

@@ -1,12 +1,14 @@
 import React from "react";
 import {
   Field,
+  FormFieldTable,
   FormikSelect,
   Icon,
   ResultColumn,
   RngToolForm,
 } from "~/components";
-import { CalibrateTimerButton } from "~/components/calibrateTimerButton";
+import { MinMaxStats, defaultMinMaxStats } from "~/types/stat";
+import { CalibrateTimerButton } from "../shared/calibrateTimerButton";
 import {
   Gen4StaticPokemon,
   RngDateTime,
@@ -14,22 +16,26 @@ import {
   StatsValue,
 } from "~/rngTools";
 import { z } from "zod";
-import { natureOptions } from "~/components/pkmFilter";
+import {
+  getNatureInputProps,
+  pkmFilterNatureFieldToRustInput,
+} from "~/components/pkmFilter";
 import { toOptions } from "~/utils/options";
-import { Gen4Starter, starterTimer, useStarterState } from "./state";
+import { useStarterState } from "./state";
+import { useAtom } from "jotai";
+import { gen4StateAtom } from "../shared/state";
 import { maleFemale, nature, StatFieldsSchema } from "~/types";
 import { getStatFields } from "~/rngToolsUi/shared/statFields";
 import { FormikRadio } from "~/components/radio";
 import { formatOffset } from "~/utils/offsetSymbol";
 import { sortBy } from "lodash-es";
 import pMap from "p-map";
-import { match } from "ts-pattern";
 import { characteristics, Characteristic4Options } from "../gen4types";
 import { fromRngDateTime, toRngDateTime } from "~/utils/time";
 import { useActiveRouteTranslations } from "~/hooks/useActiveRoute";
 import { Translations } from "~/translations";
 import { defaultHiddenPowerFilter } from "~/components/hiddenPowerInput";
-import { getIvRangeFromStats } from "~/types/statRange";
+import { getStatRange, getIvRangeFromStats } from "~/types/statRange";
 
 type Result = Gen4StaticPokemon & {
   key: string;
@@ -70,13 +76,11 @@ const getColumns = (t: Translations): ResultColumn<Result>[] => [
   {
     title: t["Calibrate"],
     dataIndex: "key",
+    disableVerticalPadding: true,
     render: (_, target) => (
       <CalibrateTimerButton
-        type="gen4"
-        calibration={{ hit_delay: target.delay }}
-        timer={starterTimer}
+        hitDelay={target.delay}
         trackerId="calibrate_gen4_starter"
-        previousStepOnClick
       />
     ),
   },
@@ -122,27 +126,26 @@ const defaultDateTime: RngDateTime = {
   second: 0,
 };
 
-const getStarterGame = (starter: Gen4Starter) => {
-  return match<Gen4Starter, "Diamond" | "HeartGold">(starter)
-    .with("Turtwig", () => "Diamond")
-    .with("Chimchar", () => "Diamond")
-    .with("Piplup", () => "Diamond")
-    .with("Chikorita", () => "HeartGold")
-    .with("Cyndaquil", () => "HeartGold")
-    .with("Totodile", () => "HeartGold")
-    .exhaustive();
+type FieldsProps = {
+  t: Translations;
 };
 
-export const CalibrateStarter4 = () => {
-  const t = useActiveRouteTranslations();
-  const [state] = useStarterState();
-  const [results, setResults] = React.useState<Result[]>([]);
+const Fields = ({ t }: FieldsProps) => {
+  const [starter] = useStarterState();
+  const [minMaxStats, setMinMaxStats] =
+    React.useState<MinMaxStats>(defaultMinMaxStats);
 
-  const targetDateTime = state.target?.seed_time.datetime ?? defaultDateTime;
-  const targetDelay = state.target?.seed_time.delay ?? 0;
-  const targetAdvance = state.target?.advance ?? 0;
-  const targetSpecies = state.species;
-  const minMaxStats = state.minMaxStats;
+  React.useEffect(() => {
+    const run = async () => {
+      const stats = await getStatRange({
+        species: starter.species,
+        levelRange: [5, 6],
+      });
+      setMinMaxStats(stats);
+    };
+
+    run();
+  }, [starter.species]);
 
   const fields: Field[] = [
     {
@@ -156,7 +159,7 @@ export const CalibrateStarter4 = () => {
       input: (
         <FormikSelect<FormState, "nature">
           name="nature"
-          options={natureOptions.required}
+          {...getNatureInputProps(t)}
         />
       ),
     },
@@ -177,6 +180,20 @@ export const CalibrateStarter4 = () => {
     },
     ...getStatFields<FormState>(minMaxStats, t),
   ];
+
+  return <FormFieldTable fields={fields} />;
+};
+
+export const CalibrateStarter4 = () => {
+  const t = useActiveRouteTranslations();
+  const [state] = useAtom(gen4StateAtom);
+  const [starter] = useStarterState();
+  const [results, setResults] = React.useState<Result[]>([]);
+
+  const targetDateTime = state.target.seedTime?.datetime ?? defaultDateTime;
+  const targetDelay = state.target.seedTime?.delay ?? 0;
+  const targetAdvance = state.target.lcrngAdvance ?? 0;
+  const targetSpecies = starter.species;
 
   const onSubmit = async (opts: FormState) => {
     const minDelay = Math.max(targetDelay - 500, 0);
@@ -199,16 +216,17 @@ export const CalibrateStarter4 = () => {
     });
 
     if (minMaxIvs == null) {
-      return [];
+      setResults([]);
+      return;
     }
 
     const datetime = toRngDateTime(
       fromRngDateTime(targetDateTime).subtract(1, "seconds"),
     );
 
-    const maxAdvances = state.game === "Platinum" ? 40 : 20;
+    const maxAdvances = state.config.game === "Platinum" ? 40 : 20;
 
-    const seedTimes = await rngTools.calc_gen4_seeds({
+    const seedTimes = await rngTools.generate_seedtime4s({
       datetime,
       seconds_increment: 2,
       min_delay: minDelay,
@@ -222,16 +240,22 @@ export const CalibrateStarter4 = () => {
         offset: 0,
         initial_advances: Math.max(targetAdvance - maxAdvances / 2, 0),
         max_advances: maxAdvances,
-        game: getStarterGame(targetSpecies),
+        method: "One",
         species: targetSpecies,
         lead: "None",
         seed: seedTime.seed,
+        // Starters will always be level 5
+        // If the user levels up to 6, that only impacts their stats, not their encounter level
+        // If we ever combine starter 4 and static 4 some day (and we should), we need to keep this in mind
+        encounter_min_level: 5,
+        encounter_max_level: 5,
+        filter_level: 5,
         filter_characteristic: opts.filter_characteristic,
         filter: {
           shiny: false,
           ability: null,
           ...minMaxIvs,
-          nature: opts.nature,
+          nature: pkmFilterNatureFieldToRustInput([opts.nature]),
           gender: opts.gender,
           hidden_power: defaultHiddenPowerFilter,
         },
@@ -243,8 +267,7 @@ export const CalibrateStarter4 = () => {
           seed: seedTime.seed,
           delay: seedTime.delay,
           advanceOffset: state.advance - targetAdvance,
-          flipDelay:
-            secondOffset % 2 === 0 && targetDelay % 2 !== seedTime.delay % 2,
+          flipDelay: targetDelay % 2 !== seedTime.delay % 2,
           key: `${seedTime.seed}-${state.pid}`,
           delayOffset: seedTime.delay - targetDelay,
           second: seedTime.datetime.second,
@@ -262,7 +285,6 @@ export const CalibrateStarter4 = () => {
 
   return (
     <RngToolForm<FormState, Result>
-      fields={fields}
       getColumns={getColumns}
       results={results}
       initialValues={initialValues}
@@ -270,6 +292,8 @@ export const CalibrateStarter4 = () => {
       onSubmit={onSubmit}
       rowKey="key"
       submitTrackerId="calibrate_gen4_starter"
-    />
+    >
+      <Fields t={t} />
+    </RngToolForm>
   );
 };

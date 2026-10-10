@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "./link";
+import { Icon, IconName } from "./icons";
+import { consoleIcons } from "./consoleIcons";
 import { Menu, MenuProps } from "antd";
 import { Flex } from "./flex";
-import { Divider } from "./divider";
 import { Typography } from "./typography";
 import { settings } from "~/settings";
 import {
@@ -17,6 +18,14 @@ import { Tag } from "./tag";
 import { useActiveRoute } from "~/hooks/useActiveRoute";
 import { MenuItemType, SubMenuType } from "antd/es/menu/interface";
 import * as tst from "ts-toolbelt";
+
+type CategoryIconProps = {
+  name: IconName;
+};
+
+const CategoryIcon = ({ name }: CategoryIconProps) => {
+  return <Icon name={name} mr={12} size={20} />;
+};
 
 const NewTag = () => {
   return (
@@ -56,6 +65,7 @@ const createMenuItem = ({
 
 type Menu = {
   label: string;
+  icon?: React.ReactNode;
   items: SubMenuItem[];
   categories: Category[];
 };
@@ -64,7 +74,12 @@ type StrictSubMenu = tst.O.Overwrite<SubMenuType, { label: string }> & {
   categories: Category[];
 };
 
-const createMenu = ({ label, items, categories }: Menu): StrictSubMenu => {
+const createMenu = ({
+  icon,
+  label,
+  items,
+  categories,
+}: Menu): StrictSubMenu => {
   let isNew = false;
   const children = items.map((item) => {
     const { isNew: itemIsNew, item: menuItem } = createMenuItem(item);
@@ -77,7 +92,7 @@ const createMenu = ({ label, items, categories }: Menu): StrictSubMenu => {
   return {
     label,
     type: "submenu",
-    icon: isNew ? <NewTag /> : null,
+    icon: isNew ? <NewTag /> : icon,
     children,
     key: label,
     categories,
@@ -87,11 +102,13 @@ const createMenu = ({ label, items, categories }: Menu): StrictSubMenu => {
 const gameMenu = [
   createMenu({
     label: "GB",
+    icon: <CategoryIcon name={consoleIcons.GB} />,
     items: [{ label: "Crystal", href: "/crystal/" }],
     categories: ["Gold, Silver, Crystal"],
   }),
   createMenu({
     label: "GBA",
+    icon: <CategoryIcon name={consoleIcons.GBA} />,
     items: [
       { label: "Ruby and Sapphire", href: "/ruby-and-sapphire/" },
       { label: "FireRed and LeafGreen", href: "/fire-red-and-leaf-green/" },
@@ -106,11 +123,13 @@ const gameMenu = [
   }),
   createMenu({
     label: "Gamecube",
+    icon: <CategoryIcon name={consoleIcons.Gamecube} />,
     items: [{ label: "Colosseum / Gales", href: "/gamecube/" }],
     categories: ["Gamecube"],
   }),
   createMenu({
     label: "NDS",
+    icon: <CategoryIcon name={consoleIcons.NDS} />,
     items: [
       {
         label: "Diamond, Pearl, and Platinum",
@@ -132,6 +151,7 @@ const gameMenu = [
   }),
   createMenu({
     label: "3DS",
+    icon: <CategoryIcon name={consoleIcons["3DS"]} />,
     items: [
       {
         label: "Transporter and Dream Radar",
@@ -158,6 +178,7 @@ const gameMenu = [
   }),
   createMenu({
     label: "Switch",
+    icon: <CategoryIcon name={consoleIcons.Switch} />,
     items: [
       { label: "Sword and Shield", href: "/sword-and-shield/" },
       {
@@ -173,11 +194,21 @@ const gameMenu = [
   }),
 ] as const satisfies MenuItem[];
 
-const StyledMenu = styled(Menu)({
+const StyledMenu = styled(Menu)(({ theme }) => ({
   "&&&.ant-menu-root": {
     border: 0,
+    fontWeight: 500,
+    "& a": {
+      fontWeight: 500,
+    },
+    ".ant-menu-submenu-open": {
+      ".ant-menu-submenu-title": {
+        color: theme.token.colorPrimaryActive,
+        background: theme.token.colorFill,
+      },
+    },
   },
-});
+}));
 
 const NavDrawerContent = React.memo(() => {
   const route = useActiveRoute();
@@ -196,14 +227,13 @@ const NavDrawerContent = React.memo(() => {
       <Flex vertical flex={1}>
         <StyledMenu
           mode="inline"
-          inlineIndent={10}
+          inlineIndent={20}
           items={gameMenu}
           defaultOpenKeys={openKeys}
           defaultSelectedKeys={openKeys}
         />
       </Flex>
-      <Divider />
-      <Flex vertical gap={16}>
+      <Flex vertical p={16}>
         <Typography>Build {settings.gitCommit}</Typography>
       </Flex>
     </Flex>

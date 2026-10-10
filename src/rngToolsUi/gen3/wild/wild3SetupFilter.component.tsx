@@ -1,16 +1,15 @@
-import { Species } from "~/rngTools";
+import { Gen3Method, Species } from "~/rngTools";
 import {
   Field,
-  FormikNumberInput,
   FormikSelect,
   FormikSwitch,
   FormFieldTable,
   Flex,
   Typography,
   Link,
+  FormikRadio,
 } from "~/components";
 import { toOptions } from "~/utils/options";
-import { gen3Methods } from "~/types";
 
 import {
   formatActionName,
@@ -20,47 +19,48 @@ import {
   formatFeebasStateName,
   leadsLabels,
 } from "./utils";
-import { useWatch } from "react-hook-form";
-import { FormState } from "./wild3FindTarget";
+import { useFormContext, useWatch_UNSAFE } from "~/hooks/form";
+import { FormState } from "./wild3TargetSetupSearcher";
 import { getPossibleValuesForSpecies } from "./wild3TargetMon";
+import { wild3SafariPokeblockSearchOptLabels } from "~/types/pokeblock";
+import {
+  getPaintingSetupFilterFields as getPaintingSetupFilterFields,
+  getTidSidSetupFilterFields,
+} from "../pokemonRng/targetSetupSearcher";
+import { FormikFeebasTilesSelector } from "./feebasMap";
 
-const getSetupFields = (
-  species: Species,
-  filter_shiny: boolean,
-  recommendedSetups: boolean,
-  usingPaintingReseeding: boolean,
-  letSearcherFindPaintingSeed: boolean,
-): Field[] => {
+const supportedGen3Methods = [
+  "Wild1",
+  "Wild2",
+  "Wild3",
+  "Wild4",
+  // TODO: Support Wild5
+] as const satisfies Gen3Method[];
+
+const getSetupFields = (obj: {
+  species: Species;
+  filter_shiny: boolean;
+  recommendedSetups: boolean;
+  usingPaintingReseeding: boolean;
+  letSearcherFindPaintingSeed: boolean;
+  showAdvancedPaintingSettings: boolean;
+  usingAceForSid: boolean;
+  feebasCycles: number[];
+  setFieldValue: ReturnType<typeof useFormContext<FormState>>["setFieldValue"];
+}): Field[] => {
+  const { species, recommendedSetups } = obj;
+
   const possVals = getPossibleValuesForSpecies(species);
   const showAdvancedSetups = !recommendedSetups;
 
   const fields: Field[] = [
     {
-      label: "Target Species",
+      label: "Target species",
       input: species,
     },
+    ...getTidSidSetupFilterFields({ ...obj, game: "emerald" }),
     {
-      label: "TID",
-      input: (
-        <FormikNumberInput<FormState>
-          name="tid"
-          numType="decimal"
-          disabled={!filter_shiny}
-        />
-      ),
-    },
-    {
-      label: "SID",
-      input: (
-        <FormikNumberInput<FormState>
-          name="sid"
-          numType="decimal"
-          disabled={!filter_shiny}
-        />
-      ),
-    },
-    {
-      label: "Recommended Setups?",
+      label: "Recommended setups?",
       input: <FormikSwitch<FormState> name="recommendedSetups" />,
     },
     {
@@ -100,6 +100,27 @@ const getSetupFields = (
         />
       ),
       show: showAdvancedSetups,
+      indent: 1,
+    },
+    {
+      label: "Using White Flute",
+      tooltip:
+        "White Flute greatly increases the odds of encountering Pokémon when using Rock Smash. It can be obtained from the Glass Workshop in Route 113.",
+      input: <FormikSwitch<FormState> name="using_white_flute" />,
+      show: showAdvancedSetups && possVals.actions.includes("RockSmash"),
+      indent: 1,
+    },
+    {
+      label: "Considered Pokéblocks",
+      tooltip:
+        "Putting a Pokéblock in a Pokéblock feeder in the Safari Zone increases the likehood encountering Pokémon with a particular nature.",
+      input: (
+        <FormikRadio<FormState>
+          name="considered_safari_pokeblocks"
+          options={wild3SafariPokeblockSearchOptLabels}
+        />
+      ),
+      show: showAdvancedSetups && possVals.is_safari_pokeblock_usable,
       indent: 1,
     },
     {
@@ -143,132 +164,116 @@ const getSetupFields = (
       indent: 1,
     },
     {
+      label: "Feebas fishing spots",
+      tooltip:
+        "Select the tiles where you can fish Feebas. If possible, avoid red tiles because they cause unstable results.",
+      input: <FormikFeebasTilesSelector<FormState> name="feebasCycles" />,
+      show: species === "Feebas",
+    },
+    {
       label: "Methods",
+      tooltip: (
+        <>
+          For advanced users. Learn more about{" "}
+          <Link newTab href="/gba-methods/">
+            methods
+          </Link>
+          .
+        </>
+      ),
       input: (
         <FormikSelect<FormState, "methods">
           name="methods"
-          options={toOptions(gen3Methods)}
+          options={toOptions(supportedGen3Methods)}
           mode="multiple"
         />
       ),
-    },
-    {
-      label: "RNG-manipulated lead PID",
-      input: <FormikSwitch<FormState> name="rngManipulatedLeadPid" />,
-    },
-
-    {
-      label: (
-        <>
-          Using{" "}
-          <Link href="/emerald-painting-rng/" newTab>
-            Painting Reseeding
-          </Link>
-          ?
-        </>
-      ),
-      key: "usingPaintingReseeding",
-      input: <FormikSwitch<FormState> name="usingPaintingReseeding" />,
-    },
-
-    {
-      label: "Let searcher find painting seed?",
-      input: <FormikSwitch<FormState> name="letSearcherFindPaintingSeed" />,
-      show: usingPaintingReseeding,
+      show: showAdvancedSetups,
       indent: 1,
     },
-
-    {
-      label: "Seed after painting reseeding",
-      input: <FormikNumberInput<FormState> name="initial_seed" numType="hex" />,
-      show: usingPaintingReseeding && !letSearcherFindPaintingSeed,
-      indent: 1,
-    },
-    {
-      label: "Min frames before painting",
-      input: (
-        <FormikNumberInput<FormState>
-          name="min_frame_before_painting"
-          numType="decimal"
-        />
-      ),
-      show: usingPaintingReseeding && letSearcherFindPaintingSeed,
-      indent: 1,
-    },
-    {
-      label: "Min advances after painting",
-      input: (
-        <FormikNumberInput<FormState>
-          name="min_adv_after_painting"
-          numType="decimal"
-        />
-      ),
-      show: usingPaintingReseeding,
-      indent: 1,
-    },
-    {
-      label: "Min advances",
-      input: (
-        <FormikNumberInput<FormState>
-          name="initial_advances"
-          numType="decimal"
-        />
-      ),
-      show: !usingPaintingReseeding,
-    },
-    {
-      label: usingPaintingReseeding
-        ? "Max advances after painting"
-        : "Max advances",
-      input: (
-        <FormikNumberInput<FormState> name="max_advances" numType="decimal" />
-      ),
-      show: usingPaintingReseeding && !letSearcherFindPaintingSeed,
-    },
-    {
-      label: "Max result count",
-      input: (
-        <FormikNumberInput<FormState>
-          name="max_result_count"
-          numType="decimal"
-        />
-      ),
-    },
+    ...getPaintingSetupFilterFields({
+      ...obj,
+      game: "emerald",
+      usingDeadBattery: false,
+      requireAceForPaintingReseeding: false,
+      initial_advances: 0, // doesn't matter if recommendedMinAdvances is null
+      recommendedMinAdvances: null,
+    }),
     {
       label: "Display results with 0% likelihood",
       input: <FormikSwitch<FormState> name="generate_even_if_impossible" />,
+    },
+    {
+      label: "RNG-manipulated lead PID",
+      tooltip: (
+        <>
+          For advanced users.
+          <br />
+          If inactive, likelihood is calculated assuming you're using a common
+          lead cycle speed.
+          <br />
+          If active, likelihood is calculated assuming you will catch a Pokémon
+          with the optimal lead cycle speed then use it to catch your target
+          Pokémon. Learn more about{" "}
+          <Link newTab href="/gba-methods-lead-impact/">
+            Methods & Leads
+          </Link>
+          .
+        </>
+      ),
+      input: <FormikSwitch<FormState> name="rngManipulatedLeadPid" />,
     },
   ];
   return fields;
 };
 
-export const SetupFilter = () => {
-  const species = useWatch<FormState, "species">({
+export const Wild3SetupFilter = () => {
+  const { setFieldValue } = useFormContext<FormState>();
+  const species = useWatch_UNSAFE<FormState, "species">({
     name: "species",
   });
-  const filterShiny = useWatch<FormState, "filter_shiny">({
+  const filter_shiny = useWatch_UNSAFE<FormState, "filter_shiny">({
     name: "filter_shiny",
   });
-  const recommendedSetups = useWatch<FormState, "recommendedSetups">({
+  const recommendedSetups = useWatch_UNSAFE<FormState, "recommendedSetups">({
     name: "recommendedSetups",
   });
-  const usingPaintingReseeding = useWatch<FormState, "usingPaintingReseeding">({
+  const usingAceForSid = useWatch_UNSAFE<FormState, "usingAceForSid">({
+    name: "usingAceForSid",
+  });
+  const usingPaintingReseeding = useWatch_UNSAFE<
+    FormState,
+    "usingPaintingReseeding"
+  >({
     name: "usingPaintingReseeding",
   });
-  const letSearcherFindPaintingSeed = useWatch<
+  const letSearcherFindPaintingSeed = useWatch_UNSAFE<
     FormState,
     "letSearcherFindPaintingSeed"
   >({
     name: "letSearcherFindPaintingSeed",
   });
+  const showAdvancedPaintingSettings = useWatch_UNSAFE<
+    FormState,
+    "showAdvancedPaintingSettings"
+  >({
+    name: "showAdvancedPaintingSettings",
+  });
+  const feebasCycles = useWatch_UNSAFE<FormState, "feebasCycles">({
+    name: "feebasCycles",
+  });
 
-  const fields: Field[] = getSetupFields(
+  const fields: Field[] = getSetupFields({
     species,
-    filterShiny,
+    filter_shiny,
     recommendedSetups,
     usingPaintingReseeding,
     letSearcherFindPaintingSeed,
-  );
+    showAdvancedPaintingSettings,
+    usingAceForSid,
+    feebasCycles,
+    setFieldValue,
+  });
 
   return (
     <Flex vertical gap={8}>

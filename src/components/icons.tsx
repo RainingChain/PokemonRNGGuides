@@ -11,19 +11,54 @@ import {
   MdOpenInNew,
   MdUpdate,
   MdEdit,
+  MdFullscreen,
+  MdFullscreenExit,
   MdOutlineTipsAndUpdates,
   MdOutlineInfo,
+  MdZoomIn,
+  MdZoomOut,
+  MdOutlineLightMode,
+  MdOutlineDarkMode,
+  MdChevronRight,
+  MdVideogameAsset,
+  MdOutlineTablet,
+  MdOutlineTimer,
+  MdArrowDownward,
+  MdArrowForward,
+  MdOutlineBuild,
+  MdOutlinePlayCircle,
+  MdSwapHoriz,
 } from "react-icons/md";
 import { BiMessageAltError } from "react-icons/bi";
 import { TiWarningOutline } from "react-icons/ti";
 import { AiOutlineSearch } from "react-icons/ai";
-import { FaDiscord, FaRegCopy } from "react-icons/fa";
-import { IoLanguage, IoSparkles } from "react-icons/io5";
+import {
+  FaDiscord,
+  FaRegCopy,
+  FaEye,
+  FaCaretLeft,
+  FaCaretRight,
+  FaCaretUp,
+  FaCaretDown,
+  FaRegQuestionCircle,
+} from "react-icons/fa";
+import { IoLanguage, IoSparkles, IoGameController } from "react-icons/io5";
 import { PiPersonSimpleWalkBold, PiWarningOctagonBold } from "react-icons/pi";
-import { FaHeart, FaPlay, FaPatreon, FaArrowUp } from "react-icons/fa6";
-import { TbPokeball } from "react-icons/tb";
+import {
+  FaHeart,
+  FaPlay,
+  FaPatreon,
+  FaArrowUp,
+  FaArrowDown,
+  FaStar,
+  FaGamepad,
+  FaLaptop,
+  FaLaptopMedical,
+} from "react-icons/fa6";
+import { TbEar, TbPokeball } from "react-icons/tb";
 import { IoIosInformationCircle } from "react-icons/io";
 import { BsTranslate } from "react-icons/bs";
+import { RiTreeLine, RiResetLeftLine } from "react-icons/ri";
 
 const icons = {
   AddCircleOutline: MdAddCircleOutline,
@@ -37,6 +72,7 @@ const icons = {
   Language: IoLanguage,
   PersonSimpleWalkBold: PiPersonSimpleWalkBold,
   Sparkles: IoSparkles,
+  Star: FaStar,
   Update: MdUpdate,
   Play: FaPlay,
   Pokeball: TbPokeball,
@@ -45,6 +81,7 @@ const icons = {
   Patreon: FaPatreon,
   Copy: FaRegCopy,
   ArrowUp: FaArrowUp,
+  ArrowDown: FaArrowDown,
   OpenInNew: MdOpenInNew,
   Edit: MdEdit,
   Translate: BsTranslate,
@@ -53,6 +90,34 @@ const icons = {
   WarningOutline: TiWarningOutline,
   CautionOutline: PiWarningOctagonBold,
   MessageOutline: BiMessageAltError,
+  Ear: TbEar,
+  TreeLine: RiTreeLine,
+  ZoomIn: MdZoomIn,
+  ZoomOut: MdZoomOut,
+  Fullscreen: MdFullscreen,
+  FullscreenExit: MdFullscreenExit,
+  Reset: RiResetLeftLine,
+  LightMode: MdOutlineLightMode,
+  DarkMode: MdOutlineDarkMode,
+  Eye: FaEye,
+  CaretLeft: FaCaretLeft,
+  CaretRight: FaCaretRight,
+  CaretUp: FaCaretUp,
+  CaretDown: FaCaretDown,
+  Question: FaRegQuestionCircle,
+  ChevronRight: MdChevronRight,
+  VideogameAsset: MdVideogameAsset,
+  OutlineTablet: MdOutlineTablet,
+  GameController: IoGameController,
+  Gamepad: FaGamepad,
+  Laptop: FaLaptop,
+  LaptopMedical: FaLaptopMedical,
+  Timer: MdOutlineTimer,
+  ArrowDownward: MdArrowDownward,
+  ArrowForward: MdArrowForward,
+  Build: MdOutlineBuild,
+  PlayCircle: MdOutlinePlayCircle,
+  SwapHoriz: MdSwapHoriz,
 } as const;
 
 export type IconName = keyof typeof icons;

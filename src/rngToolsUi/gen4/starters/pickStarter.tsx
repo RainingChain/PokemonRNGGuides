@@ -1,8 +1,10 @@
 import {
   Button,
   Field,
+  FormFieldTable,
   FormikNumberInput,
   FormikSelect,
+  MinMaxContainer,
   ResultColumn,
   RngToolForm,
 } from "~/components";
@@ -10,6 +12,7 @@ import {
   multiWorkerRngTools,
   Static4State,
   SearchStatic4Opts,
+  Species,
 } from "~/rngTools";
 import { z } from "zod";
 import {
@@ -29,21 +32,23 @@ import { match } from "ts-pattern";
 import {
   dpptStarters,
   hgssStarters,
-  Gen4Starter,
   useStarterState,
   allStarters,
 } from "./state";
-import { getStatRange } from "~/types/statRange";
-import { Gen4GameVersion } from "../gen4types";
+import { gen4StateAtom } from "../shared/state";
+import { Gen4GameVersion } from "~/types/games";
 import { useBatchedTool } from "~/hooks/useBatchedTool";
 import { chunkIvs } from "~/utils/chunkIvs";
-import { UndefinedToNull } from "~/types";
+import { RustOption } from "~/types";
 import { useActiveRouteTranslations } from "~/hooks/useActiveRoute";
 import { Translations } from "~/translations";
 import { MONTHS, MonthSchema, monthToRustFilter } from "~/utils/time";
+import { useWatch } from "~/hooks/form";
+import { useAtom } from "jotai";
 
 type Result = FlattenIvs<
   Static4State["state"] & {
+    species: Species;
     seed_time: Static4State["seed_time"];
     key: string;
     second: number;
@@ -58,12 +63,17 @@ type SelectButtonProps = {
 
 const SelectButton = ({ target }: SelectButtonProps) => {
   const [, setCurrentStep] = useCurrentStep();
-  const [, setState] = useStarterState();
+  const [, setStarter] = useStarterState();
+  const [, setState] = useAtom(gen4StateAtom);
+
   return (
     <Button
       trackerId="select_gen4_starter"
       onClick={() => {
-        setState((prev) => ({ ...prev, target }));
+        setStarter({ species: target.species });
+        setState({
+          target: { seedTime: target.seed_time, lcrngAdvance: target.advance },
+        });
         setCurrentStep((prev) => prev + 1);
       }}
     >
@@ -111,7 +121,7 @@ const getStarterAdvance = ({
   game,
   platinum_target_advance,
 }: {
-  species: Gen4Starter;
+  species: Species;
   game: Gen4GameVersion;
   platinum_target_advance: number;
 }): number => {
@@ -129,6 +139,7 @@ const getColumns = (t: Translations): ResultColumn<Result>[] => [
   {
     title: t["Select"],
     dataIndex: "key",
+    disableVerticalPadding: true,
     render: (_, target) => <SelectButton target={target} />,
   },
   {
@@ -159,19 +170,32 @@ const getColumns = (t: Translations): ResultColumn<Result>[] => [
   },
 ];
 
-const getFields = (game: Gen4GameVersion, t: Translations): Field[] => {
+type FieldsProps = {
+  game: Gen4GameVersion;
+  t: Translations;
+};
+
+const Fields = ({ game, t }: FieldsProps) => {
+  const watched = useWatch({
+    validationSchema: Validator,
+    names: { species: true },
+  });
+
   const starters = match(game)
     .with("Diamond", "Pearl", "Platinum", () => dpptStarters)
     .with("HeartGold", "SoulSilver", () => hgssStarters)
     .exhaustive();
-  return [
+
+  const fields: Field[] = [
     {
-      label: t["TID"],
-      input: <FormikNumberInput<FormState> name="tid" numType="decimal" />,
-    },
-    {
-      label: t["SID"],
-      input: <FormikNumberInput<FormState> name="sid" numType="decimal" />,
+      label: t["TID / SID"],
+      input: (
+        <MinMaxContainer
+          min={<FormikNumberInput<FormState> name="tid" numType="decimal" />}
+          max={<FormikNumberInput<FormState> name="sid" numType="decimal" />}
+          delimeter="/"
+        />
+      ),
     },
     {
       label: t["Year"],
@@ -187,15 +211,16 @@ const getFields = (game: Gen4GameVersion, t: Translations): Field[] => {
       ),
     },
     {
-      label: t["Min Delay"],
+      label: t["Delay"],
       input: (
-        <FormikNumberInput<FormState> name="min_delay" numType="decimal" />
-      ),
-    },
-    {
-      label: t["Max Delay"],
-      input: (
-        <FormikNumberInput<FormState> name="max_delay" numType="decimal" />
+        <MinMaxContainer
+          min={
+            <FormikNumberInput<FormState> name="min_delay" numType="decimal" />
+          }
+          max={
+            <FormikNumberInput<FormState> name="max_delay" numType="decimal" />
+          }
+        />
       ),
     },
     {
@@ -218,7 +243,7 @@ const getFields = (game: Gen4GameVersion, t: Translations): Field[] => {
         />
       ),
     },
-    ...getPkmFilterFields({}, t),
+    ...getPkmFilterFields({ species: watched.species ?? undefined }, t),
     {
       label: t["Force Second"],
       input: (
@@ -226,13 +251,19 @@ const getFields = (game: Gen4GameVersion, t: Translations): Field[] => {
       ),
     },
   ];
+
+  return <FormFieldTable fields={fields} />;
 };
 
-const mapResult = (res: Static4State): Result => {
+const mapResult = (
+  res: Static4State,
+  opts: RustOption<SearchStatic4Opts>,
+): Result => {
   const { state, seed_time } = res;
   return {
     ...flattenIvs(state),
     seed_time,
+    species: opts.species,
     key: `${seed_time.seed}-${state.pid}`,
     second: seed_time.datetime.second,
     seed: seed_time.seed,
@@ -242,38 +273,36 @@ const mapResult = (res: Static4State): Result => {
 
 export const PickStarter4 = () => {
   const t = useActiveRouteTranslations();
-  const [state, setState] = useStarterState();
+  const [state] = useAtom(gen4StateAtom);
   const {
     run: searchStarterSeeds,
     data: results,
+    progressPercent,
     cancel,
   } = useBatchedTool(multiWorkerRngTools.search_static4, {
     map: mapResult,
   });
 
-  const game = state.game;
+  const game = state.config.game;
 
   const onSubmit = async (opts: FormState) => {
-    const minMaxStats = await getStatRange({
-      species: opts.species,
-      levelRange: [5, 6],
-    });
-    setState((prev) => ({ ...prev, species: opts.species, minMaxStats }));
     const advance = getStarterAdvance({
       game,
       species: opts.species,
       platinum_target_advance: opts.platinum_target_advance,
     });
-    const baseOpts: UndefinedToNull<SearchStatic4Opts> = {
+    const baseOpts: RustOption<SearchStatic4Opts> = {
       ...opts,
       month: monthToRustFilter(opts.month),
       min_advance: advance,
       max_advance: advance,
+      encounter_max_level: 5,
+      encounter_min_level: 5,
       force_second: opts.force_second,
       filter: pkmFilterFieldsToRustInput(opts),
       lead: "None",
       offset: 0,
-      game,
+      method: "One",
     };
     const chunkedIvs = chunkIvs(opts.filter_min_ivs, opts.filter_max_ivs);
     const searchOpts = chunkedIvs.map(([minIvs, maxIvs]) => ({
@@ -287,7 +316,6 @@ export const PickStarter4 = () => {
     await searchStarterSeeds(searchOpts);
   };
 
-  const fields = getFields(game, t);
   const initialValues = match(game)
     .with("Diamond", "Pearl", "Platinum", () => dpptInitialValues)
     .with("HeartGold", "SoulSilver", () => hgssInitialValues)
@@ -295,10 +323,10 @@ export const PickStarter4 = () => {
 
   return (
     <RngToolForm<FormState, Result>
-      fields={fields}
       getColumns={getColumns}
       results={results}
       initialValues={initialValues}
+      values={initialValues}
       validationSchema={Validator}
       onSubmit={onSubmit}
       rowKey="key"
@@ -308,6 +336,9 @@ export const PickStarter4 = () => {
       submitButtonLabel={t["Generate"]}
       cancelButtonLabel={t["Cancel"]}
       onCancel={cancel}
-    />
+      progressPercent={progressPercent}
+    >
+      <Fields game={game} t={t} />
+    </RngToolForm>
   );
 };

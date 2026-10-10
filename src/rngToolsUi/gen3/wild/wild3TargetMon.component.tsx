@@ -7,16 +7,15 @@ import {
   Typography,
 } from "~/components";
 import { toOptions } from "~/utils/options";
-import { useFormContext } from "~/hooks/form";
+import { useFormContext, useWatch_UNSAFE } from "~/hooks/form";
 import { getPkmFilterFields } from "~/components/pkmFilter";
 import React from "react";
 import { gen3SpeciesHasVariableSize } from "~/types";
 import { getGen3PkmFilterFields } from "~/components/gen3PkmFilter";
 
 import { getWild3EmeraldGameData } from "./data/wild3GameData";
-import { useWatch } from "react-hook-form";
 import { getPossibleValuesForSpecies } from "./wild3TargetMon";
-import { FormState } from "./wild3FindTarget";
+import { FormState } from "./wild3TargetSetupSearcher";
 
 const emeraldWildGameData = getWild3EmeraldGameData();
 
@@ -42,9 +41,9 @@ const getTargetMonFields = (species: Species): Field[] => {
   return targetMonFields;
 };
 
-export const TargetMon = () => {
+export const Wild3TargetMon = () => {
   const { setFieldValue } = useFormContext<FormState>();
-  const species = useWatch<FormState, "species">({
+  const species = useWatch_UNSAFE<FormState, "species">({
     name: "species",
   });
 

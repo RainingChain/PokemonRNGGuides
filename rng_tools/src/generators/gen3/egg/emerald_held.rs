@@ -1,11 +1,25 @@
 use crate::Nature;
 use crate::rng::lcrng::Pokerng;
 use crate::rng::{Rng, StateIterator};
-use crate::{Gender, Species, gen3_shiny};
+use crate::{AbilityType, Gender, Species, gen3_shiny};
 use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
+
+fn apply_roamer(calibration: usize, has_roamer: bool) -> usize {
+    match has_roamer {
+        true => calibration.wrapping_add(1),
+        false => calibration,
+    }
+}
+
+fn remove_roamer(calibration: usize, has_roamer: bool) -> usize {
+    match has_roamer {
+        true => calibration.wrapping_sub(1),
+        false => calibration,
+    }
+}
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -20,6 +34,7 @@ struct Gen3HeldEggPid {
     advance: usize,
     redraws: usize,
     calibration: usize,
+    has_roamer: bool,
     pid: u32,
     match_call: PokeNavTrainer,
 }
@@ -29,12 +44,13 @@ struct Gen3HeldEggPid {
 pub struct Gen3HeldEgg {
     pub advance: usize,
     pub redraws: usize,
+    pub has_roamer: bool,
     pub calibration: usize,
     pub pid: u32,
     pub gender: Gender,
     pub shiny: bool,
     pub nature: Nature,
-    pub ability: u8,
+    pub ability: AbilityType,
     pub match_call: PokeNavTrainer,
 }
 
@@ -75,11 +91,12 @@ impl Gen3HeldEgg {
             pid,
             advance,
             gender,
+            has_roamer: egg.has_roamer,
             redraws: egg.redraws,
             calibration: egg.calibration,
             nature: Nature::from_pid(pid),
             shiny: gen3_shiny(pid, tid, sid),
-            ability: ((pid & 1) as u8) + 1,
+            ability: AbilityType::from_gen3_pid(pid),
             match_call: egg.match_call,
         }
     }
@@ -89,8 +106,10 @@ impl Gen3HeldEgg {
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct Egg3HeldFilters {
     pub shiny: bool,
-    pub nature: Option<Nature>,
+    pub nature: Vec<Nature>,
+    pub ability: Option<AbilityType>,
     pub gender: Option<Gender>,
+    pub match_call: Option<PokeNavTrainer>,
 }
 
 impl Egg3HeldFilters {
@@ -99,16 +118,26 @@ impl Egg3HeldFilters {
             return false;
         }
 
-        if let Some(nature) = self.nature {
-            if egg.nature != nature {
-                return false;
-            }
+        if !self.nature.is_empty() && !self.nature.contains(&egg.nature) {
+            return false;
         }
 
-        if let Some(gender) = self.gender {
-            if egg.gender != gender {
-                return false;
-            }
+        if let Some(ability) = self.ability
+            && egg.ability != ability
+        {
+            return false;
+        }
+
+        if let Some(gender) = self.gender
+            && egg.gender != gender
+        {
+            return false;
+        }
+
+        if let Some(match_call) = self.match_call
+            && egg.match_call != match_call
+        {
+            return false;
         }
 
         true
@@ -121,8 +150,6 @@ pub struct Egg3HeldOptions {
     pub delay: i16,
     pub initial_advances: usize,
     pub max_advances: usize,
-    pub female_has_everstone: bool,
-    pub female_nature: Nature,
     pub has_roamer: bool,
     pub has_lightning_rod: bool,
     pub registered_trainers: Vec<PokeNavTrainer>,
@@ -146,7 +173,7 @@ pub fn emerald_egg_held_states(opts: &Egg3HeldOptions) -> Vec<Gen3HeldEgg> {
         .take(opts.max_advances.saturating_add(1))
         .flat_map(|(advance, rng)| generate_redraw_states(rng, opts, advance))
         .collect::<Vec<Gen3HeldEgg>>();
-    result.sort_by(|a, b| a.advance.cmp(&b.advance));
+    result.sort_by_key(|a| a.advance);
     result
 }
 
@@ -160,19 +187,14 @@ fn generate_redraw_states(
     }
 
     let ordered_trainers = order_trainer_list(&opts.registered_trainers);
-    let roamer_calib = match opts.has_roamer {
-        true => 1,
-        false => 0,
-    };
-    let calibration = opts.calibration.saturating_add(roamer_calib);
+    let calibration = apply_roamer(opts.calibration, opts.has_roamer);
 
     let mut generate_state_opts = GenerateStateOpts {
         go: rng,
         ordered_trainers: &ordered_trainers,
         calibration,
+        has_roamer: opts.has_roamer,
         has_lightning_rod: opts.has_lightning_rod,
-        female_has_everstone: opts.female_has_everstone,
-        female_nature: opts.female_nature,
         filter_impossible_to_hit: opts.filter_impossible_to_hit,
         advance: 0,
         redraws: 0,
@@ -322,13 +344,13 @@ fn generate_match_call(
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct NoEggMatchCallOpts {
     seed: u32,
-    redraws: usize,
     initial_advances: usize,
     calibration: usize,
     max_advances: usize,
     has_lightning_rod: bool,
     has_roamer: bool,
     registered_trainers: Vec<PokeNavTrainer>,
+    match_call_filter: Option<PokeNavTrainer>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Tsify, Serialize, Deserialize)]
@@ -342,21 +364,23 @@ pub struct NoEggMatchCall {
 pub fn generate_no_egg_match_calls(opts: NoEggMatchCallOpts) -> Vec<NoEggMatchCall> {
     let rng = Pokerng::new(opts.seed);
     let ordered_trainers = order_trainer_list(&opts.registered_trainers);
-
-    let roamer_calib = match opts.has_roamer {
-        true => 1,
-        false => 0,
-    };
-    let skip = opts.calibration.saturating_add(roamer_calib);
+    let skip = apply_roamer(opts.calibration, opts.has_roamer);
 
     StateIterator::new(rng)
         .skip(skip)
         .enumerate()
         .skip(opts.initial_advances)
         .take(opts.max_advances.saturating_add(1))
-        .map(|(advance, mut rng)| NoEggMatchCall {
-            advance,
-            match_call: generate_match_call(&mut rng, opts.has_lightning_rod, &ordered_trainers),
+        .filter_map(|(advance, mut rng)| {
+            let match_call =
+                generate_match_call(&mut rng, opts.has_lightning_rod, &ordered_trainers);
+            match opts.match_call_filter {
+                Some(filter) if match_call != filter => None,
+                _ => Some(NoEggMatchCall {
+                    advance,
+                    match_call,
+                }),
+            }
         })
         .collect()
 }
@@ -365,9 +389,8 @@ struct GenerateStateOpts<'a> {
     go: Pokerng,
     ordered_trainers: &'a [PokeNavTrainer],
     calibration: usize,
+    has_roamer: bool,
     has_lightning_rod: bool,
-    female_has_everstone: bool,
-    female_nature: Nature,
     advance: usize,
     redraws: usize,
     filter_impossible_to_hit: bool,
@@ -379,11 +402,6 @@ fn generate_state(opts: &GenerateStateOpts) -> Option<Gen3HeldEggPid> {
     let advance = opts.advance;
     let calibration = opts.calibration;
     let has_lightning_rod = opts.has_lightning_rod;
-
-    let use_everstone = match opts.female_has_everstone {
-        true => (go.rand::<u16>() >> 15) == 0,
-        false => false,
-    };
 
     let offset = redraws.wrapping_mul(3).wrapping_add(calibration);
     // PokeFinder lets held_advance can wrap backwards as a u32
@@ -403,41 +421,25 @@ fn generate_state(opts: &GenerateStateOpts) -> Option<Gen3HeldEggPid> {
         return None;
     }
 
-    if !use_everstone {
-        let pid = (go.rand_max::<u16>(0xfffe) + 1) as u32 | ((trng.rand::<u16>() as u32) << 16);
-        return Some(Gen3HeldEggPid {
-            redraws,
-            calibration,
-            pid,
-            advance: held_advance,
-            match_call: generate_match_call(&mut go, has_lightning_rod, opts.ordered_trainers),
-        });
-    }
-
-    // Stop after 17 due to vblank.
-    // If we haven't found a result yet, we probably won't find one after this.
-    (0..16)
-        .find_map(|_| {
-            let test_pid = (go.rand::<u16>() as u32) | ((trng.rand::<u16>() as u32) << 16);
-            match Nature::from_pid(test_pid) == opts.female_nature {
-                true => Some(test_pid),
-                false => None,
-            }
-        })
-        .map(|pid| Gen3HeldEggPid {
-            redraws,
-            calibration,
-            pid,
-            advance: held_advance,
-            match_call: generate_match_call(&mut go, has_lightning_rod, opts.ordered_trainers),
-        })
+    let pid = (go.rand_max::<u16>(0xfffe) + 1) as u32 | ((trng.rand::<u16>() as u32) << 16);
+    Some(Gen3HeldEggPid {
+        redraws,
+        calibration: remove_roamer(calibration, opts.has_roamer),
+        has_roamer: opts.has_roamer,
+        pid,
+        advance: held_advance,
+        match_call: generate_match_call(&mut go, has_lightning_rod, opts.ordered_trainers),
+    })
 }
 
 #[cfg(test)]
 mod test {
+    use itertools::Itertools;
+
     use super::Gender::*;
     use super::Nature::*;
     use super::*;
+    use crate::AbilityType;
     use crate::assert_list_eq;
 
     fn register_all_trainers() -> Vec<PokeNavTrainer> {
@@ -458,16 +460,16 @@ mod test {
             max_advances: 10,
             min_redraw: 0,
             max_redraw: 5,
-            female_has_everstone: false,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -477,132 +479,144 @@ mod test {
                 advance: 4294967278,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xf042e97f,
                 gender: Male,
                 shiny: false,
                 nature: Mild,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967278,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x2aefe97f,
                 gender: Male,
                 shiny: false,
                 nature: Lonely,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967278,
                 redraws: 2,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x659ce97f,
                 gender: Male,
                 shiny: false,
                 nature: Relaxed,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967278,
                 redraws: 3,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xa049e97f,
                 gender: Male,
                 shiny: false,
                 nature: Jolly,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967278,
                 redraws: 4,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xdaf6e97f,
                 gender: Male,
                 shiny: false,
                 nature: Rash,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967278,
                 redraws: 5,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x15a3e97f,
                 gender: Male,
                 shiny: false,
                 nature: Naughty,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967281,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xb5958e43,
                 gender: Male,
                 shiny: false,
                 nature: Naughty,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967281,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xf0428e43,
                 gender: Male,
                 shiny: false,
                 nature: Timid,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967281,
                 redraws: 2,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x2aef8e43,
                 gender: Male,
                 shiny: false,
                 nature: Calm,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967281,
                 redraws: 3,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x659c8e43,
                 gender: Male,
                 shiny: false,
                 nature: Lonely,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967281,
                 redraws: 4,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xa0498e43,
                 gender: Male,
                 shiny: false,
                 nature: Relaxed,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 4294967281,
                 redraws: 5,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xdaf68e43,
                 gender: Male,
                 shiny: false,
                 nature: Jolly,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
         ];
@@ -624,16 +638,16 @@ mod test {
             max_advances: 10,
             min_redraw: 0,
             max_redraw: 5,
-            female_has_everstone: false,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -643,198 +657,216 @@ mod test {
                 advance: 983,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xd23d2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Quirky,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xcea2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Lax,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 2,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x47972c1d,
                 gender: Female,
                 shiny: false,
                 nature: Modest,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 3,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x82452c1d,
                 gender: Female,
                 shiny: false,
                 nature: Relaxed,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 4,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xbcf22c1d,
                 gender: Female,
                 shiny: false,
                 nature: Jolly,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 5,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xf79f2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Rash,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x1404aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Rash,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x4eb1aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Hardy,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 2,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x895eaa0a,
                 gender: Female,
                 shiny: false,
                 nature: Docile,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 3,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xc40baa0a,
                 gender: Female,
                 shiny: false,
                 nature: Serious,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 4,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xfeb8aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Bashful,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 5,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x3965aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Adamant,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 987,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xd957c6ec,
                 gender: Male,
                 shiny: false,
                 nature: Adamant,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 987,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x1404c6ec,
                 gender: Male,
                 shiny: false,
                 nature: Jolly,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 987,
                 redraws: 2,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x4eb1c6ec,
                 gender: Male,
                 shiny: false,
                 nature: Rash,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 987,
                 redraws: 3,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x895ec6ec,
                 gender: Male,
                 shiny: false,
                 nature: Hardy,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 987,
                 redraws: 4,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xc40bc6ec,
                 gender: Male,
                 shiny: false,
                 nature: Docile,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 987,
                 redraws: 5,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xfeb8c6ec,
                 gender: Male,
                 shiny: false,
                 nature: Serious,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
         ];
@@ -856,16 +888,16 @@ mod test {
             max_advances: 3,
             min_redraw: 0,
             max_redraw: 1,
-            female_has_everstone: false,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -875,66 +907,72 @@ mod test {
                 advance: 982,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x907710c8,
                 gender: Male,
                 shiny: false,
                 nature: Lax,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 982,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xcb2410c8,
                 gender: Male,
                 shiny: false,
                 nature: Modest,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xd23d2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Quirky,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xcea2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Lax,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x1404aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Rash,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x4eb1aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Hardy,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
         ];
@@ -956,16 +994,16 @@ mod test {
             max_advances: 3,
             min_redraw: 0,
             max_redraw: 1,
-            female_has_everstone: false,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -975,88 +1013,96 @@ mod test {
                 advance: 982,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x907710c8,
                 gender: Male,
                 shiny: false,
                 nature: Lax,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 982,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xcb2410c8,
                 gender: Male,
                 shiny: false,
                 nature: Modest,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xd23d2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Quirky,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 983,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xcea2c1d,
                 gender: Female,
                 shiny: false,
                 nature: Lax,
-                ability: 2,
+                ability: AbilityType::Second,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x1404aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Rash,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 984,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x4eb1aa0a,
                 gender: Female,
                 shiny: false,
                 nature: Hardy,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 985,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x55cae766,
                 gender: Male,
                 shiny: false,
                 nature: Calm,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
                 advance: 985,
                 redraws: 1,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x9077e766,
                 gender: Male,
                 shiny: false,
                 nature: Lonely,
-                ability: 1,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
             },
         ];
@@ -1078,16 +1124,16 @@ mod test {
             max_advances: 3,
             min_redraw: 0,
             max_redraw: 1,
-            female_has_everstone: false,
-            female_nature: Nature::Hardy,
             tid: 53821,
             sid: 11293,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: true,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -1096,10 +1142,11 @@ mod test {
             advance: 983,
             redraws: 0,
             calibration: 18,
+            has_roamer: false,
             pid: 0xD23D2C1D,
             shiny: true,
             nature: Nature::Quirky,
-            ability: 2,
+            ability: AbilityType::Second,
             gender: Gender::Female,
             match_call: PokeNavTrainer::None,
         }];
@@ -1108,561 +1155,81 @@ mod test {
     }
 
     #[test]
-    fn everstone() {
+    fn ability_filter() {
         let opts = Egg3HeldOptions {
             delay: 0,
             filter_impossible_to_hit: false,
-            compatability: Compatability::GetAlongVeryWell,
+            compatability: Compatability::GetAlong,
             calibration: 18,
             has_roamer: false,
             has_lightning_rod: false,
             registered_trainers: vec![],
-            initial_advances: 20,
-            max_advances: 100,
+            initial_advances: 1000,
+            max_advances: 3,
             min_redraw: 0,
-            max_redraw: 0,
-            female_has_everstone: true,
-            female_nature: Nature::Hardy,
+            max_redraw: 1,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: Some(AbilityType::First),
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
         let results = emerald_egg_held_states(&opts);
         let expected = [
             Gen3HeldEgg {
-                advance: 2,
+                advance: 982,
                 redraws: 0,
-                pid: 0xC553375E,
-                shiny: false,
-                nature: Nature::Naive,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
                 calibration: 18,
+                has_roamer: false,
+                pid: 0x907710c8,
+                gender: Male,
+                shiny: false,
+                nature: Lax,
+                ability: AbilityType::First,
+                match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
-                advance: 5,
-                redraws: 0,
-                pid: 0x5C0F6296,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
+                advance: 982,
+                redraws: 1,
                 calibration: 18,
+                has_roamer: false,
+                pid: 0xcb2410c8,
+                gender: Male,
+                shiny: false,
+                nature: Modest,
+                ability: AbilityType::First,
+                match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
-                advance: 8,
+                advance: 984,
                 redraws: 0,
-                pid: 0x4FF9DFA4,
-                shiny: false,
-                nature: Nature::Bold,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
                 calibration: 18,
+                has_roamer: false,
+                pid: 0x1404aa0a,
+                gender: Female,
+                shiny: false,
+                nature: Rash,
+                ability: AbilityType::First,
+                match_call: PokeNavTrainer::None,
             },
             Gen3HeldEgg {
-                advance: 11,
-                redraws: 0,
-                pid: 0x0528945C,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
+                advance: 984,
+                redraws: 1,
                 calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 12,
-                redraws: 0,
-                pid: 0xA4912428,
+                has_roamer: false,
+                pid: 0x4eb1aa0a,
+                gender: Female,
                 shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
+                nature: Hardy,
+                ability: AbilityType::First,
                 match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 13,
-                redraws: 0,
-                pid: 0x98D86297,
-                shiny: false,
-                nature: Nature::Sassy,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 15,
-                redraws: 0,
-                pid: 0x1C65A398,
-                shiny: false,
-                nature: Nature::Naive,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 16,
-                redraws: 0,
-                pid: 0x5E2B1C4A,
-                shiny: false,
-                nature: Nature::Rash,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 19,
-                redraws: 0,
-                pid: 0xE0E5C848,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 20,
-                redraws: 0,
-                pid: 0x6544D3C6,
-                shiny: false,
-                nature: Nature::Adamant,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 21,
-                redraws: 0,
-                pid: 0xA70BC3EB,
-                shiny: false,
-                nature: Nature::Careful,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 24,
-                redraws: 0,
-                pid: 0x6C5E945D,
-                shiny: false,
-                nature: Nature::Bashful,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 27,
-                redraws: 0,
-                pid: 0xBB8C38B6,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 29,
-                redraws: 0,
-                pid: 0xB53DBFE2,
-                shiny: false,
-                nature: Nature::Naive,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 34,
-                redraws: 0,
-                pid: 0xFE1DBFD2,
-                shiny: false,
-                nature: Nature::Naive,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 37,
-                redraws: 0,
-                pid: 0xC370FB24,
-                shiny: false,
-                nature: Nature::Rash,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 38,
-                redraws: 0,
-                pid: 0x05367D24,
-                shiny: false,
-                nature: Nature::Timid,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 40,
-                redraws: 0,
-                pid: 0x88C2DA01,
-                shiny: false,
-                nature: Nature::Rash,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Female,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 43,
-                redraws: 0,
-                pid: 0x4E15BA85,
-                shiny: false,
-                nature: Nature::Adamant,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 47,
-                redraws: 0,
-                pid: 0xC9C5260E,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Female,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 48,
-                redraws: 0,
-                pid: 0x96F5B6A1,
-                shiny: false,
-                nature: Nature::Careful,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 49,
-                redraws: 0,
-                pid: 0xD8BB4161,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 52,
-                redraws: 0,
-                pid: 0x9E0EB54C,
-                shiny: false,
-                nature: Nature::Rash,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 55,
-                redraws: 0,
-                pid: 0x63617B44,
-                shiny: false,
-                nature: Nature::Relaxed,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 57,
-                redraws: 0,
-                pid: 0xE6EE68F0,
-                shiny: false,
-                nature: Nature::Serious,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 59,
-                redraws: 0,
-                pid: 0x6A7A7460,
-                shiny: false,
-                nature: Nature::Bold,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 61,
-                redraws: 0,
-                pid: 0xEE07E062,
-                shiny: false,
-                nature: Nature::Brave,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 64,
-                redraws: 0,
-                pid: 0xB35A11BB,
-                shiny: false,
-                nature: Nature::Bashful,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 67,
-                redraws: 0,
-                pid: 0x78ADA7C5,
-                shiny: false,
-                nature: Nature::Sassy,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 69,
-                redraws: 0,
-                pid: 0xFC39A856,
-                shiny: false,
-                nature: Nature::Adamant,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 72,
-                redraws: 0,
-                pid: 0xC18C863B,
-                shiny: false,
-                nature: Nature::Mild,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 73,
-                redraws: 0,
-                pid: 0x0353AD06,
-                shiny: false,
-                nature: Nature::Bold,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Female,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 74,
-                redraws: 0,
-                pid: 0x451911D3,
-                shiny: false,
-                nature: Nature::Quiet,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 76,
-                redraws: 0,
-                pid: 0xC8A557FE,
-                shiny: false,
-                nature: Nature::Mild,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 77,
-                redraws: 0,
-                pid: 0xFA040966,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 78,
-                redraws: 0,
-                pid: 0xF93E172E,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 79,
-                redraws: 0,
-                pid: 0x8DF8451C,
-                shiny: false,
-                nature: Nature::Lonely,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Female,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 86,
-                redraws: 0,
-                pid: 0x5A654275,
-                shiny: false,
-                nature: Nature::Naive,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 87,
-                redraws: 0,
-                pid: 0x7A287169,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 88,
-                redraws: 0,
-                pid: 0xFE272843,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 89,
-                redraws: 0,
-                pid: 0x7BDC8D5B,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 90,
-                redraws: 0,
-                pid: 0x617E2844,
-                shiny: false,
-                nature: Nature::Gentle,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 92,
-                redraws: 0,
-                pid: 0xE50ACB61,
-                shiny: false,
-                nature: Nature::Naive,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 93,
-                redraws: 0,
-                pid: 0x26D1C043,
-                shiny: false,
-                nature: Nature::Lonely,
-                ability: 2,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 97,
-                redraws: 0,
-                pid: 0x2DEA3DCE,
-                shiny: false,
-                nature: Nature::Mild,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 99,
-                redraws: 0,
-                pid: 0xB177A0B2,
-                shiny: false,
-                nature: Nature::Naughty,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 100,
-                redraws: 0,
-                pid: 0xF33D111A,
-                shiny: false,
-                nature: Nature::Serious,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Female,
-                calibration: 18,
-            },
-            Gen3HeldEgg {
-                advance: 102,
-                redraws: 0,
-                pid: 0xB788EBA6,
-                shiny: false,
-                nature: Nature::Hardy,
-                ability: 1,
-                match_call: PokeNavTrainer::None,
-                gender: Gender::Male,
-                calibration: 18,
             },
         ];
 
@@ -1683,16 +1250,16 @@ mod test {
             max_advances: 3,
             min_redraw: 0,
             max_redraw: 1,
-            female_has_everstone: true,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -1723,16 +1290,16 @@ mod test {
             max_advances: 3,
             min_redraw: 0,
             max_redraw: 1,
-            female_has_everstone: true,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -1763,16 +1330,16 @@ mod test {
             max_advances: 3,
             min_redraw: 0,
             max_redraw: 1,
-            female_has_everstone: true,
-            female_nature: Nature::Hardy,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Bulbasaur,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -1803,16 +1370,16 @@ mod test {
             max_advances: 5,
             min_redraw: 0,
             max_redraw: 0,
-            female_has_everstone: false,
-            female_nature: Nature::Adamant,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::Illumise,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -1823,10 +1390,11 @@ mod test {
                 advance: 83,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x95122D94,
                 shiny: false,
                 nature: Nature::Hardy,
-                ability: 1,
+                ability: AbilityType::First,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1834,10 +1402,11 @@ mod test {
                 advance: 84,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xD6D80967,
                 shiny: false,
                 nature: Nature::Relaxed,
-                ability: 2,
+                ability: AbilityType::Second,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1845,10 +1414,11 @@ mod test {
                 advance: 85,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x189E112E,
                 shiny: false,
                 nature: Nature::Calm,
-                ability: 1,
+                ability: AbilityType::First,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1856,10 +1426,11 @@ mod test {
                 advance: 86,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x5A65A1E1,
                 shiny: false,
                 nature: Nature::Quiet,
-                ability: 2,
+                ability: AbilityType::Second,
                 gender: Gender::Male,
                 match_call: PokeNavTrainer::None,
             },
@@ -1867,10 +1438,11 @@ mod test {
                 advance: 88,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xDDF173C5,
                 shiny: false,
                 nature: Nature::Quirky,
-                ability: 2,
+                ability: AbilityType::Second,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1893,16 +1465,16 @@ mod test {
             max_advances: 5,
             min_redraw: 0,
             max_redraw: 0,
-            female_has_everstone: false,
-            female_nature: Nature::Adamant,
             tid: 0,
             sid: 0,
             lua_adjustment: false,
             egg_species: Species::NidoranF,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: false,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -1913,10 +1485,11 @@ mod test {
                 advance: 83,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x95122D94,
                 shiny: false,
                 nature: Nature::Hardy,
-                ability: 1,
+                ability: AbilityType::First,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1924,10 +1497,11 @@ mod test {
                 advance: 84,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xD6D80967,
                 shiny: false,
                 nature: Nature::Relaxed,
-                ability: 2,
+                ability: AbilityType::Second,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1935,10 +1509,11 @@ mod test {
                 advance: 85,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x189E112E,
                 shiny: false,
                 nature: Nature::Calm,
-                ability: 1,
+                ability: AbilityType::First,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1946,10 +1521,11 @@ mod test {
                 advance: 86,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0x5A65A1E1,
                 shiny: false,
                 nature: Nature::Quiet,
-                ability: 2,
+                ability: AbilityType::Second,
                 gender: Gender::Male,
                 match_call: PokeNavTrainer::None,
             },
@@ -1957,10 +1533,11 @@ mod test {
                 advance: 88,
                 redraws: 0,
                 calibration: 18,
+                has_roamer: false,
                 pid: 0xDDF173C5,
                 shiny: false,
                 nature: Nature::Quirky,
-                ability: 2,
+                ability: AbilityType::Second,
                 gender: Gender::Female,
                 match_call: PokeNavTrainer::None,
             },
@@ -1983,16 +1560,16 @@ mod test {
             max_advances: 2100,
             min_redraw: 0,
             max_redraw: 0,
-            female_has_everstone: false,
-            female_nature: Nature::Adamant,
             tid: 12345,
             sid: 54321,
             lua_adjustment: true,
             egg_species: Species::Ralts,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: true,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -2002,10 +1579,11 @@ mod test {
             advance: 2040,
             redraws: 0,
             calibration: 21,
+            has_roamer: false,
             pid: 0x2441C04C,
             shiny: true,
             nature: Nature::Rash,
-            ability: 1,
+            ability: AbilityType::First,
             gender: Gender::Female,
             match_call: PokeNavTrainer::GuitaristFernando,
         }];
@@ -2039,16 +1617,16 @@ mod test {
             max_advances: 2100,
             min_redraw: 0,
             max_redraw: 0,
-            female_has_everstone: false,
-            female_nature: Nature::Adamant,
             tid: 12345,
             sid: 54321,
             lua_adjustment: true,
             egg_species: Species::Ralts,
             filters: Egg3HeldFilters {
+                ability: Option::None,
                 shiny: true,
-                nature: Option::None,
+                nature: vec![],
                 gender: Option::None,
+                match_call: Option::None,
             },
         };
 
@@ -2058,13 +1636,73 @@ mod test {
             advance: 2040,
             redraws: 0,
             calibration: 21,
+            has_roamer: false,
             pid: 0x2441C04C,
             shiny: true,
             nature: Nature::Rash,
-            ability: 1,
+            ability: AbilityType::First,
             gender: Gender::Female,
             match_call: PokeNavTrainer::RuinManiacDusty,
         }];
+
+        assert_list_eq!(result, expected);
+    }
+
+    #[test]
+    fn filter_match_calls() {
+        let opts = Egg3HeldOptions {
+            delay: 0,
+            filter_impossible_to_hit: false,
+            compatability: Compatability::GetAlong,
+            calibration: 21,
+            has_roamer: false,
+            has_lightning_rod: true,
+            registered_trainers: register_all_trainers(),
+            initial_advances: 2000,
+            max_advances: 100,
+            min_redraw: 0,
+            max_redraw: 0,
+            tid: 12345,
+            sid: 54321,
+            lua_adjustment: true,
+            egg_species: Species::Ralts,
+            filters: Egg3HeldFilters {
+                ability: None,
+                shiny: false,
+                nature: vec![],
+                gender: None,
+                match_call: Some(PokeNavTrainer::FishermanElliot),
+            },
+        };
+
+        let result = emerald_egg_held_states(&opts);
+
+        let expected = [
+            Gen3HeldEgg {
+                advance: 1996,
+                redraws: 0,
+                has_roamer: false,
+                calibration: 21,
+                pid: 0xd62b19f8,
+                gender: Male,
+                shiny: false,
+                nature: Calm,
+                ability: AbilityType::First,
+                match_call: PokeNavTrainer::FishermanElliot,
+            },
+            Gen3HeldEgg {
+                advance: 2042,
+                redraws: 0,
+                has_roamer: false,
+                calibration: 21,
+                pid: 0xa7cdf7d3,
+                gender: Male,
+                shiny: false,
+                nature: Calm,
+                ability: AbilityType::Second,
+                match_call: PokeNavTrainer::FishermanElliot,
+            },
+        ];
 
         assert_list_eq!(result, expected);
     }
@@ -2083,16 +1721,16 @@ mod test {
             max_advances: 2100,
             min_redraw: 0,
             max_redraw: 0,
-            female_has_everstone: false,
-            female_nature: Nature::Adamant,
             tid: 12345,
             sid: 54321,
             lua_adjustment: true,
             egg_species: Species::Ralts,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: true,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -2102,10 +1740,11 @@ mod test {
             advance: 2040,
             redraws: 0,
             calibration: 21,
+            has_roamer: false,
             pid: 0x2441C04C,
             shiny: true,
             nature: Nature::Rash,
-            ability: 1,
+            ability: AbilityType::First,
             gender: Gender::Female,
             match_call: PokeNavTrainer::None,
         }];
@@ -2127,16 +1766,16 @@ mod test {
             max_advances: 200,
             min_redraw: 0,
             max_redraw: 0,
-            female_has_everstone: false,
-            female_nature: Nature::Adamant,
             tid: 12345,
             sid: 54321,
             lua_adjustment: true,
             egg_species: Species::Ralts,
             filters: Egg3HeldFilters {
+                ability: None,
                 shiny: true,
-                nature: None,
+                nature: vec![],
                 gender: None,
+                match_call: None,
             },
         };
 
@@ -2145,11 +1784,12 @@ mod test {
         let expected = [Gen3HeldEgg {
             advance: 6695,
             redraws: 0,
-            calibration: 23,
+            calibration: 22,
+            has_roamer: true,
             pid: 0x292DCD22,
             shiny: true,
             nature: Nature::Modest,
-            ability: 1,
+            ability: AbilityType::First,
             gender: Gender::Female,
             match_call: PokeNavTrainer::CoolTrainerCristin,
         }];
@@ -2162,12 +1802,12 @@ mod test {
         let opts = NoEggMatchCallOpts {
             initial_advances: 0,
             calibration: 20,
-            redraws: 0,
             has_lightning_rod: true,
             has_roamer: false,
             max_advances: 12,
             registered_trainers: register_all_trainers(),
             seed: 0,
+            match_call_filter: None,
         };
 
         let results = generate_no_egg_match_calls(opts);
@@ -2196,5 +1836,193 @@ mod test {
         .collect();
 
         assert_list_eq!(results, expected);
+    }
+
+    #[test]
+    fn match_call_filter() {
+        let opts = NoEggMatchCallOpts {
+            initial_advances: 0,
+            calibration: 20,
+            has_lightning_rod: true,
+            has_roamer: false,
+            max_advances: 12,
+            registered_trainers: register_all_trainers(),
+            seed: 0,
+            match_call_filter: Some(PokeNavTrainer::TriathleteBenjamin),
+        };
+
+        let results = generate_no_egg_match_calls(opts);
+
+        let expected: [NoEggMatchCall; 2] = [
+            NoEggMatchCall {
+                advance: 8,
+                match_call: PokeNavTrainer::TriathleteBenjamin,
+            },
+            NoEggMatchCall {
+                advance: 10,
+                match_call: PokeNavTrainer::TriathleteBenjamin,
+            },
+        ];
+
+        assert_list_eq!(results, expected);
+    }
+
+    mod pokefinder {
+        use super::*;
+
+        fn parse_pokefinder(str: &str) -> Vec<Gen3HeldEgg> {
+            str.lines()
+                .map(|raw_line| {
+                    let line = raw_line.trim();
+
+                    if line.is_empty() {
+                        panic!("Empty line in chatter data");
+                    }
+
+                    let parts: Vec<&str> = line.split("\t").collect();
+                    let advance: usize = parts[0].parse().unwrap();
+                    let redraws: usize = parts[2].parse().unwrap();
+                    let pid = u32::from_str_radix(parts[3], 16).unwrap();
+                    let shiny = parts[4] != "No";
+                    let nature = Nature::from_str(parts[5]);
+                    let ability = AbilityType::from_pokefinder_str(parts[6]);
+                    let gender = Gender::from_pokefinder_str(parts[15]);
+
+                    Gen3HeldEgg {
+                        advance: advance + (redraws * 3),
+                        redraws,
+                        has_roamer: false,
+                        calibration: 18,
+                        pid,
+                        gender,
+                        shiny,
+                        nature,
+                        ability,
+                        match_call: PokeNavTrainer::None,
+                    }
+                })
+                .collect()
+        }
+
+        macro_rules! pokefinder {
+            ($file:expr) => {
+                parse_pokefinder(include_str!($file))
+            };
+        }
+
+        fn clear_match_call(results: Vec<Gen3HeldEgg>) -> Vec<Gen3HeldEgg> {
+            results
+                .into_iter()
+                .map(|egg| Gen3HeldEgg {
+                    match_call: PokeNavTrainer::None,
+                    ..egg
+                })
+                .collect()
+        }
+
+        fn sort(eggs: Vec<Gen3HeldEgg>) -> Vec<Gen3HeldEgg> {
+            eggs.into_iter()
+                .sorted_by(|a, b| a.redraws.cmp(&b.redraws).then(a.advance.cmp(&b.advance)))
+                .collect()
+        }
+
+        #[test]
+        fn dont_like_each_other() {
+            let opts = Egg3HeldOptions {
+                delay: 0,
+                filter_impossible_to_hit: false,
+                compatability: Compatability::DontLikeEachOther,
+                calibration: 18,
+                has_roamer: false,
+                has_lightning_rod: false,
+                registered_trainers: vec![],
+                initial_advances: 100,
+                max_advances: 100,
+                min_redraw: 0,
+                max_redraw: 5,
+                tid: 12345,
+                sid: 54321,
+                lua_adjustment: false,
+                egg_species: Species::Bulbasaur,
+                filters: Egg3HeldFilters {
+                    ability: None,
+                    shiny: false,
+                    nature: vec![],
+                    gender: None,
+                    match_call: None,
+                },
+            };
+
+            let results = sort(clear_match_call(emerald_egg_held_states(&opts)));
+            let expected = sort(pokefinder!("test_data/held/dont_like_each_other.txt"));
+
+            assert_list_eq!(results, expected);
+        }
+
+        #[test]
+        fn get_along() {
+            let opts = Egg3HeldOptions {
+                delay: 0,
+                filter_impossible_to_hit: false,
+                compatability: Compatability::GetAlong,
+                calibration: 18,
+                has_roamer: false,
+                has_lightning_rod: false,
+                registered_trainers: vec![],
+                initial_advances: 100,
+                max_advances: 100,
+                min_redraw: 0,
+                max_redraw: 5,
+                tid: 0,
+                sid: 0,
+                lua_adjustment: false,
+                egg_species: Species::Bulbasaur,
+                filters: Egg3HeldFilters {
+                    ability: None,
+                    shiny: false,
+                    nature: vec![],
+                    gender: None,
+                    match_call: None,
+                },
+            };
+
+            let results = sort(clear_match_call(emerald_egg_held_states(&opts)));
+            let expected = sort(pokefinder!("test_data/held/get_along.txt"));
+
+            assert_list_eq!(results, expected);
+        }
+
+        #[test]
+        fn get_along_well() {
+            let opts = Egg3HeldOptions {
+                delay: 0,
+                filter_impossible_to_hit: false,
+                compatability: Compatability::GetAlongVeryWell,
+                calibration: 18,
+                has_roamer: false,
+                has_lightning_rod: false,
+                registered_trainers: vec![],
+                initial_advances: 100,
+                max_advances: 100,
+                min_redraw: 0,
+                max_redraw: 5,
+                tid: 0,
+                sid: 0,
+                lua_adjustment: false,
+                egg_species: Species::Bulbasaur,
+                filters: Egg3HeldFilters {
+                    ability: None,
+                    shiny: false,
+                    nature: vec![],
+                    gender: None,
+                    match_call: None,
+                },
+            };
+
+            let results = sort(clear_match_call(emerald_egg_held_states(&opts)));
+            let expected = sort(pokefinder!("test_data/held/get_along_very_well.txt"));
+
+            assert_list_eq!(results, expected);
+        }
     }
 }

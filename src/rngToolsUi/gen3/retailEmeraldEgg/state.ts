@@ -1,8 +1,6 @@
-import { atom, useAtom } from "jotai";
+import { atom, useAtom, SetStateAction } from "jotai";
 import {
-  PokeNavTrainer,
   Gen3HeldEgg,
-  Nature,
   Species,
   Compatability,
   Gen3PickupMethod,
@@ -11,76 +9,9 @@ import { atomWithPersistence } from "~/state/localStorage";
 import { maxIvs } from "~/types/ivs";
 import { z } from "zod";
 import { NullableIvs } from "~/components/ivInput";
-
-// This is the order shown by the game
-const trainers = [
-  "AromaLadyRose",
-  "RuinManiacAndres",
-  "RuinManiacDusty",
-  "TuberLola",
-  "TuberRicky",
-  "SisAndBroLilaRoy",
-  "CoolTrainerCristin",
-  "CoolTrainerBrooke",
-  "CoolTrainerWilton",
-  "HexManiacValerie",
-  "LadyCindy",
-  "BeautyThalia",
-  "BeautyJessica",
-  "RichBoyWinston",
-  "PokemaniacSteve",
-  "SwimmerTony",
-  "BlackBeltNob",
-  "BlackBeltKoji",
-  "GuitaristFernando",
-  "GuitaristDalton",
-  "KindlerBernie",
-  "CamperEthan",
-  "OldCoupleJohnJay",
-  "BugManiacJeffrey",
-  "PsychicCameron",
-  "PsychicJacki",
-  "GentlemanWalter",
-  "SchoolKidKaren",
-  "SchoolKidJerry",
-  "SrAndJrAnnaMeg",
-  "PokefanIsabel",
-  "PokefanMiguel",
-  "ExpertTimothy",
-  "ExpertShelby",
-  "YoungsterCalvin",
-  "FishermanElliot",
-  "TriathleteIsaiah",
-  "TriathleteMaria",
-  "TriathleteAbigail",
-  "TriathleteDylan",
-  "TriathleteKatelyn",
-  "TriathleteBenjamin",
-  "TriathletePablo",
-  "DragonTamerNicolas",
-  "BirdKeeperRobert",
-  "NinjaBoyLao",
-  "BattleGirlCyndy",
-  "ParasolLadyMadeline",
-  "SwimmerJenny",
-  "PicknickerDiana",
-  "TwinsAmyLiv",
-  "SailorErnest",
-  "SailorCory",
-  "CollectorEdwin",
-  "PkmnBreederLydia",
-  "PkmnBreederIsaac",
-  "PkmnBreederGabrielle",
-  "PkmnRangerCatherine",
-  "PkmnRangerJackson",
-  "LassHaley",
-  "BugCatcherJames",
-  "HikerTrent",
-  "HikerSawyer",
-  "YoungCoupleKiraDan",
-] as const satisfies PokeNavTrainer[];
-
-export const pokeNavTrainers = trainers;
+import type { HeldEggCalibrationResult } from "./calibrateHeldEgg/result";
+import type { HeldEggCalibrationFilters } from "./calibrateHeldEgg/validator";
+import { pokeNavTrainers as trainers } from "./constants";
 
 export const RegisteredPokeNavTrainersSchema = z.object({
   registeredTrainers: z.enum(trainers).array(),
@@ -105,8 +36,6 @@ export const useRegisteredTrainers = () => useAtom(registeredTrainers);
 type HeldEggSettings = {
   compatability: Compatability;
   egg_species: Species;
-  female_nature: Nature;
-  female_has_everstone: boolean;
   has_lightning_rod: boolean;
   has_roamer: boolean;
 };
@@ -123,16 +52,55 @@ const initialHeldState: HeldEggState = {
   eggSettings: {
     compatability: "DontLikeEachOther",
     egg_species: "Bulbasaur",
-    female_has_everstone: false,
-    female_nature: "Adamant",
     has_lightning_rod: false,
     has_roamer: false,
   },
 };
 
-const heldEggAtom = atom(initialHeldState);
+export type HeldEggCalibrationSearch = {
+  calibration: number;
+  initialAdvances: number;
+  maxAdvances: number;
+  minRedraw: number | null;
+  maxRedraw: number | null;
+};
+
+export type HeldEggCalibrationState = {
+  // These values are only for debug purposes.
+  // They might be out of sync with the user's display.
+  debug: {
+    filters: HeldEggCalibrationFilters | null;
+    search: HeldEggCalibrationSearch | null;
+  } | null;
+  results: HeldEggCalibrationResult[] | null;
+  previousOffsets: number[] | null;
+};
+
+export const initialCalibrationState: HeldEggCalibrationState = {
+  debug: null,
+  results: null,
+  previousOffsets: null,
+};
+
+const heldEggCalibrationAtom = atom(initialCalibrationState);
+
+const baseHeldEggAtom = atom(initialHeldState);
+
+// Calibration results are relative to the held egg state,
+// so changing the state invalidates them.
+const heldEggAtom = atom(
+  (get) => get(baseHeldEggAtom),
+  (get, set, update: SetStateAction<HeldEggState>) => {
+    const prev = get(baseHeldEggAtom);
+    const next = typeof update === "function" ? update(prev) : update;
+    set(baseHeldEggAtom, next);
+    set(heldEggCalibrationAtom, initialCalibrationState);
+  },
+);
 
 export const useHeldEggState = () => useAtom(heldEggAtom);
+
+export const useHeldEggCalibrationState = () => useAtom(heldEggCalibrationAtom);
 
 export type PickupEggState = {
   seed: number;

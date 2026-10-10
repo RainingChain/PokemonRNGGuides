@@ -1,9 +1,9 @@
 use crate::{
     AbilityType, Characteristic, Gender, Ivs, Nature, PkmState, Species, gen3_shiny,
-    gen4::{LeadAbility, seed_time4::SeedTime4},
+    gen4::{LeadAbility, seed_time::SeedTime4},
 };
 use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Tsify, Serialize, Deserialize)]
@@ -19,6 +19,7 @@ pub struct BaseStatic4State {
     pub shiny: bool,
     pub characteristic: Characteristic,
     pub lead: LeadAbility,
+    pub level: u8,
 }
 
 impl BaseStatic4State {
@@ -29,6 +30,7 @@ impl BaseStatic4State {
         seed: u32,
         species: Species,
         nature: Nature,
+        level: u8,
         pid: u32,
         tid: u16,
         sid: u16,
@@ -41,6 +43,7 @@ impl BaseStatic4State {
             nature,
             pid,
             lead,
+            level,
             advance: 0,
             shiny: gen3_shiny(pid, tid, sid),
             ability: AbilityType::from_gen3_pid(pid),

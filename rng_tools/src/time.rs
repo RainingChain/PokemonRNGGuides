@@ -1,7 +1,11 @@
 use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, Timelike};
 use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
+
+pub fn is_leap_year(year: u32) -> bool {
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
+}
 
 #[derive(Debug, Clone, PartialEq, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -77,7 +81,7 @@ impl RngDateTime {
         )
     }
 
-    pub fn as_seconds_iterator(&mut self) -> SecondsIterator {
+    pub fn as_seconds_iterator(&mut self) -> SecondsIterator<'_> {
         SecondsIterator::new(self)
     }
 

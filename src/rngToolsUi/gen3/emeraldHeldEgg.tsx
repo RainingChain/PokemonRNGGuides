@@ -11,11 +11,10 @@ import {
 import { rngTools, Gen3HeldEgg } from "~/rngTools";
 import { getGen3SpeciesOptions, species } from "~/types/species";
 import { nature } from "~/types/nature";
-import { gender } from "~/types/gender";
-import { natureOptions } from "~/components/pkmFilter";
-import { genderOptions } from "~/components/genderFilter/options";
+import { gender, genderOptions } from "~/types/gender";
 import { z } from "zod";
-import { translateOptions, Translations } from "~/translations";
+import { Translations } from "~/translations";
+import { NatureFilterInput } from "~/components/natureFilterInput";
 
 const getColumns = (t: Translations): ResultColumn<Gen3HeldEgg>[] => {
   return [
@@ -39,11 +38,9 @@ const getColumns = (t: Translations): ResultColumn<Gen3HeldEgg>[] => {
 };
 
 const Validator = z.object({
-  delay: z.number().int().min(0),
+  delay: z.number().int(),
   initial_advances: z.number().int().min(0),
   max_advances: z.number().int().min(0),
-  female_has_everstone: z.boolean(),
-  female_nature: z.enum(nature),
   calibration: z.number().int().min(0),
   min_redraw: z.number().int().min(0),
   max_redraw: z.number().int().min(0),
@@ -52,7 +49,7 @@ const Validator = z.object({
   sid: z.number().int().min(0).max(65535),
   egg_species: z.enum(species),
   filter_shiny: z.boolean(),
-  filter_nature: z.enum(nature).nullable(),
+  filter_nature: z.array(z.enum(nature)),
   filter_gender: z.enum(gender).nullable(),
 });
 
@@ -62,8 +59,6 @@ const initialValues: FormState = {
   delay: 0,
   initial_advances: 100,
   max_advances: 1000,
-  female_has_everstone: false,
-  female_nature: "Adamant",
   calibration: 18,
   min_redraw: 0,
   max_redraw: 5,
@@ -72,29 +67,12 @@ const initialValues: FormState = {
   sid: 0,
   egg_species: "Bulbasaur",
   filter_shiny: false,
-  filter_nature: null,
+  filter_nature: [],
   filter_gender: null,
 };
 
 const getFields = (t: Translations): Field[] => {
   return [
-    {
-      label: t["Female or Ditto has everstone"],
-      input: <FormikSwitch<FormState> name="female_has_everstone" />,
-    },
-    {
-      label: t["Female or Ditto nature"],
-      input: (
-        <FormikSelect<FormState, "female_nature">
-          name="female_nature"
-          options={translateOptions({
-            t,
-            options: natureOptions.required,
-            sort: true,
-          })}
-        />
-      ),
-    },
     {
       label: t["Egg species"],
       input: (
@@ -178,16 +156,7 @@ const getFields = (t: Translations): Field[] => {
     },
     {
       label: t["Filter nature"],
-      input: (
-        <FormikSelect<FormState, "filter_nature">
-          name="filter_nature"
-          options={translateOptions({
-            t,
-            options: natureOptions.optional,
-            sort: true,
-          })}
-        />
-      ),
+      input: <NatureFilterInput />,
     },
     {
       label: t["Filter gender"],
@@ -219,7 +188,9 @@ export const EmeraldHeldEgg = ({ lua = false }: Props) => {
       filters: {
         shiny: opts.filter_shiny,
         nature: opts.filter_nature,
+        ability: null,
         gender: opts.filter_gender,
+        match_call: null,
       },
     });
 

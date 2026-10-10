@@ -3,9 +3,11 @@ import {
   Typography,
   Flex,
   Image,
+  type ImageProps,
   Link,
   Alert,
   type AlertProps,
+  LinkButton,
 } from "~/components";
 import styled from "@emotion/styled";
 import { formatRelativeUrl } from "~/utils/formatRelativeUrl";
@@ -14,25 +16,14 @@ import { get } from "lodash-es";
 import { guides } from "~/guides";
 import { usePageLanguage } from "~/markdownExports/languageContext";
 import type React from "react";
+import { z } from "zod";
 import { useActiveRouteTranslations } from "~/hooks/useActiveRoute";
+import { SlugOrExternalLinkSchema } from "~/types/navigation";
 
 type Props = { children: React.ReactNode };
 
-export const MarkdownH1 = (props: Props) => {
-  return <Typography.Title level={1} m={0} {...props} />;
-};
-
-export const MarkdownH2 = (props: Props) => (
-  <Typography.Title level={2} m={0} {...props} />
-);
-
-export const MarkdownH3 = (props: Props) => (
-  <Typography.Title level={3} m={0} {...props} />
-);
-
-const _MarkdownParagraph = styled(Typography.Text)({
+const _MarkdownParagraph = styled(Typography.Body)({
   display: "block",
-  color: "inherit",
 });
 
 export const MarkdownParagraph = (props: Props) => (
@@ -102,9 +93,9 @@ export const MarkdownCode = ({ children }: Props) => {
   return <_Code>{children}</_Code>;
 };
 
-export const MarkdownImage = ({ src, alt }: { src: string; alt: string }) => (
+export const MarkdownImage = (props: Partial<ImageProps>) => (
   <Flex justify="center">
-    <Image src={src} alt={alt} />
+    <Image {...props} />
   </Flex>
 );
 
@@ -212,4 +203,20 @@ export const MarkdownBlockquote = ({
   }
 
   return <Blockquote>{children}</Blockquote>;
+};
+
+const MarkdownLinkButtonPropsSchema = z.object({
+  trackerId: z.string(),
+  link: SlugOrExternalLinkSchema,
+  type: z.union([z.literal("primary"), z.literal("default")]).optional(),
+});
+
+export const MarkdownLinkButton = (props: Props) => {
+  const parsedProps = MarkdownLinkButtonPropsSchema.safeParse(props);
+
+  if (!parsedProps.success) {
+    return null;
+  }
+
+  return <LinkButton {...parsedProps.data}>{props.children}</LinkButton>;
 };

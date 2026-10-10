@@ -1,107 +1,151 @@
+import React from "react";
 import * as tst from "ts-toolbelt";
+import { isEqual } from "lodash-es";
 import styled from "@emotion/styled";
 import { Select as AntdSelect, SelectProps as AntdSelectProps } from "antd";
 import { useField } from "~/hooks/form";
-import { GenericForm } from "~/types/form";
+import { FormControlledProps, GenericForm } from "~/types/form";
 import { Flex } from "./flex";
-import React from "react";
 import { Icon } from "./icons";
 import { Button } from "./button";
 import { Typography } from "./typography";
 import { Path, Paths } from "~/types";
+import { PrimitiveAtom, useAtom } from "jotai";
+import { toOptions } from "~/utils/options";
+import { useActiveRouteTranslations } from "~/hooks/useActiveRoute";
+import { Translation } from "~/translations";
+import { useSize } from "~/theme/size";
 
-const SelectContainer = styled(Flex)({
-  ".ant-select": {
-    width: "100%",
+const SelectContainer = styled(Flex)(({ theme }) => ({
+  "&&&": {
+    ".ant-select": {
+      width: "100%",
+      borderRadius: 4,
+    },
+    ".ant-select-suffix": {
+      color: theme.token.colorTextSecondary,
+    },
   },
-});
+}));
 
 const SelectAllContainer = styled(Flex)({
   flexFlow: "row wrap",
 });
 
-type SelectProps<ValueType> = {
-  fullFlex?: boolean;
-  name?: string;
-} & AntdSelectProps<ValueType>;
+type SelectProps<ValueType> = tst.O.Merge<
+  {
+    fullFlex?: boolean;
+    name?: string;
+    errorMessage?: string;
+  },
+  AntdSelectProps<ValueType>
+>;
 
 export const Select = <ValueType,>({
   fullFlex,
+  value,
+  onChange,
+  onSelect,
+  mode,
+  options,
+  errorMessage,
+  status,
   ...props
 }: SelectProps<ValueType>) => {
+  const size = useSize();
+  React.useEffect(() => {
+    if (
+      mode !== "multiple" &&
+      options != null &&
+      options.length > 0 &&
+      options.find((opt) => isEqual(opt.value, value)) == null
+    ) {
+      // The props types guarantee this is correct in usage, but TS can't figure it out internally
+      const safeValue = options[0].value as ValueType;
+      onChange?.(safeValue, options[0]);
+
+      // @ts-expect-error -- this is incorrect for multiple select
+      // but is correct for single select and we're checking mode !== "multiple"
+      onSelect?.(safeValue, options[0]);
+    }
+  }, [mode, options, onChange, onSelect, value]);
+
   return (
-    <SelectContainer flex={fullFlex ? 1 : undefined}>
-      <AntdSelect size="large" showSearch {...props} />
+    <SelectContainer vertical flex={fullFlex ? 1 : undefined}>
+      <AntdSelect
+        size={size}
+        showSearch={{ optionFilterProp: "label" }}
+        mode={mode}
+        value={value}
+        onSelect={onSelect}
+        onChange={onChange}
+        options={options}
+        {...props}
+        status={errorMessage != null ? "error" : status}
+      />
+      {errorMessage != null && (
+        <Typography.Text type="danger">{errorMessage}</Typography.Text>
+      )}
     </SelectContainer>
   );
 };
 
-type SingleFormikSelectValue<
-  FormState extends GenericForm,
-  FieldKey extends Paths<FormState>,
-> =
-  Path<FormState, FieldKey> extends string | number | null
-    ? {
-        label: string;
-        value: Path<FormState, FieldKey>;
-      }[]
-    : never;
+type SelectOption<Value> = {
+  label: React.ReactNode;
+  value: Value;
+};
+
+type FormikSelectBaseProps = Omit<
+  SelectProps<unknown>,
+  FormControlledProps | "options" | "mode"
+>;
 
 type SingleFormikSelectProps<
   FormState extends GenericForm,
   FieldKey extends Paths<FormState>,
 > = tst.O.Merge<
-  Omit<
-    SelectProps<SingleFormikSelectValue<FormState, FieldKey>>,
-    "onChange" | "defaultValue" | "options" | "mode"
-  >,
+  FormikSelectBaseProps,
   {
     selectAllNoneButtons?: undefined;
     mode?: undefined;
     name: FieldKey;
-    options: SingleFormikSelectValue<FormState, FieldKey>;
+    options: Path<FormState, FieldKey> extends string | number | null
+      ? SelectOption<Path<FormState, FieldKey>>[]
+      : never;
   }
 >;
-
-type MultiFormikSelectValue<
-  FormState extends GenericForm,
-  FieldKey extends Paths<FormState>,
-> =
-  Path<FormState, FieldKey> extends string[] | number[] | null
-    ? {
-        label: string;
-        value: Path<FormState, FieldKey>[keyof Path<FormState, FieldKey>];
-      }[]
-    : never;
 
 type MultiFormikSelectProps<
   FormState extends GenericForm,
   FieldKey extends Paths<FormState>,
 > = tst.O.Merge<
-  Omit<
-    SelectProps<MultiFormikSelectValue<FormState, FieldKey>>,
-    "onChange" | "defaultValue" | "options" | "mode"
-  >,
+  FormikSelectBaseProps,
   {
     selectAllNoneButtons?: boolean;
     mode: "multiple";
     name: FieldKey;
-    options: MultiFormikSelectValue<FormState, FieldKey>;
+    options: Path<FormState, FieldKey> extends string[] | number[] | null
+      ? SelectOption<NonNullable<Path<FormState, FieldKey>>[number]>[]
+      : never;
   }
 >;
 
-export const FormikSelect = <
-  FormState extends GenericForm,
-  FieldKey extends Paths<FormState>,
->({
+type InternalFormikSelectProps = tst.O.Merge<
+  FormikSelectBaseProps,
+  {
+    selectAllNoneButtons?: boolean;
+    mode?: "multiple";
+    name: string;
+    options: SelectOption<string | number | null>[];
+  }
+>;
+
+const InternalFormikSelect = ({
   name,
   selectAllNoneButtons,
   ...props
-}:
-  | SingleFormikSelectProps<FormState, FieldKey>
-  | MultiFormikSelectProps<FormState, FieldKey>) => {
-  const [{ value, onBlur }, { error, status }, { setValue }] =
-    useField<Path<FormState, typeof name>>(name);
+}: InternalFormikSelectProps) => {
+  const [{ value, onBlur }, { error }, { setValue }] = useField<unknown>(name);
 
   const selectAllNonePopupRender = (menu: React.ReactElement) => {
     return (
@@ -111,11 +155,7 @@ export const FormikSelect = <
             <Button
               type="text"
               trackerId="select-all-button"
-              onClick={() => {
-                const newVals = props.options.map(({ value }) => value);
-                // @ts-expect-error -- prop types guarantee this is correct
-                setValue(newVals);
-              }}
+              onClick={() => setValue(props.options.map(({ value }) => value))}
             >
               <Icon name="AddCircleOutline" /> Select All
             </Button>
@@ -124,7 +164,6 @@ export const FormikSelect = <
             <Button
               type="text"
               trackerId="select-none-button"
-              // @ts-expect-error -- prop types guarantee this is correct
               onClick={() => setValue([])}
             >
               <Icon name="Block" /> Select None
@@ -136,26 +175,56 @@ export const FormikSelect = <
     );
   };
 
-  const popupRender = selectAllNoneButtons
-    ? selectAllNonePopupRender
-    : undefined;
+  return (
+    <Select
+      {...props}
+      name={name}
+      value={value}
+      onBlur={onBlur}
+      onChange={setValue}
+      popupRender={selectAllNoneButtons ? selectAllNonePopupRender : undefined}
+      errorMessage={error}
+    />
+  );
+};
+
+type FormikSelectComponent = <
+  FormState extends GenericForm,
+  FieldKey extends Paths<FormState>,
+>(
+  props:
+    | SingleFormikSelectProps<FormState, FieldKey>
+    | MultiFormikSelectProps<FormState, FieldKey>,
+) => React.JSX.Element;
+
+// The public props tie options to the field's type, which TS can't follow
+// internally, so the implementation works with loosely typed values.
+export const FormikSelect = InternalFormikSelect as FormikSelectComponent;
+
+type AtomSelectProps<State, Option> = {
+  options: Option[] | Readonly<Option[]>;
+  atom: PrimitiveAtom<State>;
+  getValue: (state: State) => Option;
+  nextState: (state: State, option: Option) => State;
+  format?: (option: Option) => string;
+};
+
+export const AtomSelect = <State, Option extends Translation>({
+  options,
+  atom,
+  getValue,
+  nextState,
+  format: _format,
+}: AtomSelectProps<State, Option>) => {
+  const t = useActiveRouteTranslations();
+  const format = _format ?? ((option: Option) => t[option]);
+  const [state, setState] = useAtom(atom);
 
   return (
-    <>
-      <Select
-        {...props}
-        name={String(name)}
-        onBlur={onBlur}
-        // @ts-expect-error -- prop types guarantee this is correct
-        onChange={(value) => setValue(value)}
-        // @ts-expect-error -- prop types guarantee this is correct
-        value={value}
-        popupRender={popupRender}
-        status={status}
-      />
-      {error != null && (
-        <Typography.Text type="danger">{error}</Typography.Text>
-      )}
-    </>
+    <Select<Option>
+      options={toOptions(options, format)}
+      value={getValue(state)}
+      onChange={(option) => setState((prev) => nextState(prev, option))}
+    />
   );
 };

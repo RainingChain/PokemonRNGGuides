@@ -21,8 +21,8 @@ export const guides = {
       hideFromNavDrawer: false,
       addedOn: null,
       translation: null,
-      layout: "titled",
-      lastUpdated: null,
+      layout: "wide",
+      lastUpdated: "2026-09-26",
       type: "baseGuide",
       canonical: "/",
       file: "guides/Home.mdx",
@@ -214,11 +214,15 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-04-28",
       type: "baseGuide",
       canonical: "/bdsp-advance-rng/",
       file: "guides/Brilliant Diamond and Shining Pearl/Advancing the RNG.mdx",
-      translations: { en: "/bdsp-advance-rng/", fr: "/fr-bdsp-advance-rng/" },
+      translations: {
+        en: "/bdsp-advance-rng/",
+        fr: "/fr-bdsp-advance-rng/",
+        zh: "/zh-bdsp-advance-rng/",
+      },
       guideGroupId:
         "en:false-Advancing the RNG:Brilliant Diamond and Shining Pearl",
       guideVariantLinks: {
@@ -389,7 +393,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/black-2-and-white-2/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -423,7 +427,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/black-and-white/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -457,7 +461,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/brilliant-diamond-and-shining-pearl/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -544,6 +548,48 @@ export const guides = {
       return file.default;
     }),
   },
+  "/bw-find-ds-parameters/": {
+    meta: {
+      id: "/bw-find-ds-parameters/",
+      categories: ["Black and White"],
+      section: "rng_technique",
+      guideVariants: ["retail"],
+      guideKey: "true-DS Parameters",
+      isNew: false,
+      title: "How To Find DS Parameters in Black and White",
+      navDrawerTitle: "DS Parameters",
+      description:
+        "Learn how to find your DS parameters for successful RNG in Pokémon Black and White.",
+      slug: "/bw-find-ds-parameters/",
+      isRoughDraft: true,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: null,
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-04-16",
+      type: "baseGuide",
+      canonical: "/bw-find-ds-parameters/",
+      file: "guides/Gen 5/Retail Find DS Parameters.mdx",
+      translations: null,
+      guideGroupId: "en:true-DS Parameters:Black and White",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/bw-find-ds-parameters/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool", "rough_draft"],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 5/Retail Find DS Parameters.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 5/Retail Find DS Parameters.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
   "/bw2-calibration/": {
     meta: {
       id: "/bw2-calibration/",
@@ -614,6 +660,48 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Gen 5/BW2 Egg.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 5/BW2 Egg.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/bw2-find-ds-parameters/": {
+    meta: {
+      id: "/bw2-find-ds-parameters/",
+      categories: ["Black 2 and White 2"],
+      section: "rng_technique",
+      guideVariants: ["retail"],
+      guideKey: "true-DS Parameters",
+      isNew: false,
+      title: "How To Find DS Parameters in Black 2 and White 2",
+      navDrawerTitle: "DS Parameters",
+      description:
+        "Learn how to find your DS parameters for successful RNG in Pokémon Black 2 and White 2.",
+      slug: "/bw2-find-ds-parameters/",
+      isRoughDraft: true,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: null,
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-04-16",
+      type: "baseGuide",
+      canonical: "/bw-find-ds-parameters/",
+      file: "guides/Gen 5/Retail Find DS Parameters.mdx",
+      translations: null,
+      guideGroupId: "en:true-DS Parameters:Black 2 and White 2",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/bw2-find-ds-parameters/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool", "rough_draft"],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 5/Retail Find DS Parameters.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 5/Retail Find DS Parameters.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -863,6 +951,86 @@ export const guides = {
       return file.default;
     }),
   },
+  "/chatot-pitch-elm-call-finder/": {
+    meta: {
+      id: "/chatot-pitch-elm-call-finder/",
+      categories: ["Diamond, Pearl, and Platinum", "HeartGold and SoulSilver"],
+      section: "rng_technique",
+      guideVariants: ["retail"],
+      guideKey: "false-Chatot Pitch & Elm Call Finder",
+      isNew: false,
+      title:
+        "Pokémon Gen 4 Chatot & Elm Call RNG Tool | RNG Advance Finder for DPPt & HGSS",
+      navDrawerTitle: "Chatot Pitch & Elm Call Finder",
+      description:
+        "Easily find RNG advances in Pokémon Diamond, Pearl, Platinum, HeartGold, and SoulSilver using Chatot pitches or Elm Calls. No manual counting or difficult 5-pitch matching required. Simplified Low/Medium/High filters, live sequence matching, and target advance markers make Gen 4 RNG tracking faster and easier.",
+      slug: "/chatot-pitch-elm-call-finder/",
+      isRoughDraft: false,
+      orderPriority: 2,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-05-14",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-19",
+      type: "baseGuide",
+      canonical: "/chatot-pitch-elm-call-finder/",
+      file: "guides/Gen 4/Advance Finder.mdx",
+      translations: null,
+      guideGroupId:
+        "en:false-Chatot Pitch & Elm Call Finder:Diamond, Pearl, and Platinum|HeartGold and SoulSilver",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/chatot-pitch-elm-call-finder/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Advance Finder.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Advance Finder.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/chatot-pitch-finder/": {
+    meta: {
+      id: "/chatot-pitch-finder/",
+      categories: ["Diamond, Pearl, and Platinum", "HeartGold and SoulSilver"],
+      section: "rng_technique",
+      guideVariants: ["retail"],
+      guideKey: "/chatot-pitch-finder/",
+      isNew: false,
+      title:
+        "Pokémon Gen 4 Chatot & Elm Call RNG Tool | RNG Advance Finder for DPPt & HGSS",
+      navDrawerTitle: "Chatot Pitch & Elm Call Finder",
+      description:
+        "Easily find RNG advances in Pokémon Diamond, Pearl, Platinum, HeartGold, and SoulSilver using Chatot pitches or Elm Calls. No manual counting or difficult 5-pitch matching required. Simplified Low/Medium/High filters, live sequence matching, and target advance markers make Gen 4 RNG tracking faster and easier.",
+      slug: "/chatot-pitch-finder/",
+      isRoughDraft: false,
+      orderPriority: 2,
+      difficulty: null,
+      hideFromNavDrawer: true,
+      addedOn: "2026-05-14",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-19",
+      type: "baseGuide",
+      canonical: "/chatot-pitch-elm-call-finder/",
+      file: "guides/Gen 4/Advance Finder.mdx",
+      translations: null,
+      guideGroupId:
+        "en:/chatot-pitch-finder/:Diamond, Pearl, and Platinum|HeartGold and SoulSilver",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/chatot-pitch-finder/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Advance Finder.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Advance Finder.mdx?raw");
+      return file.default;
+    }),
+  },
   "/citrarng-setup/": {
     meta: {
       id: "/citrarng-setup/",
@@ -973,11 +1141,14 @@ export const guides = {
       addedOn: "2025-07-03",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-08-09",
       type: "baseGuide",
       canonical: "/consistent-platinum-rng/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/Consistent Platinum RNG.mdx",
-      translations: null,
+      translations: {
+        en: "/consistent-platinum-rng/",
+        zh: "/zh-consistent-platinum-rng/",
+      },
       guideGroupId:
         "en:false-Consistent Platinum RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: {
@@ -1054,7 +1225,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/crystal/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -1088,7 +1259,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/e-tips-rng/", language: "de" },
       layout: "guide",
-      lastUpdated: "2026-03-09",
+      lastUpdated: "2026-05-27",
       type: "translatedGuide",
       canonical: "/de-e-tips-rng/",
       file: "guides/Translations/de/Gen 3/Emerald/Basic Rules of RNG.mdx",
@@ -1270,7 +1441,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: { enSlug: "/emerald-overview/", language: "de" },
       layout: "guide",
-      lastUpdated: "2026-03-09",
+      lastUpdated: "2026-08-22",
       type: "translatedGuide",
       canonical: "/de-emerald-overview/",
       file: "guides/Translations/de/Gen 3/Emerald/Emerald Overview.mdx",
@@ -1278,6 +1449,7 @@ export const guides = {
         de: "/de-emerald-overview/",
         en: "/emerald-overview/",
         it: "/it-emerald-overview/",
+        zh: "/zh-emerald-overview/",
       },
       guideGroupId: "de:false-Emerald Overview:Emerald",
       guideVariantLinks: null,
@@ -1400,7 +1572,7 @@ export const guides = {
       addedOn: "2025-05-03",
       translation: { enSlug: "/emerald-shiny-starter/", language: "de" },
       layout: "guide",
-      lastUpdated: "2026-03-22",
+      lastUpdated: "2026-09-03",
       type: "translatedGuide",
       canonical: "/de-emerald-shiny-starter/",
       file: "guides/Translations/de/Gen 3/Emerald/Shiny Starter.mdx",
@@ -1666,7 +1838,7 @@ export const guides = {
       addedOn: "2025-05-18",
       translation: { enSlug: "/retail-emerald-egg/", language: "de" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-11",
       type: "translatedGuide",
       canonical: "/de-retail-emerald-egg/",
       file: "guides/Translations/de/Gen 3/Emerald/Retail Egg.mdx",
@@ -1691,11 +1863,11 @@ export const guides = {
   },
   "/de-retail-emerald-wild/": {
     meta: {
-      id: "/retail-emerald-wild/",
+      id: "/de-retail-emerald-wild/",
       categories: ["Emerald"],
       section: "pokemon_rng",
       guideVariants: ["retail"],
-      guideKey: "false-Wild RNG",
+      guideKey: "/de-retail-emerald-wild/",
       isNew: false,
       title: "Smaragd Retail Wild RNG",
       navDrawerTitle: "Wild RNG",
@@ -1707,30 +1879,23 @@ export const guides = {
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
-      translation: { enSlug: "/retail-emerald-wild/", language: "de" },
+      translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-19",
-      type: "translatedGuide",
-      canonical: "/de-retail-emerald-wild/",
-      file: "guides/Translations/de/Gen 3/Emerald/Retail Wild RNG.mdx",
-      translations: {
-        de: "/de-retail-emerald-wild/",
-        it: "/it-retail-emerald-wild/",
-        en: "/retail-emerald-wild/",
-        zh: "/zh-retail-emerald-wild/",
+      lastUpdated: "2026-10-03",
+      type: "baseGuide",
+      canonical: "/emerald-wild/",
+      file: "guides/Gen 3/Emerald/Gen 3 Wild.mdx",
+      translations: null,
+      guideGroupId: "en:/de-retail-emerald-wild/:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/de-retail-emerald-wild/" },
+        cfwEmu: null,
       },
-      guideGroupId: "de:false-Wild RNG:Emerald",
-      guideVariantLinks: null,
-      displayAttributes: [],
+      displayAttributes: ["web_tool"],
     },
-    Guide: React.lazy(
-      () =>
-        import("~/../guides/Translations/de/Gen 3/Emerald/Retail Wild RNG.mdx"),
-    ),
+    Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx")),
     getRawFile: memoize(async () => {
-      const file = await import(
-        "~/../guides/Translations/de/Gen 3/Emerald/Retail Wild RNG.mdx?raw"
-      );
+      const file = await import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx?raw");
       return file.default;
     }),
   },
@@ -1945,7 +2110,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-10",
+      lastUpdated: "2026-07-12",
       type: "baseGuide",
       canonical: "/delete-pokemon-save/",
       file: "guides/Tools and Emulators/Delete Save.mdx",
@@ -2034,7 +2199,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/diamond-pearl-and-platinum/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -2097,13 +2262,13 @@ export const guides = {
         "Learn how to advance the RNG in Diamond, Pearl, and Platinum. This guide explains different methods like journal flips, Chatot chatters, and NPC actions.",
       slug: "/dppt-advance-rng/",
       isRoughDraft: false,
-      orderPriority: 20,
+      orderPriority: 1,
       difficulty: null,
       hideFromNavDrawer: false,
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-14",
       type: "baseGuide",
       canonical: "/dppt-advance-rng/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/Advancing the RNG.mdx",
@@ -2165,6 +2330,48 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Gen 4/Cute Charm.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 4/Cute Charm.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/dppt-honey-tree-npcs/": {
+    meta: {
+      id: "/dppt-honey-tree-npcs/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "supporting_info",
+      guideVariants: null,
+      guideKey: "false-Honey Tree NPCs",
+      isNew: false,
+      title: "Honey Tree NPCs in Diamond, Pearl, and Platinum",
+      navDrawerTitle: "Honey Tree NPCs",
+      description:
+        "View a list of Honey Tree NPCs for easier RNG in Diamond, Pearl, and Platinum.",
+      slug: "/dppt-honey-tree-npcs/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-05-31",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-05-31",
+      type: "baseGuide",
+      canonical: "/dppt-honey-tree-npcs/",
+      file: "guides/Gen 4/Diamond, Pearl, and Platinum/Honey Tree NPCs.mdx",
+      translations: null,
+      guideGroupId: "en:false-Honey Tree NPCs:Diamond, Pearl, and Platinum",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () =>
+        import(
+          "~/../guides/Gen 4/Diamond, Pearl, and Platinum/Honey Tree NPCs.mdx"
+        ),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 4/Diamond, Pearl, and Platinum/Honey Tree NPCs.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -2267,21 +2474,21 @@ export const guides = {
       categories: ["Diamond, Pearl, and Platinum"],
       section: "pokemon_rng",
       guideVariants: ["retail", "cfw-emu"],
-      guideKey: "false-PokeRadar RNG",
+      guideKey: "true-PokéRadar RNG",
       isNew: false,
-      title: "Diamond, Pearl, and Platinum PokeRadar RNG",
-      navDrawerTitle: "PokeRadar RNG",
+      title: "Diamond, Pearl, and Platinum PokéRadar RNG",
+      navDrawerTitle: "PokéRadar RNG",
       description:
-        "Learn two different methods for RNG manipulation with the PokéRadar in Diamond, Pearl, and Platinum.",
+        "Learn how to RNG PokéRadar in Diamond, Pearl, and Platinum for shiny, high-IV Pokémon.",
       slug: "/dppt-pokeradar-rng/",
-      isRoughDraft: false,
+      isRoughDraft: true,
       orderPriority: 20,
       difficulty: null,
       hideFromNavDrawer: false,
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-22",
+      lastUpdated: "2026-07-08",
       type: "baseGuide",
       canonical: "/dppt-pokeradar-rng/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/PokeRadar.mdx",
@@ -2289,12 +2496,12 @@ export const guides = {
         en: "/dppt-pokeradar-rng/",
         zh: "/zh-dppt-pokeradar-rng/",
       },
-      guideGroupId: "en:false-PokeRadar RNG:Diamond, Pearl, and Platinum",
+      guideGroupId: "en:true-PokéRadar RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: {
         retail: { type: "slug", slug: "/dppt-pokeradar-rng/" },
         cfwEmu: { type: "slug", slug: "/dppt-pokeradar-rng/" },
       },
-      displayAttributes: [],
+      displayAttributes: ["rough_draft"],
     },
     Guide: React.lazy(
       () =>
@@ -2311,8 +2518,8 @@ export const guides = {
     meta: {
       id: "/dppt-setup-rng/",
       categories: ["Diamond, Pearl, and Platinum"],
-      section: "pokemon_rng",
-      guideVariants: ["retail", "cfw-emu"],
+      section: "other_rng",
+      guideVariants: ["cfw-emu"],
       guideKey: "false-Honey Tree RNG",
       isNew: false,
       title: "Diamond, Pearl, and Platinum Honey Tree RNG",
@@ -2327,14 +2534,14 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-05",
       type: "baseGuide",
       canonical: "/dppt-setup-rng/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/Honey.mdx",
       translations: null,
       guideGroupId: "en:false-Honey Tree RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: {
-        retail: { type: "slug", slug: "/dppt-setup-rng/" },
+        retail: { type: "slug", slug: "/retail-dppt-honey-tree/" },
         cfwEmu: { type: "slug", slug: "/dppt-setup-rng/" },
       },
       displayAttributes: [],
@@ -2369,7 +2576,7 @@ export const guides = {
       addedOn: "2025-06-08",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-04-07",
+      lastUpdated: "2026-09-19",
       type: "baseGuide",
       canonical: "/hgss-tid-sid/",
       file: "guides/Gen 4/Retail TID.mdx",
@@ -2380,7 +2587,7 @@ export const guides = {
         retail: { type: "slug", slug: "/dppt-tid-sid/" },
         cfwEmu: { type: "slug", slug: "/emulator-dppt-tid-sid/" },
       },
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(() => import("~/../guides/Gen 4/Retail TID.mdx")),
     getRawFile: memoize(async () => {
@@ -2529,7 +2736,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-09",
+      lastUpdated: "2026-05-27",
       type: "baseGuide",
       canonical: "/e-tips-rng/",
       file: "guides/Gen 3/Emerald/Basic Rules of RNG.mdx",
@@ -2576,7 +2783,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-27",
+      lastUpdated: "2026-05-27",
       type: "baseGuide",
       canonical: "/emerald-advancing-rng-techniques/",
       file: "guides/Gen 3/Emerald/Advancing RNG Techniques.mdx",
@@ -2639,6 +2846,48 @@ export const guides = {
     getRawFile: memoize(async () => {
       const file = await import(
         "~/../guides/Gen 3/Emerald/Battle Video.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/emerald-largest-lotad-seedot/": {
+    meta: {
+      id: "/emerald-largest-lotad-seedot/",
+      categories: ["Emerald"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Largest Lotad/Seedot",
+      isNew: false,
+      title: "Largest Lotad/Seedot",
+      navDrawerTitle: "Largest Lotad/Seedot",
+      description:
+        "Catching the largest possible Lotad and Seedot to show to Sootopolis City brothers",
+      slug: "/emerald-largest-lotad-seedot/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-08-23",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-09-01",
+      type: "baseGuide",
+      canonical: "/emerald-largest-lotad-seedot/",
+      file: "guides/Gen 3/Emerald/Largest Pokemon.mdx",
+      translations: null,
+      guideGroupId: "en:false-Largest Lotad/Seedot:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-largest-lotad-seedot/" },
+        cfwEmu: null,
+      },
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/Largest Pokemon.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/Largest Pokemon.mdx?raw"
       );
       return file.default;
     }),
@@ -2709,7 +2958,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-08-23",
       type: "baseGuide",
       canonical: "/emerald-overview/",
       file: "guides/Gen 3/Emerald/Emerald Overview.mdx",
@@ -2717,6 +2966,7 @@ export const guides = {
         de: "/de-emerald-overview/",
         en: "/emerald-overview/",
         it: "/it-emerald-overview/",
+        zh: "/zh-emerald-overview/",
       },
       guideGroupId: "en:false-Emerald Overview:Emerald",
       guideVariantLinks: null,
@@ -2739,7 +2989,7 @@ export const guides = {
       section: "rng_technique",
       guideVariants: ["retail"],
       guideKey: "false-Painting Reseeding",
-      isNew: true,
+      isNew: false,
       title: "Painting Reseeding",
       navDrawerTitle: "Painting Reseeding",
       description:
@@ -2884,7 +3134,7 @@ export const guides = {
       },
       guideGroupId: "en:false-Pokérus:Emerald",
       guideVariantLinks: {
-        retail: null,
+        retail: { type: "slug", slug: "/emerald-pokerus-retail/" },
         cfwEmu: { type: "slug", slug: "/emerald-pokerus-emu/" },
       },
       displayAttributes: ["video_guide"],
@@ -2892,6 +3142,92 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Pokerus.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 3/Emerald/Pokerus.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/emerald-pokerus-retail/": {
+    meta: {
+      id: "/emerald-pokerus-retail/",
+      categories: ["Emerald"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Pokérus",
+      isNew: false,
+      title: "Pokérus in Emerald",
+      navDrawerTitle: "Pokérus",
+      description: "How to be infected by Pokérus",
+      slug: "/emerald-pokerus-retail/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-08-06",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-08-22",
+      type: "baseGuide",
+      canonical: "/emerald-pokerus-retail/",
+      file: "guides/Gen 3/Emerald/Pokerus Retail.mdx",
+      translations: null,
+      guideGroupId: "en:false-Pokérus:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-pokerus-retail/" },
+        cfwEmu: { type: "slug", slug: "/emerald-pokerus-emu/" },
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/Pokerus Retail.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/Pokerus Retail.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/emerald-rng-with-ace/": {
+    meta: {
+      id: "/emerald-rng-with-ace/",
+      categories: ["Emerald"],
+      section: "rng_technique",
+      guideVariants: ["retail"],
+      guideKey: "false-RNG With ACE",
+      isNew: false,
+      title: "Pokémon Emerald RNG with ACE Guide (Seed Manipulation & Setup)",
+      navDrawerTitle: "RNG With ACE",
+      description:
+        "Step-by-step guide to RNG manipulation in Pokémon Emerald using ACE. Learn how to set custom seeds, generate targets, calibrate advances, and reliably hit perfect Pokémon.",
+      slug: "/emerald-rng-with-ace/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-05-05",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-13",
+      type: "baseGuide",
+      canonical: "/emerald-rng-with-ace/",
+      file: "guides/Gen 3/Emerald/RNG With Ace.mdx",
+      translations: {
+        en: "/emerald-rng-with-ace/",
+        it: "/it-emerald-rng-with-ace/",
+      },
+      guideGroupId: "en:false-RNG With ACE:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-rng-with-ace/" },
+        cfwEmu: null,
+      },
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/RNG With Ace.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/RNG With Ace.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -2914,7 +3250,7 @@ export const guides = {
       addedOn: "2025-05-03",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-09-03",
       type: "baseGuide",
       canonical: "/emerald-shiny-starter/",
       file: "guides/Gen 3/Emerald/Shiny Starter.mdx",
@@ -2989,29 +3325,32 @@ export const guides = {
     meta: {
       id: "/emerald-static/",
       categories: ["Emerald"],
-      section: "tool",
-      guideVariants: null,
-      guideKey: "true-Static Tool",
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Starter, Legend, and Fossil RNG",
       isNew: false,
-      title: "Static Tool",
-      navDrawerTitle: "Static Tool",
-      description: "Static encounters in Emerald",
+      title: "Starter, Legend, and Fossil RNG",
+      navDrawerTitle: "Starter, Legend, and Fossil RNG",
+      description: "Starter, legend, and fossil encounters in Emerald",
       slug: "/emerald-static/",
-      isRoughDraft: true,
+      isRoughDraft: false,
       orderPriority: 20,
       difficulty: null,
       hideFromNavDrawer: false,
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-06-12",
       type: "baseGuide",
       canonical: "/emerald-static/",
       file: "guides/Gen 3/Emerald/Gen 3 Static.mdx",
       translations: null,
-      guideGroupId: "en:true-Static Tool:Emerald",
-      guideVariantLinks: null,
-      displayAttributes: ["web_tool", "rough_draft"],
+      guideGroupId: "en:false-Starter, Legend, and Fossil RNG:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/emerald-static/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Gen 3/Emerald/Gen 3 Static.mdx"),
@@ -3080,7 +3419,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-15",
+      lastUpdated: "2026-05-19",
       type: "baseGuide",
       canonical: "/emerald-wild-method-likelihood-calculator/",
       file: "guides/Gen 3/Emerald/Method Likelihood Calculator.mdx",
@@ -3106,30 +3445,31 @@ export const guides = {
       categories: ["Emerald"],
       section: "pokemon_rng",
       guideVariants: ["retail"],
-      guideKey: "true-Wild Searcher",
+      guideKey: "false-Wild RNG",
       isNew: false,
-      title: "Wild Searcher",
-      navDrawerTitle: "Wild Searcher",
-      description: "Wild Searcher",
+      title: "Pokemon Emerald Wild RNG",
+      navDrawerTitle: "Wild RNG",
+      description:
+        "How to RNG wild Pokémon in Pokémon Emerald on a retail console for perfect IVs, natures, and shinies. Supports Feebas, Ditto, Safari Zone with Pokéblock, mass outbreaks, fishing, Rock Smash, painting reseeding and more.",
       slug: "/emerald-wild/",
-      isRoughDraft: true,
+      isRoughDraft: false,
       orderPriority: 20,
       difficulty: null,
       hideFromNavDrawer: false,
-      addedOn: null,
+      addedOn: "2026-05-05",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-15",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       canonical: "/emerald-wild/",
       file: "guides/Gen 3/Emerald/Gen 3 Wild.mdx",
       translations: null,
-      guideGroupId: "en:true-Wild Searcher:Emerald",
+      guideGroupId: "en:false-Wild RNG:Emerald",
       guideVariantLinks: {
         retail: { type: "slug", slug: "/emerald-wild/" },
         cfwEmu: null,
       },
-      displayAttributes: ["web_tool", "rough_draft"],
+      displayAttributes: ["web_tool"],
     },
     Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx")),
     getRawFile: memoize(async () => {
@@ -3157,7 +3497,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/emerald/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -3316,7 +3656,7 @@ export const guides = {
       addedOn: "2026-03-08",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-16",
+      lastUpdated: "2026-04-21",
       type: "baseGuide",
       canonical: "/emulator-b2w2-wild/",
       file: "guides/Gen 5/Wild RNG Emu.mdx",
@@ -3571,7 +3911,7 @@ export const guides = {
       translation: null,
       layout: "guide",
       canonical: "/emulator-b2w2-wild/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-04-21",
       type: "baseGuide",
       file: "guides/Gen 5/Wild RNG Emu.mdx",
       translations: { en: "/emulator-bw-wild/", it: "/it-emulator-bw-wild/" },
@@ -3688,14 +4028,14 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-04-16",
       type: "baseGuide",
       canonical: "/emulator-dppt-egg/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/Egg.mdx",
       translations: { en: "/emulator-dppt-egg/", zh: "/zh-emulator-dppt-egg/" },
       guideGroupId: "en:false-Egg RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: {
-        retail: null,
+        retail: { type: "slug", slug: "/retail-dppt-egg/" },
         cfwEmu: { type: "slug", slug: "/emulator-dppt-egg/" },
       },
       displayAttributes: [],
@@ -3819,7 +4159,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-04-10",
       type: "baseGuide",
       canonical: "/emulator-dppt-tid-sid/",
       file: "guides/Gen 4/Diamond, Pearl, and Platinum/TID SID.mdx",
@@ -3909,7 +4249,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-09-20",
       type: "baseGuide",
       canonical: "/emulator-flrg-stationary-and-gift/",
       file: "guides/Gen 3/FireRed and LeafGreen/Static RNG.mdx",
@@ -3982,38 +4322,38 @@ export const guides = {
       categories: ["FireRed and LeafGreen"],
       section: "pokemon_rng",
       guideVariants: ["cfw-emu"],
-      guideKey: "true-Static RNG",
+      guideKey: "/emulator-frlg-stationary/",
       isNew: false,
       title: "FireRed and LeafGreen Static RNG",
       navDrawerTitle: "Static RNG",
-      description: "Static v2 RNG",
+      description:
+        "Learn how to RNG shiny 6IV legendaries in Pokémon FireRed and LeafGreen using static encounters.",
       slug: "/emulator-frlg-stationary/",
-      isRoughDraft: true,
+      isRoughDraft: false,
       orderPriority: 20,
       difficulty: null,
-      hideFromNavDrawer: false,
+      hideFromNavDrawer: true,
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-09-20",
       type: "baseGuide",
-      canonical: "/emulator-frlg-stationary/",
-      file: "guides/Gen 3/FireRed and LeafGreen/Stationary v2 Emu.mdx",
+      canonical: "/emulator-flrg-stationary-and-gift/",
+      file: "guides/Gen 3/FireRed and LeafGreen/Static RNG.mdx",
       translations: null,
-      guideGroupId: "en:true-Static RNG:FireRed and LeafGreen",
+      guideGroupId: "en:/emulator-frlg-stationary/:FireRed and LeafGreen",
       guideVariantLinks: {
         retail: null,
         cfwEmu: { type: "slug", slug: "/emulator-frlg-stationary/" },
       },
-      displayAttributes: ["rough_draft"],
+      displayAttributes: [],
     },
     Guide: React.lazy(
-      () =>
-        import("~/../guides/Gen 3/FireRed and LeafGreen/Stationary v2 Emu.mdx"),
+      () => import("~/../guides/Gen 3/FireRed and LeafGreen/Static RNG.mdx"),
     ),
     getRawFile: memoize(async () => {
       const file = await import(
-        "~/../guides/Gen 3/FireRed and LeafGreen/Stationary v2 Emu.mdx?raw"
+        "~/../guides/Gen 3/FireRed and LeafGreen/Static RNG.mdx?raw"
       );
       return file.default;
     }),
@@ -4250,7 +4590,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-07",
       type: "baseGuide",
       canonical: "/emulator-hgss-special-wild/",
       file: "guides/Gen 4/HeartGold and SoulSilver/Special Wild Case (Emu).mdx",
@@ -4886,7 +5226,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/delete-pokemon-save/", language: "es" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-07-12",
       type: "translatedGuide",
       canonical: "/es-delete-pokemon-save/",
       file: "guides/Translations/es/Tools and Emulators/Delete Save.mdx",
@@ -4927,13 +5267,13 @@ export const guides = {
         "Aprende cómo avanzar el RNG en Diamante, Perla y Platino. Esta guía explica diferentes métodos como pasar páginas del diario, los “chatters” de Chatot y las acciones de los NPC.",
       slug: "/es-dppt-advance-rng/",
       isRoughDraft: false,
-      orderPriority: 20,
+      orderPriority: 1,
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
       translation: { enSlug: "/dppt-advance-rng/", language: "es" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-14",
       type: "translatedGuide",
       canonical: "/es-dppt-advance-rng/",
       file: "guides/Translations/es/Gen 4/Diamond, Pearl, and Platinum/Advancing the RNG.mdx",
@@ -5192,13 +5532,13 @@ export const guides = {
         "Aprende cómo avanzar el RNG en HeartGold y SoulSilver. Esta guía explica diferentes métodos como los chatters de Chatot, la radio y las acciones de los NPC.",
       slug: "/es-hgss-rng-advance/",
       isRoughDraft: false,
-      orderPriority: 20,
+      orderPriority: 1,
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
       translation: { enSlug: "/hgss-rng-advance/", language: "es" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-14",
       type: "translatedGuide",
       canonical: "/es-hgss-rng-advance/",
       file: "guides/Translations/es/Gen 4/HeartGold and SoulSilver/Advancing the RNG.mdx",
@@ -5296,15 +5636,15 @@ export const guides = {
       hideFromNavDrawer: true,
       addedOn: null,
       translation: null,
-      layout: "titled",
-      lastUpdated: null,
+      layout: "application",
+      lastUpdated: "2026-07-15",
       type: "baseGuide",
       canonical: "/experiments/",
       file: "guides/Experiments.mdx",
       translations: null,
       guideGroupId: "en:/experiments/:User Settings",
       guideVariantLinks: null,
-      displayAttributes: [],
+      displayAttributes: ["web_tool"],
     },
     Guide: React.lazy(() => import("~/../guides/Experiments.mdx")),
     getRawFile: memoize(async () => {
@@ -5332,7 +5672,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/fire-red-and-leaf-green/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -5371,7 +5711,11 @@ export const guides = {
       type: "translatedGuide",
       canonical: "/fr-bdsp-advance-rng/",
       file: "guides/Translations/fr/Brilliant Diamond and Shining Pearl/Advancing the RNG.mdx",
-      translations: { en: "/bdsp-advance-rng/", fr: "/fr-bdsp-advance-rng/" },
+      translations: {
+        en: "/bdsp-advance-rng/",
+        fr: "/fr-bdsp-advance-rng/",
+        zh: "/zh-bdsp-advance-rng/",
+      },
       guideGroupId:
         "fr:false-Advancing the RNG:Brilliant Diamond and Shining Pearl",
       guideVariantLinks: null,
@@ -5532,13 +5876,14 @@ export const guides = {
     meta: {
       id: "/frlg-static/",
       categories: ["FireRed and LeafGreen"],
-      section: "tool",
-      guideVariants: null,
-      guideKey: "true-Static Tool",
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "true-Starter, Legend, and Fossil RNG",
       isNew: false,
-      title: "Static Tool",
-      navDrawerTitle: "Static Tool",
-      description: "Static encounters in FireRed and LeafGreen",
+      title: "Starter, Legend, and Fossil RNG",
+      navDrawerTitle: "Starter, Legend, and Fossil RNG",
+      description:
+        "Starter, legend, and fossil encounters in FireRed and LeafGreen",
       slug: "/frlg-static/",
       isRoughDraft: true,
       orderPriority: 20,
@@ -5547,13 +5892,17 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-06-12",
       type: "baseGuide",
       canonical: "/emerald-static/",
       file: "guides/Gen 3/Emerald/Gen 3 Static.mdx",
       translations: null,
-      guideGroupId: "en:true-Static Tool:FireRed and LeafGreen",
-      guideVariantLinks: null,
+      guideGroupId:
+        "en:true-Starter, Legend, and Fossil RNG:FireRed and LeafGreen",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/frlg-static/" },
+        cfwEmu: null,
+      },
       displayAttributes: ["web_tool", "rough_draft"],
     },
     Guide: React.lazy(
@@ -5669,7 +6018,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/gamecube/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -6153,7 +6502,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/heart-gold-and-soul-silver/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -6335,13 +6684,13 @@ export const guides = {
         "Learn how to advance the RNG in HeartGold and SoulSilver. This guide explains different methods like Chatot chatters, radio, and NPC actions.",
       slug: "/hgss-rng-advance/",
       isRoughDraft: false,
-      orderPriority: 20,
+      orderPriority: 1,
       difficulty: null,
       hideFromNavDrawer: false,
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-14",
       type: "baseGuide",
       canonical: "/hgss-rng-advance/",
       file: "guides/Gen 4/HeartGold and SoulSilver/Advancing the RNG.mdx",
@@ -6390,7 +6739,7 @@ export const guides = {
       addedOn: "2025-06-08",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-04-07",
+      lastUpdated: "2026-09-19",
       type: "baseGuide",
       canonical: "/hgss-tid-sid/",
       file: "guides/Gen 4/Retail TID.mdx",
@@ -6401,7 +6750,7 @@ export const guides = {
         retail: { type: "slug", slug: "/hgss-tid-sid/" },
         cfwEmu: null,
       },
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(() => import("~/../guides/Gen 4/Retail TID.mdx")),
     getRawFile: memoize(async () => {
@@ -6573,7 +6922,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/e-tips-rng/", language: "it" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-27",
       type: "translatedGuide",
       canonical: "/it-e-tips-rng/",
       file: "guides/Translations/it/Gen 3/Emerald/Basic Rules of RNG.mdx",
@@ -6620,7 +6969,7 @@ export const guides = {
       addedOn: "2025-04-08",
       translation: { enSlug: "/emerald-overview/", language: "it" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-08-22",
       type: "translatedGuide",
       canonical: "/it-emerald-overview/",
       file: "guides/Translations/it/Gen 3/Emerald/Emerald Overview.mdx",
@@ -6628,6 +6977,7 @@ export const guides = {
         de: "/de-emerald-overview/",
         en: "/emerald-overview/",
         it: "/it-emerald-overview/",
+        zh: "/zh-emerald-overview/",
       },
       guideGroupId: "it:false-Emerald Overview:Emerald",
       guideVariantLinks: null,
@@ -6642,6 +6992,50 @@ export const guides = {
     getRawFile: memoize(async () => {
       const file = await import(
         "~/../guides/Translations/it/Gen 3/Emerald/Emerald Overview.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/it-emerald-rng-with-ace/": {
+    meta: {
+      id: "/emerald-rng-with-ace/",
+      categories: ["Emerald"],
+      section: "rng_technique",
+      guideVariants: ["retail"],
+      guideKey: "false-RNG With ACE",
+      isNew: false,
+      title:
+        "Guida RNG con ACE in Pokémon Emerald (Manipolazione del Seed e Setup)",
+      navDrawerTitle: "RNG con ACE",
+      description:
+        "Guida passo passo alla manipolazione dell’RNG in Pokémon Emerald tramite ACE. Scopri come impostare seed personalizzati, generare target, calibrare gli avanzamenti e ottenere Pokémon perfetti in modo affidabile.",
+      slug: "/it-emerald-rng-with-ace/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: true,
+      addedOn: "2026-05-05",
+      translation: { enSlug: "/emerald-rng-with-ace/", language: "it" },
+      layout: "guide",
+      lastUpdated: "2026-05-05",
+      type: "translatedGuide",
+      canonical: "/it-emerald-rng-with-ace/",
+      file: "guides/Translations/it/Gen 3/Emerald/RNG With Ace.mdx",
+      translations: {
+        en: "/emerald-rng-with-ace/",
+        it: "/it-emerald-rng-with-ace/",
+      },
+      guideGroupId: "it:false-RNG With ACE:Emerald",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () =>
+        import("~/../guides/Translations/it/Gen 3/Emerald/RNG With Ace.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Translations/it/Gen 3/Emerald/RNG With Ace.mdx?raw"
       );
       return file.default;
     }),
@@ -6715,7 +7109,7 @@ export const guides = {
       addedOn: "2026-03-08",
       translation: { enSlug: "/emulator-b2w2-wild/", language: "it" },
       layout: "guide",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-04-21",
       type: "translatedGuide",
       canonical: "/it-emulator-b2w2-wild/",
       file: "guides/Translations/it/Gen 5/Wild RNG Emu.mdx",
@@ -6807,7 +7201,7 @@ export const guides = {
       translation: { enSlug: "/emulator-bw-wild/", language: "it" },
       layout: "guide",
       canonical: "/it-emulator-b2w2-wild/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-04-21",
       type: "translatedGuide",
       file: "guides/Translations/it/Gen 5/Wild RNG Emu.mdx",
       translations: { en: "/emulator-bw-wild/", it: "/it-emulator-bw-wild/" },
@@ -7217,7 +7611,7 @@ export const guides = {
       addedOn: "2025-06-15",
       translation: { enSlug: "/retail-dppt-starter/", language: "it" },
       layout: "guide",
-      lastUpdated: "2026-03-25",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/it-retail-hgss-starter/",
       file: "guides/Translations/it/Gen 4/Starters.mdx",
@@ -7228,7 +7622,7 @@ export const guides = {
       },
       guideGroupId: "it:false-Starter RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: null,
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Translations/it/Gen 4/Starters.mdx"),
@@ -7242,11 +7636,11 @@ export const guides = {
   },
   "/it-retail-emerald-wild/": {
     meta: {
-      id: "/retail-emerald-wild/",
+      id: "/it-retail-emerald-wild/",
       categories: ["Emerald"],
       section: "pokemon_rng",
       guideVariants: ["retail"],
-      guideKey: "false-Wild RNG",
+      guideKey: "/it-retail-emerald-wild/",
       isNew: false,
       title: "RNG Retail di Selvatici su Smeraldo",
       navDrawerTitle: "RNG Retail di Selvatici su Smeraldo",
@@ -7258,30 +7652,23 @@ export const guides = {
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
-      translation: { enSlug: "/retail-emerald-wild/", language: "it" },
+      translation: null,
       layout: "guide",
-      lastUpdated: null,
-      type: "translatedGuide",
-      canonical: "/it-retail-emerald-wild/",
-      file: "guides/Translations/it/Gen 3/Emerald/Retail Wild RNG.mdx",
-      translations: {
-        de: "/de-retail-emerald-wild/",
-        it: "/it-retail-emerald-wild/",
-        en: "/retail-emerald-wild/",
-        zh: "/zh-retail-emerald-wild/",
+      lastUpdated: "2026-10-03",
+      type: "baseGuide",
+      canonical: "/emerald-wild/",
+      file: "guides/Gen 3/Emerald/Gen 3 Wild.mdx",
+      translations: null,
+      guideGroupId: "en:/it-retail-emerald-wild/:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/it-retail-emerald-wild/" },
+        cfwEmu: null,
       },
-      guideGroupId: "it:false-Wild RNG:Emerald",
-      guideVariantLinks: null,
-      displayAttributes: [],
+      displayAttributes: ["web_tool"],
     },
-    Guide: React.lazy(
-      () =>
-        import("~/../guides/Translations/it/Gen 3/Emerald/Retail Wild RNG.mdx"),
-    ),
+    Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx")),
     getRawFile: memoize(async () => {
-      const file = await import(
-        "~/../guides/Translations/it/Gen 3/Emerald/Retail Wild RNG.mdx?raw"
-      );
+      const file = await import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx?raw");
       return file.default;
     }),
   },
@@ -7305,7 +7692,7 @@ export const guides = {
       addedOn: "2025-06-15",
       translation: { enSlug: "/retail-hgss-starter/", language: "it" },
       layout: "guide",
-      lastUpdated: "2026-03-25",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/it-retail-hgss-starter/",
       file: "guides/Translations/it/Gen 4/Starters.mdx",
@@ -7316,7 +7703,7 @@ export const guides = {
       },
       guideGroupId: "it:false-Starter RNG:HeartGold and SoulSilver",
       guideVariantLinks: null,
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Translations/it/Gen 4/Starters.mdx"),
@@ -7371,6 +7758,53 @@ export const guides = {
       return file.default;
     }),
   },
+  "/iv-calculator/": {
+    meta: {
+      id: "/iv-calculator/",
+      categories: [
+        "Ruby and Sapphire",
+        "FireRed and LeafGreen",
+        "Emerald",
+        "Diamond, Pearl, and Platinum",
+        "HeartGold and SoulSilver",
+        "Black and White",
+        "Black 2 and White 2",
+      ],
+      section: "tool",
+      guideVariants: null,
+      guideKey: "true-IV Calculator",
+      isNew: false,
+      title: "IV Calculator",
+      navDrawerTitle: "IV Calculator",
+      description: "IV Calculator",
+      slug: "/iv-calculator/",
+      isRoughDraft: true,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: null,
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-04-13",
+      type: "baseGuide",
+      canonical: "/iv-calculator/",
+      file: "guides/Tools and Emulators/IV Calc.mdx",
+      translations: null,
+      guideGroupId:
+        "en:true-IV Calculator:Black 2 and White 2|Black and White|Diamond, Pearl, and Platinum|Emerald|FireRed and LeafGreen|HeartGold and SoulSilver|Ruby and Sapphire",
+      guideVariantLinks: null,
+      displayAttributes: ["web_tool", "rough_draft"],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Tools and Emulators/IV Calc.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Tools and Emulators/IV Calc.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
   "/legends-arceus/": {
     meta: {
       id: "/legends-arceus/",
@@ -7391,7 +7825,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/legends-arceus/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -7862,7 +8296,7 @@ export const guides = {
       addedOn: "2025-03-18",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-09-24",
       type: "baseGuide",
       canonical: "/mystic-timer/",
       file: "guides/Tools and Emulators/Timer.mdx",
@@ -7902,11 +8336,11 @@ export const guides = {
       addedOn: "2025-04-03",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-04-28",
       type: "baseGuide",
       canonical: "/no-dolphin-patch/",
       file: "guides/Tools and Emulators/No Dolphin Patch.mdx",
-      translations: null,
+      translations: { en: "/no-dolphin-patch/", zh: "/zh-no-dolphin-patch/" },
       guideGroupId:
         "en:false-No Dolphin Patch:Emerald|FireRed and LeafGreen|Ruby and Sapphire",
       guideVariantLinks: null,
@@ -7987,7 +8421,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/omega-ruby-and-alpha-sapphire/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -8384,6 +8818,165 @@ export const guides = {
       return file.default;
     }),
   },
+  "/retail-dppt-egg/": {
+    meta: {
+      id: "/retail-dppt-egg/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Egg RNG",
+      isNew: false,
+      title: "Diamond, Pearl, and Platinum Egg RNG Guide",
+      navDrawerTitle: "Egg RNG",
+      description:
+        "Learn how to RNG egg Pokémon in Diamond, Pearl, and Platinum for perfect IVs, natures, and shinies.",
+      slug: "/retail-dppt-egg/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-07-04",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-04",
+      type: "baseGuide",
+      canonical: "/retail-dppt-egg/",
+      file: "guides/Gen 4/Retail Egg.mdx",
+      translations: null,
+      guideGroupId: "en:false-Egg RNG:Diamond, Pearl, and Platinum",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-dppt-egg/" },
+        cfwEmu: { type: "slug", slug: "/emulator-dppt-egg/" },
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Retail Egg.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Retail Egg.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/retail-dppt-honey-pokemon/": {
+    meta: {
+      id: "/retail-dppt-honey-pokemon/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Honey Pokémon RNG",
+      isNew: false,
+      title: "Diamond, Pearl, and Platinum Honey Pokémon RNG Guide",
+      navDrawerTitle: "Honey Pokémon RNG",
+      description:
+        "Learn how to RNG honey Pokémon in Diamond, Pearl, and Platinum for perfect IVs, natures, and shinies.",
+      slug: "/retail-dppt-honey-pokemon/",
+      isRoughDraft: false,
+      orderPriority: 3,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-05-31",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-09-19",
+      type: "baseGuide",
+      canonical: "/retail-dppt-static/",
+      file: "guides/Gen 4/Retail Static.mdx",
+      translations: null,
+      guideGroupId: "en:false-Honey Pokémon RNG:Diamond, Pearl, and Platinum",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-dppt-honey-pokemon/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Retail Static.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Retail Static.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/retail-dppt-honey-tree/": {
+    meta: {
+      id: "/retail-dppt-honey-tree/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Honey Tree RNG",
+      isNew: false,
+      title: "Diamond, Pearl, and Platinum Honey Tree RNG",
+      navDrawerTitle: "Honey Tree RNG",
+      description:
+        "Get any Honey Tree Pokémon, including Munchlax and Combee, in Diamond, Pearl, and Platinum.",
+      slug: "/retail-dppt-honey-tree/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-05-31",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-05-31",
+      type: "baseGuide",
+      canonical: "/retail-dppt-honey-tree/",
+      file: "guides/Gen 4/Diamond, Pearl, and Platinum/Retail Honey Tree.mdx",
+      translations: null,
+      guideGroupId: "en:false-Honey Tree RNG:Diamond, Pearl, and Platinum",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-dppt-honey-tree/" },
+        cfwEmu: { type: "slug", slug: "/dppt-setup-rng/" },
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(
+      () =>
+        import(
+          "~/../guides/Gen 4/Diamond, Pearl, and Platinum/Retail Honey Tree.mdx"
+        ),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 4/Diamond, Pearl, and Platinum/Retail Honey Tree.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/retail-dppt-lottery/": {
+    meta: {
+      id: "/retail-dppt-lottery/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Lottery RNG",
+      isNew: false,
+      title: "Diamond, Pearl, and Platinum Lottery RNG Guide",
+      navDrawerTitle: "Lottery RNG",
+      description:
+        "Get unlimited Master Balls and Experience Shares in Diamond, Pearl, and Platinum with lottery RNG.",
+      slug: "/retail-dppt-lottery/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-07-19",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-19",
+      type: "baseGuide",
+      canonical: "/retail-dppt-lottery/",
+      file: "guides/Gen 4/Lottery.mdx",
+      translations: null,
+      guideGroupId: "en:false-Lottery RNG:Diamond, Pearl, and Platinum",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-dppt-lottery/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Lottery.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Lottery.mdx?raw");
+      return file.default;
+    }),
+  },
   "/retail-dppt-starter/": {
     meta: {
       id: "/retail-dppt-starter/",
@@ -8404,7 +8997,7 @@ export const guides = {
       addedOn: "2025-06-15",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-04-07",
+      lastUpdated: "2026-09-28",
       type: "baseGuide",
       canonical: "/retail-hgss-starter/",
       file: "guides/Gen 4/Starters.mdx",
@@ -8418,7 +9011,7 @@ export const guides = {
         retail: { type: "slug", slug: "/retail-dppt-starter/" },
         cfwEmu: null,
       },
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(() => import("~/../guides/Gen 4/Starters.mdx")),
     getRawFile: memoize(async () => {
@@ -8433,7 +9026,7 @@ export const guides = {
       section: "pokemon_rng",
       guideVariants: ["retail"],
       guideKey: "false-Legend, Gift, and Fossil RNG",
-      isNew: true,
+      isNew: false,
       title: "Diamond, Pearl, and Platinum Legend, Gift, and Fossil RNG Guide",
       navDrawerTitle: "Legend, Gift, and Fossil RNG",
       description:
@@ -8446,7 +9039,7 @@ export const guides = {
       addedOn: "2026-04-05",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-04-07",
+      lastUpdated: "2026-09-19",
       type: "baseGuide",
       canonical: "/retail-dppt-static/",
       file: "guides/Gen 4/Retail Static.mdx",
@@ -8462,6 +9055,44 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Gen 4/Retail Static.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 4/Retail Static.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/retail-dppt-swarm/": {
+    meta: {
+      id: "/retail-dppt-swarm/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Swarm RNG",
+      isNew: false,
+      title: "Diamond, Pearl, and Platinum Swarm RNG",
+      navDrawerTitle: "Swarm RNG",
+      description:
+        "Learn how to RNG Swarm Pokémon in Diamond, Pearl, and Platinum for shiny, high-IV Pokémon.",
+      slug: "/retail-dppt-swarm/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-07-26",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-26",
+      type: "baseGuide",
+      canonical: "/retail-hgss-swarm/",
+      file: "guides/Gen 4/Swarm.mdx",
+      translations: null,
+      guideGroupId: "en:false-Swarm RNG:Diamond, Pearl, and Platinum",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-dppt-swarm/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Swarm.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Swarm.mdx?raw");
       return file.default;
     }),
   },
@@ -8485,7 +9116,7 @@ export const guides = {
       addedOn: "2025-05-18",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-16",
+      lastUpdated: "2026-09-19",
       type: "baseGuide",
       canonical: "/retail-emerald-egg/",
       file: "guides/Gen 3/Emerald/Retail Egg.mdx",
@@ -8513,44 +9144,35 @@ export const guides = {
       categories: ["Emerald"],
       section: "pokemon_rng",
       guideVariants: ["retail"],
-      guideKey: "false-Wild RNG",
+      guideKey: "/retail-emerald-wild/",
       isNew: false,
       title: "Emerald Retail Wild RNG",
-      navDrawerTitle: "Wild RNG",
+      navDrawerTitle: "Emerald Retail Wild RNG",
       description:
-        "Learn how to RNG wild Pokémon in Pokémon Emerald on a retail console for perfect IVs, natures, and shinies.",
+        "How to RNG wild Pokémon in Pokémon Emerald on a retail console for perfect IVs, natures, and shinies. Supports Feebas, Ditto, Safari Zone with Pokéblock, mass outbreaks, fishing, Rock Smash, painting reseeding and more.",
       slug: "/retail-emerald-wild/",
       isRoughDraft: false,
       orderPriority: 20,
       difficulty: null,
-      hideFromNavDrawer: false,
+      hideFromNavDrawer: true,
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-19",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
-      canonical: "/retail-emerald-wild/",
-      file: "guides/Gen 3/Emerald/Retail Wild RNG.mdx",
-      translations: {
-        de: "/de-retail-emerald-wild/",
-        it: "/it-retail-emerald-wild/",
-        en: "/retail-emerald-wild/",
-        zh: "/zh-retail-emerald-wild/",
-      },
-      guideGroupId: "en:false-Wild RNG:Emerald",
+      canonical: "/emerald-wild/",
+      file: "guides/Gen 3/Emerald/Gen 3 Wild.mdx",
+      translations: null,
+      guideGroupId: "en:/retail-emerald-wild/:Emerald",
       guideVariantLinks: {
         retail: { type: "slug", slug: "/retail-emerald-wild/" },
         cfwEmu: null,
       },
-      displayAttributes: [],
+      displayAttributes: ["web_tool"],
     },
-    Guide: React.lazy(
-      () => import("~/../guides/Gen 3/Emerald/Retail Wild RNG.mdx"),
-    ),
+    Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx")),
     getRawFile: memoize(async () => {
-      const file = await import(
-        "~/../guides/Gen 3/Emerald/Retail Wild RNG.mdx?raw"
-      );
+      const file = await import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx?raw");
       return file.default;
     }),
   },
@@ -8574,7 +9196,7 @@ export const guides = {
       addedOn: "2025-06-15",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-04-07",
+      lastUpdated: "2026-09-28",
       type: "baseGuide",
       canonical: "/retail-hgss-starter/",
       file: "guides/Gen 4/Starters.mdx",
@@ -8588,11 +9210,126 @@ export const guides = {
         retail: { type: "slug", slug: "/retail-hgss-starter/" },
         cfwEmu: null,
       },
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(() => import("~/../guides/Gen 4/Starters.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 4/Starters.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/retail-hgss-swarm/": {
+    meta: {
+      id: "/retail-hgss-swarm/",
+      categories: ["HeartGold and SoulSilver"],
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Swarm RNG",
+      isNew: false,
+      title: "HeartGold and SoulSilver Swarm RNG",
+      navDrawerTitle: "Swarm RNG",
+      description:
+        "Learn how to RNG Swarm Pokémon in HeartGold and SoulSilver for shiny, high-IV Pokémon.",
+      slug: "/retail-hgss-swarm/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-07-26",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-26",
+      type: "baseGuide",
+      canonical: "/retail-hgss-swarm/",
+      file: "guides/Gen 4/Swarm.mdx",
+      translations: null,
+      guideGroupId: "en:false-Swarm RNG:HeartGold and SoulSilver",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-hgss-swarm/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Swarm.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Swarm.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/retail-hgss-voltorb-flip/": {
+    meta: {
+      id: "/retail-hgss-voltorb-flip/",
+      categories: ["HeartGold and SoulSilver"],
+      section: "other_rng",
+      guideVariants: ["retail"],
+      guideKey: "false-Voltorb Flip RNG",
+      isNew: false,
+      title: "HeartGold and SoulSilver Voltorb Flip RNG",
+      navDrawerTitle: "Voltorb Flip RNG",
+      description:
+        "A Voltorb Flip solver for Pokémon HeartGold & SoulSilver that predicts boards, finds safe moves, and helps you earn Game Corner coins for prizes like Porygon, Eevee, and Dratini.",
+      slug: "/retail-hgss-voltorb-flip/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-07-26",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-07-26",
+      type: "baseGuide",
+      canonical: "/retail-hgss-voltorb-flip/",
+      file: "guides/Gen 4/Voltorb Flip.mdx",
+      translations: null,
+      guideGroupId: "en:false-Voltorb Flip RNG:HeartGold and SoulSilver",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/retail-hgss-voltorb-flip/" },
+        cfwEmu: null,
+      },
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(() => import("~/../guides/Gen 4/Voltorb Flip.mdx")),
+    getRawFile: memoize(async () => {
+      const file = await import("~/../guides/Gen 4/Voltorb Flip.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/retail-or-emulator/": {
+    meta: {
+      id: "/retail-or-emulator/",
+      categories: ["Home"],
+      section: "getting_started",
+      guideVariants: null,
+      guideKey: "false-Pick Retail or Emulator",
+      isNew: false,
+      title: "Pick Retail or Emulator",
+      navDrawerTitle: "Pick Retail or Emulator",
+      description:
+        "Compare RNG manipulation on retail hardware and on emulators to pick the right setup.",
+      slug: "/retail-or-emulator/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: null,
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-10-03",
+      type: "baseGuide",
+      canonical: "/retail-or-emulator/",
+      file: "guides/Getting Started/Retail or Emulator.mdx",
+      translations: null,
+      guideGroupId: "en:false-Pick Retail or Emulator:Home",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Getting Started/Retail or Emulator.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Getting Started/Retail or Emulator.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -10187,7 +10924,7 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-27",
       type: "baseGuide",
       canonical: "/rs-battery/",
       file: "guides/Gen 3/Ruby and Sapphire/Live and Dry Battery.mdx",
@@ -10437,7 +11174,7 @@ export const guides = {
       addedOn: "2025-05-17",
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-08-22",
       type: "baseGuide",
       canonical: "/rs-pokerus-retail/",
       file: "guides/Gen 3/Ruby and Sapphire/Pokerus Retail.mdx",
@@ -10509,13 +11246,14 @@ export const guides = {
     meta: {
       id: "/rs-static/",
       categories: ["Ruby and Sapphire"],
-      section: "tool",
-      guideVariants: null,
-      guideKey: "true-Static Tool",
+      section: "pokemon_rng",
+      guideVariants: ["retail"],
+      guideKey: "true-Starter, Legend, and Fossil RNG",
       isNew: false,
-      title: "Static Tool",
-      navDrawerTitle: "Static Tool",
-      description: "Static encounters in Ruby and Sapphire",
+      title: "Starter, Legend, and Fossil RNG",
+      navDrawerTitle: "Starter, Legend, and Fossil RNG",
+      description:
+        "Starter, legend, and fossil encounters in Ruby and Sapphire",
       slug: "/rs-static/",
       isRoughDraft: true,
       orderPriority: 20,
@@ -10524,13 +11262,16 @@ export const guides = {
       addedOn: null,
       translation: null,
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-06-12",
       type: "baseGuide",
       canonical: "/emerald-static/",
       file: "guides/Gen 3/Emerald/Gen 3 Static.mdx",
       translations: null,
-      guideGroupId: "en:true-Static Tool:Ruby and Sapphire",
-      guideVariantLinks: null,
+      guideGroupId: "en:true-Starter, Legend, and Fossil RNG:Ruby and Sapphire",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/rs-static/" },
+        cfwEmu: null,
+      },
       displayAttributes: ["web_tool", "rough_draft"],
     },
     Guide: React.lazy(
@@ -10644,7 +11385,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/ruby-and-sapphire/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -10655,6 +11396,47 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Hubs.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Hubs.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/sinnoh-map/": {
+    meta: {
+      id: "/sinnoh-map/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "supporting_info",
+      guideVariants: null,
+      guideKey: "false-Interactive Sinnoh Map",
+      isNew: false,
+      title: "Interactive Sinnoh Map",
+      navDrawerTitle: "Interactive Sinnoh Map",
+      description:
+        "Interactive Sinnoh maps for Diamond, Pearl, and Platinum featuring touch-friendly navigation, highlighted areas, toggle-able markers, and more.",
+      slug: "/sinnoh-map/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-05-14",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-05-15",
+      type: "baseGuide",
+      canonical: "/sinnoh-map/",
+      file: "guides/Gen 4/Diamond, Pearl, and Platinum/Sinnoh Map.mdx",
+      translations: null,
+      guideGroupId:
+        "en:false-Interactive Sinnoh Map:Diamond, Pearl, and Platinum",
+      guideVariantLinks: null,
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(
+      () =>
+        import("~/../guides/Gen 4/Diamond, Pearl, and Platinum/Sinnoh Map.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 4/Diamond, Pearl, and Platinum/Sinnoh Map.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -10714,7 +11496,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/sun-and-moon/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -10748,7 +11530,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/sword-and-shield/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -10817,7 +11599,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/transporter-dream-radar/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -10971,7 +11753,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/ultra-sun-and-ultra-moon/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -10982,6 +11764,45 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Hubs.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Hubs.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/what-is-rng/": {
+    meta: {
+      id: "/what-is-rng/",
+      categories: ["Home"],
+      section: "getting_started",
+      guideVariants: null,
+      guideKey: "false-What is RNG?",
+      isNew: false,
+      title: "What is RNG?",
+      navDrawerTitle: "What is RNG?",
+      description:
+        "An introduction to RNG manipulation in Pokémon games for beginners.",
+      slug: "/what-is-rng/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: null,
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-10-03",
+      type: "baseGuide",
+      canonical: "/what-is-rng/",
+      file: "guides/Getting Started/What Is RNG.mdx",
+      translations: null,
+      guideGroupId: "en:false-What is RNG?:Home",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Getting Started/What Is RNG.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Getting Started/What Is RNG.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -11051,7 +11872,7 @@ export const guides = {
       translation: null,
       layout: "titled",
       canonical: "/x-and-y/",
-      lastUpdated: "2026-03-08",
+      lastUpdated: "2026-10-03",
       type: "baseGuide",
       file: "guides/Hubs.mdx",
       translations: null,
@@ -11165,7 +11986,7 @@ export const guides = {
       addedOn: "2025-03-24",
       translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-25",
+      lastUpdated: "2026-04-26",
       type: "baseGuide",
       canonical: "/xy-pokeradar/",
       file: "guides/Gen 6/PokeRadar.mdx",
@@ -11180,6 +12001,45 @@ export const guides = {
     Guide: React.lazy(() => import("~/../guides/Gen 6/PokeRadar.mdx")),
     getRawFile: memoize(async () => {
       const file = await import("~/../guides/Gen 6/PokeRadar.mdx?raw");
+      return file.default;
+    }),
+  },
+  "/your-first-rng/": {
+    meta: {
+      id: "/your-first-rng/",
+      categories: ["Home"],
+      section: "getting_started",
+      guideVariants: null,
+      guideKey: "false-Your First RNG",
+      isNew: false,
+      title: "Your First RNG",
+      navDrawerTitle: "Your First RNG",
+      description:
+        "Learn how to manipulate RNG in Pokémon games to get your first shiny.",
+      slug: "/your-first-rng/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: null,
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-10-04",
+      type: "baseGuide",
+      canonical: "/your-first-rng/",
+      file: "guides/Getting Started/Your First Shiny.mdx",
+      translations: null,
+      guideGroupId: "en:false-Your First RNG:Home",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Getting Started/Your First Shiny.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Getting Started/Your First Shiny.mdx?raw"
+      );
       return file.default;
     }),
   },
@@ -11203,7 +12063,7 @@ export const guides = {
       addedOn: "2025-07-03",
       translation: { enSlug: "/3ds-alt-settings/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-28",
       type: "translatedGuide",
       canonical: "/zh-3ds-alt-settings/",
       file: "guides/Translations/zh/Gen 4/3DS Alt Settings.mdx",
@@ -11264,6 +12124,53 @@ export const guides = {
     getRawFile: memoize(async () => {
       const file = await import(
         "~/../guides/Translations/zh/Gen 4/3DS Helper.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/zh-bdsp-advance-rng/": {
+    meta: {
+      id: "/bdsp-advance-rng/",
+      categories: ["Brilliant Diamond and Shining Pearl"],
+      section: "rng_technique",
+      guideVariants: ["retail", "cfw-emu"],
+      guideKey: "false-Advancing the RNG",
+      isNew: false,
+      title: "晶灿钻石／明亮珍珠的帧数推进",
+      navDrawerTitle: "晶灿钻石／明亮珍珠的帧数推进",
+      description:
+        "晶灿钻石与明亮珍珠的帧数推进原理。了解哪些行为会消耗帧数，以及如何通过乱数操作来获取完美宝可梦。",
+      slug: "/zh-bdsp-advance-rng/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: true,
+      addedOn: null,
+      translation: { enSlug: "/bdsp-advance-rng/", language: "zh" },
+      layout: "guide",
+      lastUpdated: "2026-04-28",
+      type: "translatedGuide",
+      canonical: "/zh-bdsp-advance-rng/",
+      file: "guides/Translations/zh/Brilliant Diamond and Shining Pearl/Advancing the RNG.mdx",
+      translations: {
+        en: "/bdsp-advance-rng/",
+        fr: "/fr-bdsp-advance-rng/",
+        zh: "/zh-bdsp-advance-rng/",
+      },
+      guideGroupId:
+        "zh:false-Advancing the RNG:Brilliant Diamond and Shining Pearl",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () =>
+        import(
+          "~/../guides/Translations/zh/Brilliant Diamond and Shining Pearl/Advancing the RNG.mdx"
+        ),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Translations/zh/Brilliant Diamond and Shining Pearl/Advancing the RNG.mdx?raw"
       );
       return file.default;
     }),
@@ -11386,6 +12293,52 @@ export const guides = {
     getRawFile: memoize(async () => {
       const file = await import(
         "~/../guides/Translations/zh/Tools and Emulators/Connect Dolphin To GBA.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/zh-consistent-platinum-rng/": {
+    meta: {
+      id: "/consistent-platinum-rng/",
+      categories: ["Diamond, Pearl, and Platinum"],
+      section: "rng_technique",
+      guideVariants: ["retail", "cfw-emu"],
+      guideKey: "false-Consistent Platinum RNG",
+      isNew: false,
+      title: "更稳定的白金乱数",
+      navDrawerTitle: "更稳定的白金乱数",
+      description:
+        "针对白金乱数的全新更稳定优化，更容易获得异色高个体的宝可梦。",
+      slug: "/zh-consistent-platinum-rng/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: true,
+      addedOn: "2025-07-03",
+      translation: { enSlug: "/consistent-platinum-rng/", language: "zh" },
+      layout: "guide",
+      lastUpdated: "2026-04-28",
+      type: "translatedGuide",
+      canonical: "/zh-consistent-platinum-rng/",
+      file: "guides/Translations/zh/Gen 4/Diamond, Pearl, and Platinum/Consistent Platinum RNG.mdx",
+      translations: {
+        en: "/consistent-platinum-rng/",
+        zh: "/zh-consistent-platinum-rng/",
+      },
+      guideGroupId:
+        "zh:false-Consistent Platinum RNG:Diamond, Pearl, and Platinum",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () =>
+        import(
+          "~/../guides/Translations/zh/Gen 4/Diamond, Pearl, and Platinum/Consistent Platinum RNG.mdx"
+        ),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Translations/zh/Gen 4/Diamond, Pearl, and Platinum/Consistent Platinum RNG.mdx?raw"
       );
       return file.default;
     }),
@@ -11551,13 +12504,13 @@ export const guides = {
       description: "推进乱数帧数的不同方法及影响帧数的事件机制",
       slug: "/zh-dppt-advance-rng/",
       isRoughDraft: false,
-      orderPriority: 20,
+      orderPriority: 1,
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
       translation: { enSlug: "/dppt-advance-rng/", language: "zh" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-14",
       type: "translatedGuide",
       canonical: "/zh-dppt-advance-rng/",
       file: "guides/Translations/zh/Gen 4/Diamond, Pearl, and Platinum/Advancing the RNG.mdx",
@@ -11713,13 +12666,13 @@ export const guides = {
       categories: ["Diamond, Pearl, and Platinum"],
       section: "pokemon_rng",
       guideVariants: ["retail", "cfw-emu"],
-      guideKey: "false-PokeRadar RNG",
+      guideKey: "true-PokéRadar RNG",
       isNew: false,
       title: "宝可追踪乱数",
       navDrawerTitle: "宝可追踪乱数",
       description: "两种不同的宝可追踪乱数方法",
       slug: "/zh-dppt-pokeradar-rng/",
-      isRoughDraft: false,
+      isRoughDraft: true,
       orderPriority: 20,
       difficulty: null,
       hideFromNavDrawer: true,
@@ -11734,7 +12687,7 @@ export const guides = {
         en: "/dppt-pokeradar-rng/",
         zh: "/zh-dppt-pokeradar-rng/",
       },
-      guideGroupId: "zh:false-PokeRadar RNG:Diamond, Pearl, and Platinum",
+      guideGroupId: "zh:true-PokéRadar RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: null,
       displayAttributes: [],
     },
@@ -11770,7 +12723,7 @@ export const guides = {
       addedOn: "2025-06-08",
       translation: { enSlug: "/dppt-tid-sid/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/zh-hgss-tid-sid/",
       file: "guides/Translations/zh/Gen 4/Retail TID.mdx",
@@ -11778,7 +12731,7 @@ export const guides = {
       guideGroupId:
         "zh:false-Cute Charm & TID/SID RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: null,
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Translations/zh/Gen 4/Retail TID.mdx"),
@@ -11850,7 +12803,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/e-tips-rng/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-05-27",
       type: "translatedGuide",
       canonical: "/zh-e-tips-rng/",
       file: "guides/Translations/zh/Gen 3/Emerald/Basic Rules of RNG.mdx",
@@ -11916,6 +12869,52 @@ export const guides = {
     getRawFile: memoize(async () => {
       const file = await import(
         "~/../guides/Translations/zh/Gen 3/Emerald/Mirage Island.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
+  "/zh-emerald-overview/": {
+    meta: {
+      id: "/emerald-overview/",
+      categories: ["Emerald"],
+      section: "getting_started",
+      guideVariants: null,
+      guideKey: "false-Emerald Overview",
+      isNew: false,
+      title: "绿宝石概述",
+      navDrawerTitle: "绿宝石概述",
+      description: "宝可梦绿宝石乱数操作的实际应用与操作技巧",
+      slug: "/zh-emerald-overview/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: true,
+      addedOn: "2025-04-08",
+      translation: { enSlug: "/emerald-overview/", language: "zh" },
+      layout: "guide",
+      lastUpdated: "2026-05-02",
+      type: "translatedGuide",
+      canonical: "/zh-emerald-overview/",
+      file: "guides/Translations/zh/Gen 3/Emerald/Emerald Overview.mdx",
+      translations: {
+        de: "/de-emerald-overview/",
+        en: "/emerald-overview/",
+        it: "/it-emerald-overview/",
+        zh: "/zh-emerald-overview/",
+      },
+      guideGroupId: "zh:false-Emerald Overview:Emerald",
+      guideVariantLinks: null,
+      displayAttributes: [],
+    },
+    Guide: React.lazy(
+      () =>
+        import(
+          "~/../guides/Translations/zh/Gen 3/Emerald/Emerald Overview.mdx"
+        ),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Translations/zh/Gen 3/Emerald/Emerald Overview.mdx?raw"
       );
       return file.default;
     }),
@@ -12023,7 +13022,7 @@ export const guides = {
       addedOn: "2025-05-03",
       translation: { enSlug: "/emerald-shiny-starter/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-09-03",
       type: "translatedGuide",
       canonical: "/zh-emerald-shiny-starter/",
       file: "guides/Translations/zh/Gen 3/Emerald/Shiny Starter.mdx",
@@ -12546,7 +13545,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/emulator-dppt-tid-sid/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/zh-emulator-dppt-tid-sid/",
       file: "guides/Translations/zh/Gen 4/Diamond, Pearl, and Platinum/TID SID.mdx",
@@ -12582,7 +13581,7 @@ export const guides = {
       isNew: false,
       title: "孵化乱数",
       navDrawerTitle: "孵化乱数",
-      description: "通过培育屋进行乱数孵蛋",
+      description: "通过培育屋进行孵化乱数",
       slug: "/zh-emulator-emerald-egg/",
       isRoughDraft: false,
       orderPriority: 20,
@@ -12591,7 +13590,7 @@ export const guides = {
       addedOn: "2025-03-09",
       translation: { enSlug: "/emulator-emerald-egg/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-05-02",
       type: "translatedGuide",
       canonical: "/zh-emulator-emerald-egg/",
       file: "guides/Translations/zh/Gen 3/Emerald/Egg RNG.mdx",
@@ -13493,7 +14492,7 @@ export const guides = {
       addedOn: "2025-03-02",
       translation: { enSlug: "/gen2-celebi/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-28",
       type: "translatedGuide",
       canonical: "/zh-gen2-celebi/",
       file: "guides/Translations/zh/Gen 2/Celebi.mdx",
@@ -13735,13 +14734,13 @@ export const guides = {
       description: "乱数推进的方法及影响乱数的机制",
       slug: "/zh-hgss-rng-advance/",
       isRoughDraft: false,
-      orderPriority: 20,
+      orderPriority: 1,
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
       translation: { enSlug: "/hgss-rng-advance/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-05-14",
       type: "translatedGuide",
       canonical: "/zh-hgss-rng-advance/",
       file: "guides/Translations/zh/Gen 4/HeartGold and SoulSilver/Advancing the RNG.mdx",
@@ -13786,7 +14785,7 @@ export const guides = {
       addedOn: "2025-06-08",
       translation: { enSlug: "/hgss-tid-sid/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/zh-hgss-tid-sid/",
       file: "guides/Translations/zh/Gen 4/Retail TID.mdx",
@@ -13794,7 +14793,7 @@ export const guides = {
       guideGroupId:
         "zh:false-Cute Charm & TID/SID RNG:HeartGold and SoulSilver",
       guideVariantLinks: null,
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Translations/zh/Gen 4/Retail TID.mdx"),
@@ -13831,7 +14830,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/install-pokereader/", language: "zh" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-04-28",
       type: "translatedGuide",
       canonical: "/zh-install-pokereader/",
       file: "guides/Translations/zh/Tools and Emulators/3DS PokeReader.mdx",
@@ -14078,6 +15077,49 @@ export const guides = {
       return file.default;
     }),
   },
+  "/zh-no-dolphin-patch/": {
+    meta: {
+      id: "/no-dolphin-patch/",
+      categories: ["Ruby and Sapphire", "FireRed and LeafGreen", "Emerald"],
+      section: "patch",
+      guideVariants: null,
+      guideKey: "false-No Dolphin Patch",
+      isNew: false,
+      title: "无需海豚模拟器的补丁",
+      navDrawerTitle: "无需海豚模拟器的补丁",
+      description:
+        "使用此补丁即可对许愿星基拉祈进行乱数操作，无需依赖海豚模拟器。",
+      slug: "/zh-no-dolphin-patch/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: true,
+      addedOn: "2025-04-03",
+      translation: { enSlug: "/no-dolphin-patch/", language: "zh" },
+      layout: "guide",
+      lastUpdated: "2026-04-28",
+      type: "translatedGuide",
+      canonical: "/zh-no-dolphin-patch/",
+      file: "guides/Translations/zh/Tools and Emulators/No Dolphin Patch.mdx",
+      translations: { en: "/no-dolphin-patch/", zh: "/zh-no-dolphin-patch/" },
+      guideGroupId:
+        "zh:false-No Dolphin Patch:Emerald|FireRed and LeafGreen|Ruby and Sapphire",
+      guideVariantLinks: null,
+      displayAttributes: ["video_guide"],
+    },
+    Guide: React.lazy(
+      () =>
+        import(
+          "~/../guides/Translations/zh/Tools and Emulators/No Dolphin Patch.mdx"
+        ),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Translations/zh/Tools and Emulators/No Dolphin Patch.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
   "/zh-oras-mirage-spots/": {
     meta: {
       id: "/oras-mirage-spots/",
@@ -14304,7 +15346,7 @@ export const guides = {
       addedOn: "2025-06-15",
       translation: { enSlug: "/retail-dppt-starter/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/zh-retail-hgss-starter/",
       file: "guides/Translations/zh/Gen 4/Starters.mdx",
@@ -14315,7 +15357,7 @@ export const guides = {
       },
       guideGroupId: "zh:false-Starter RNG:Diamond, Pearl, and Platinum",
       guideVariantLinks: null,
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Translations/zh/Gen 4/Starters.mdx"),
@@ -14335,10 +15377,10 @@ export const guides = {
       guideVariants: ["retail"],
       guideKey: "false-Egg RNG",
       isNew: false,
-      title: "Retail Emerald Egg RNG",
-      navDrawerTitle: "Retail Emerald Egg RNG",
+      title: "绿宝石实机孵化乱数",
+      navDrawerTitle: "绿宝石实机孵化乱数",
       description:
-        "Learn how to Retail RNG eggs in Pokémon Emerald using the Daycare. Get perfect IVs, natures, and shinies.",
+        "学习如何在绿宝石实机通过培育屋进行孵化乱数，获得完美个体性格的异色宝可梦。",
       slug: "/zh-retail-emerald-egg/",
       isRoughDraft: false,
       orderPriority: 20,
@@ -14347,7 +15389,7 @@ export const guides = {
       addedOn: "2025-05-18",
       translation: { enSlug: "/retail-emerald-egg/", language: "zh" },
       layout: "guide",
-      lastUpdated: null,
+      lastUpdated: "2026-05-02",
       type: "translatedGuide",
       canonical: "/zh-retail-emerald-egg/",
       file: "guides/Translations/zh/Gen 3/Emerald/Retail Egg.mdx",
@@ -14372,11 +15414,11 @@ export const guides = {
   },
   "/zh-retail-emerald-wild/": {
     meta: {
-      id: "/retail-emerald-wild/",
+      id: "/zh-retail-emerald-wild/",
       categories: ["Emerald"],
       section: "pokemon_rng",
       guideVariants: ["retail"],
-      guideKey: "false-Wild RNG",
+      guideKey: "/zh-retail-emerald-wild/",
       isNew: false,
       title: "实机野生乱数",
       navDrawerTitle: "实机野生乱数",
@@ -14387,30 +15429,23 @@ export const guides = {
       difficulty: null,
       hideFromNavDrawer: true,
       addedOn: null,
-      translation: { enSlug: "/retail-emerald-wild/", language: "zh" },
+      translation: null,
       layout: "guide",
-      lastUpdated: "2026-03-20",
-      type: "translatedGuide",
-      canonical: "/zh-retail-emerald-wild/",
-      file: "guides/Translations/zh/Gen 3/Emerald/Retail Wild RNG.mdx",
-      translations: {
-        de: "/de-retail-emerald-wild/",
-        it: "/it-retail-emerald-wild/",
-        en: "/retail-emerald-wild/",
-        zh: "/zh-retail-emerald-wild/",
+      lastUpdated: "2026-10-03",
+      type: "baseGuide",
+      canonical: "/emerald-wild/",
+      file: "guides/Gen 3/Emerald/Gen 3 Wild.mdx",
+      translations: null,
+      guideGroupId: "en:/zh-retail-emerald-wild/:Emerald",
+      guideVariantLinks: {
+        retail: { type: "slug", slug: "/zh-retail-emerald-wild/" },
+        cfwEmu: null,
       },
-      guideGroupId: "zh:false-Wild RNG:Emerald",
-      guideVariantLinks: null,
-      displayAttributes: [],
+      displayAttributes: ["web_tool"],
     },
-    Guide: React.lazy(
-      () =>
-        import("~/../guides/Translations/zh/Gen 3/Emerald/Retail Wild RNG.mdx"),
-    ),
+    Guide: React.lazy(() => import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx")),
     getRawFile: memoize(async () => {
-      const file = await import(
-        "~/../guides/Translations/zh/Gen 3/Emerald/Retail Wild RNG.mdx?raw"
-      );
+      const file = await import("~/../guides/Gen 3/Emerald/Gen 3 Wild.mdx?raw");
       return file.default;
     }),
   },
@@ -14434,7 +15469,7 @@ export const guides = {
       addedOn: "2025-06-15",
       translation: { enSlug: "/retail-hgss-starter/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-04-10",
       type: "translatedGuide",
       canonical: "/zh-retail-hgss-starter/",
       file: "guides/Translations/zh/Gen 4/Starters.mdx",
@@ -14445,7 +15480,7 @@ export const guides = {
       },
       guideGroupId: "zh:false-Starter RNG:HeartGold and SoulSilver",
       guideVariantLinks: null,
-      displayAttributes: ["video_guide", "web_tool"],
+      displayAttributes: ["web_tool", "video_guide"],
     },
     Guide: React.lazy(
       () => import("~/../guides/Translations/zh/Gen 4/Starters.mdx"),
@@ -15895,7 +16930,7 @@ export const guides = {
       addedOn: null,
       translation: { enSlug: "/rs-battery/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-05-27",
       type: "translatedGuide",
       canonical: "/zh-rs-battery/",
       file: "guides/Translations/zh/Gen 3/Ruby and Sapphire/Live and Dry Battery.mdx",
@@ -16064,7 +17099,7 @@ export const guides = {
       addedOn: "2025-05-17",
       translation: { enSlug: "/rs-pokerus-retail/", language: "zh" },
       layout: "guide",
-      lastUpdated: "2026-03-20",
+      lastUpdated: "2026-08-08",
       type: "translatedGuide",
       canonical: "/zh-rs-pokerus-retail/",
       file: "guides/Translations/zh/Gen 3/Ruby and Sapphire/Pokerus Retail.mdx",
@@ -16274,14 +17309,18 @@ export const guideSlugs = [
   "/brilliant-diamond-and-shining-pearl/",
   "/bw-calibration/",
   "/bw-emu-starter/",
+  "/bw-find-ds-parameters/",
   "/bw2-calibration/",
   "/bw2-egg/",
+  "/bw2-find-ds-parameters/",
   "/cfw-bdsp-egg/",
   "/cfw-bdsp-stationary/",
   "/cfw-bdsp-tidandsid/",
   "/cfw-bdsp-wild/",
   "/challenge-usum-ta/",
   "/channel-jirachi/",
+  "/chatot-pitch-elm-call-finder/",
+  "/chatot-pitch-finder/",
   "/citrarng-setup/",
   "/connect-dolphin-to-gba/",
   "/consistent-platinum-rng/",
@@ -16312,6 +17351,7 @@ export const guideSlugs = [
   "/dppt-3ds-rng/",
   "/dppt-advance-rng/",
   "/dppt-cute-charm/",
+  "/dppt-honey-tree-npcs/",
   "/dppt-initial-seed-retail/",
   "/dppt-initial-seed/",
   "/dppt-pokeradar-rng/",
@@ -16323,12 +17363,15 @@ export const guideSlugs = [
   "/e-tips-rng/",
   "/emerald-advancing-rng-techniques/",
   "/emerald-battle-video/",
+  "/emerald-largest-lotad-seedot/",
   "/emerald-mirage-island/",
   "/emerald-overview/",
   "/emerald-painting-reseeding/",
   "/emerald-painting-rng/",
   "/emerald-painting-seed-searcher/",
   "/emerald-pokerus-emu/",
+  "/emerald-pokerus-retail/",
+  "/emerald-rng-with-ace/",
   "/emerald-shiny-starter/",
   "/emerald-sid-feebas/",
   "/emerald-static/",
@@ -16417,6 +17460,7 @@ export const guideSlugs = [
   "/install-pokereader/",
   "/it-e-tips-rng/",
   "/it-emerald-overview/",
+  "/it-emerald-rng-with-ace/",
   "/it-emulator-b2w2-runasdate-inital-seed/",
   "/it-emulator-b2w2-wild/",
   "/it-emulator-bw-runasdate-initial-seed/",
@@ -16433,6 +17477,7 @@ export const guideSlugs = [
   "/it-retail-emerald-wild/",
   "/it-retail-hgss-starter/",
   "/it-rs-gen3-sid/",
+  "/iv-calculator/",
   "/legends-arceus/",
   "/meteor-jirachi/",
   "/mgba-setup/",
@@ -16457,11 +17502,19 @@ export const guideSlugs = [
   "/pokereader/",
   "/retail-bw-entralink/",
   "/retail-bw-starter/",
+  "/retail-dppt-egg/",
+  "/retail-dppt-honey-pokemon/",
+  "/retail-dppt-honey-tree/",
+  "/retail-dppt-lottery/",
   "/retail-dppt-starter/",
   "/retail-dppt-static/",
+  "/retail-dppt-swarm/",
   "/retail-emerald-egg/",
   "/retail-emerald-wild/",
   "/retail-hgss-starter/",
+  "/retail-hgss-swarm/",
+  "/retail-hgss-voltorb-flip/",
+  "/retail-or-emulator/",
   "/retail-oras-egg-mmsc/",
   "/retail-oras-egg-no-mmsc/",
   "/retail-oras-tid/",
@@ -16510,6 +17563,7 @@ export const guideSlugs = [
   "/rs-tidsid-generator/",
   "/rs-tips-rng/",
   "/ruby-and-sapphire/",
+  "/sinnoh-map/",
   "/sos-call-rates/",
   "/sun-and-moon/",
   "/sword-and-shield/",
@@ -16519,16 +17573,20 @@ export const guideSlugs = [
   "/transporter-rng-offline/",
   "/transporter-rng/",
   "/ultra-sun-and-ultra-moon/",
+  "/what-is-rng/",
   "/wishing-star-jirachi/",
   "/x-and-y/",
   "/xdcolo-tidsid-generator/",
   "/xy-friend-safari-patch/",
   "/xy-pokeradar/",
+  "/your-first-rng/",
   "/zh-3ds-alt-settings/",
   "/zh-3ds-helper/",
+  "/zh-bdsp-advance-rng/",
   "/zh-bw2-egg/",
   "/zh-channel-jirachi/",
   "/zh-connect-dolphin-to-gba/",
+  "/zh-consistent-platinum-rng/",
   "/zh-delete-pokemon-save/",
   "/zh-desmume-setup/",
   "/zh-dppt-3ds-rng/",
@@ -16541,6 +17599,7 @@ export const guideSlugs = [
   "/zh-dppt-wild/",
   "/zh-e-tips-rng/",
   "/zh-emerald-mirage-island/",
+  "/zh-emerald-overview/",
   "/zh-emerald-painting-rng/",
   "/zh-emerald-pokerus-emu/",
   "/zh-emerald-shiny-starter/",
@@ -16591,6 +17650,7 @@ export const guideSlugs = [
   "/zh-misc-3ds-island-scan-sm/",
   "/zh-misc-3ds-island-scan-usum/",
   "/zh-misc-dolphin-gba-bios/",
+  "/zh-no-dolphin-patch/",
   "/zh-oras-mirage-spots/",
   "/zh-oras-remove-time-penalty/",
   "/zh-pal-xd-eevee/",
@@ -16696,5 +17756,38 @@ export const externalGuides = [
     translations: null,
     guideGroupId: "en:gen5-web-tool:Black 2 and White 2|Black and White",
     guideVariantLinks: null,
+  },
+  {
+    addedOn: "2026-04-26",
+    categories: ["Emerald"],
+    section: "other_rng",
+    navDrawerTitle: "Battle Frontier",
+    guideKey: "emerald-battle-frontier",
+    displayAttributes: ["web_tool"],
+    guideVariants: ["retail"],
+    url: "https://pokemoncompletion.com/BattleFacilities/Emerald/RngManipulation",
+    difficulty: null,
+    id: "https://pokemoncompletion.com/BattleFacilities/Emerald/RngManipulation",
+    isNew: false,
+    translation: null,
+    canonical: null,
+    hideFromNavDrawer: false,
+    isRoughDraft: false,
+    title: "Battle Frontier",
+    orderPriority: 20,
+    lastUpdated: null,
+    description: "",
+    layout: "guide",
+    type: "externalLink",
+    translations: null,
+    guideGroupId: "en:emerald-battle-frontier:Emerald",
+    guideVariantLinks: {
+      retail: {
+        type: "externalLink",
+        externalLink:
+          "https://pokemoncompletion.com/BattleFacilities/Emerald/RngManipulation",
+      },
+      cfwEmu: null,
+    },
   },
 ] as const;

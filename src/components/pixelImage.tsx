@@ -6,6 +6,7 @@ import Beedrill from "~/assets/box-sprites/beedrill.png";
 import Bellsprout from "~/assets/box-sprites/bellsprout.png";
 import Bulbasaur from "~/assets/box-sprites/bulbasaur.png";
 import Charmander from "~/assets/box-sprites/charmander.png";
+import Chatot from "~/assets/box-sprites/chatot.png";
 import Chesnaught from "~/assets/box-sprites/chesnaught.png";
 import Chikorita from "~/assets/box-sprites/chikorita.png";
 import Combusken from "~/assets/box-sprites/combusken.png";
@@ -29,6 +30,7 @@ import Luxio from "~/assets/box-sprites/luxio.png";
 import Marill from "~/assets/box-sprites/marill.png";
 import Marshtomp from "~/assets/box-sprites/marshtomp.png";
 import Monferno from "~/assets/box-sprites/monferno.png";
+import Munchlax from "~/assets/box-sprites/munchlax.png";
 import Onix from "~/assets/box-sprites/onix.png";
 import Pidgeot from "~/assets/box-sprites/pidgeot.png";
 import Prinplup from "~/assets/box-sprites/prinplup.png";
@@ -49,6 +51,7 @@ import Venipede from "~/assets/box-sprites/venipede.png";
 import Vigoroth from "~/assets/box-sprites/vigoroth.png";
 import DpptHeads from "~/assets/dppt_heads.webp";
 import DpptTails from "~/assets/dppt_tails.webp";
+import { OneOf } from "~/types/utils";
 
 const image = {
   Aggron,
@@ -57,6 +60,7 @@ const image = {
   Bellsprout,
   Bulbasaur,
   Charmander,
+  Chatot,
   Chesnaught,
   Chikorita,
   Combusken,
@@ -80,6 +84,7 @@ const image = {
   Marill,
   Marshtomp,
   Monferno,
+  Munchlax,
   Onix,
   Pidgeot,
   Prinplup,
@@ -107,9 +112,12 @@ const _PixelImage = styled.img({
 });
 
 type Props = {
+  className?: string;
+} & OneOf<{
   name: keyof typeof image;
-};
+  src: string;
+}>;
 
-export const PixelImage = ({ name }: Props) => {
-  return <_PixelImage src={image[name]} />;
+export const PixelImage = ({ src, name, className }: Props) => {
+  return <_PixelImage src={src ?? image[name]} className={className} />;
 };
