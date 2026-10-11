@@ -1,0 +1,36 @@
+---
+title: "Shiny Calculator"
+description: "Check whether a Pokémon is shiny for a given TID/SID, or find the SID that makes a Pokémon shiny."
+slug: "shiny-calculator"
+category:
+  - "GBA Tools"
+  - "NDS Tools"
+  - "3DS Tools"
+section: "tool"
+addedOn: "2026-10-10"
+---
+
+<Gist>
+  Check whether a Pokémon is shiny for a given TID/SID, or find the SID that
+  makes a Pokémon shiny.
+</Gist>
+
+This calculator works for Ruby, Sapphire, Emerald, Diamond, Pearl, and Platinum.
+
+## Check if a Pokémon is shiny
+
+Enter your TID, SID, and the Pokémon's PID. The calculator will show
+whether that Pokémon is shiny for the given trainer ID pair.
+
+<IsPokemonShinyForTidSid />
+
+## Find a SID that makes a Pokémon shiny
+
+Enter your TID and the Pokémon's PID. The calculator will output all eight SIDs
+that make the Pokémon shiny, along with their shared TSV and the matching PSV.
+
+The results list one square shiny SID and seven star shiny SIDs. Square and star
+animations are only distinguished in Gen 8 and later; all eight SIDs produce a
+shiny Pokémon in the games covered here.
+
+<FindSidForShinyPokemon />

@@ -3231,6 +3231,45 @@ export const guides = {
       return file.default;
     }),
   },
+  "/emerald-shininess-calculator/": {
+    meta: {
+      id: "/emerald-shininess-calculator/",
+      categories: ["Emerald"],
+      section: "tool",
+      guideVariants: null,
+      guideKey: "false-Shininess Calculator",
+      isNew: true,
+      title: "Shininess Calculator",
+      navDrawerTitle: "Shininess Calculator",
+      description:
+        "Check whether a Pokémon is shiny for a given TID/SID, or find the SID that makes a Pokémon shiny.",
+      slug: "/emerald-shininess-calculator/",
+      isRoughDraft: false,
+      orderPriority: 20,
+      difficulty: null,
+      hideFromNavDrawer: false,
+      addedOn: "2026-10-10",
+      translation: null,
+      layout: "guide",
+      lastUpdated: "2026-10-10",
+      type: "baseGuide",
+      canonical: "/emerald-shininess-calculator/",
+      file: "guides/Gen 3/Emerald/Shininess Calculator.mdx",
+      translations: null,
+      guideGroupId: "en:false-Shininess Calculator:Emerald",
+      guideVariantLinks: null,
+      displayAttributes: ["web_tool"],
+    },
+    Guide: React.lazy(
+      () => import("~/../guides/Gen 3/Emerald/Shininess Calculator.mdx"),
+    ),
+    getRawFile: memoize(async () => {
+      const file = await import(
+        "~/../guides/Gen 3/Emerald/Shininess Calculator.mdx?raw"
+      );
+      return file.default;
+    }),
+  },
   "/emerald-shiny-starter/": {
     meta: {
       id: "/emerald-shiny-starter/",
@@ -17372,6 +17411,7 @@ export const guideSlugs = [
   "/emerald-pokerus-emu/",
   "/emerald-pokerus-retail/",
   "/emerald-rng-with-ace/",
+  "/emerald-shininess-calculator/",
   "/emerald-shiny-starter/",
   "/emerald-sid-feebas/",
   "/emerald-static/",
